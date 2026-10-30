@@ -1,0 +1,308 @@
+{
+    "users": [
+        {
+            "id": 1,
+            "full_name": "Admin Officer",
+            "email": "admin@ecocoins.ph",
+            "password": "$2y$10$TbWerdbymhoQqSiKZeypa.lEcMf0wuIQAQ35hTE.kl92WV\/tHqhd2",
+            "role": "admin",
+            "qr_code": "ECO-ADM-0001",
+            "points": 0,
+            "created_at": "2026-10-01 08:00:00"
+        },
+        {
+            "id": 2,
+            "full_name": "User",
+            "email": "user@example.com",
+            "password": "$2y$10$nxPtq2XhC74pjnwHrhpvTe9FXl.aU0mUqTILv\/RPmxxtNaXpiv\/uC",
+            "role": "resident",
+            "qr_code": "ECO-RES-88219",
+            "points": 1325,
+            "created_at": "2026-10-10 09:30:00"
+        },
+        {
+            "id": 3,
+            "full_name": "Annie Flores",
+            "email": "annie@example.com",
+            "password": "$2y$10$1nibdSKZZjnBgLHlQrlhkO\/DnkXy0CQg78TMGch63JybQkmp\/jAW6",
+            "role": "resident",
+            "qr_code": "ECO-RES-10492",
+            "points": 840,
+            "created_at": "2026-10-12 11:20:00"
+        },
+        {
+            "id": 4,
+            "full_name": "Theresa Ramos",
+            "email": "theresa@example.com",
+            "password": "$2y$10$n.Ho5Tn\/KzRCRLBbcsF.D.Kf.Vr4ZXbE1PM2Pmz5m6ZKKnEmjDbxC",
+            "role": "resident",
+            "qr_code": "ECO-RES-29381",
+            "points": 960,
+            "created_at": "2026-10-14 14:15:00"
+        },
+        {
+            "id": 5,
+            "full_name": "Cathrine Santos",
+            "email": "cathrine@example.com",
+            "password": "$2y$10$ivuV9TM.G35qS6gKj33Nae\/7cS5wM9LSI9Sdwoe4oXUUMW44UNsOu",
+            "role": "resident",
+            "qr_code": "ECO-RES-50123",
+            "points": 1100,
+            "created_at": "2026-10-15 16:40:00"
+        },
+        {
+            "id": 6,
+            "full_name": "Noel Batumbakal",
+            "email": "noel@example.com",
+            "password": "$2y$10$ioWBtA8\/hCgtbkbN7RfyCOA\/dPcHsFv4yXiVNBqSbMpDtm\/\/nGcQy",
+            "role": "resident",
+            "qr_code": "ECO-RES-77401",
+            "points": 620,
+            "created_at": "2026-10-16 10:10:00"
+        }
+    ],
+    "materials": [
+        {
+            "id": 1,
+            "name": "Plastic Bottle",
+            "category": "Plastic",
+            "points_per_unit": 5,
+            "unit": "piece",
+            "icon": "bottle",
+            "status": "active"
+        },
+        {
+            "id": 2,
+            "name": "Can",
+            "category": "Metal",
+            "points_per_unit": 8,
+            "unit": "piece",
+            "icon": "cup",
+            "status": "active"
+        },
+        {
+            "id": 3,
+            "name": "Glass Bottle",
+            "category": "Glass",
+            "points_per_unit": 10,
+            "unit": "piece",
+            "icon": "glass",
+            "status": "active"
+        },
+        {
+            "id": 4,
+            "name": "Cardboard \/ Paper",
+            "category": "Paper",
+            "points_per_unit": 4,
+            "unit": "kg",
+            "icon": "paper",
+            "status": "active"
+        }
+    ],
+    "transactions": [
+        {
+            "id": 1,
+            "user_id": 2,
+            "material_id": 1,
+            "material_name": "Plastic Bottle",
+            "quantity": 2,
+            "points_earned": 10,
+            "receipt_no": "REC-20261022-01",
+            "created_at": "2026-10-22 10:24:00"
+        },
+        {
+            "id": 2,
+            "user_id": 2,
+            "material_id": 2,
+            "material_name": "Can",
+            "quantity": 1,
+            "points_earned": 8,
+            "receipt_no": "REC-20261021-02",
+            "created_at": "2026-10-21 16:32:00"
+        },
+        {
+            "id": 3,
+            "user_id": 2,
+            "material_id": 1,
+            "material_name": "Plastic Bottle",
+            "quantity": 2,
+            "points_earned": 10,
+            "receipt_no": "REC-20261019-03",
+            "created_at": "2026-10-19 11:20:00"
+        },
+        {
+            "id": 4,
+            "user_id": 2,
+            "material_id": 2,
+            "material_name": "Can",
+            "quantity": 3,
+            "points_earned": 24,
+            "receipt_no": "REC-20261018-04",
+            "created_at": "2026-10-18 15:15:00"
+        },
+        {
+            "id": 5,
+            "user_id": 2,
+            "material_id": 1,
+            "material_name": "Plastic Bottle",
+            "quantity": 1,
+            "points_earned": 5,
+            "receipt_no": "REC-20261016-05",
+            "created_at": "2026-10-16 09:40:00"
+        },
+        {
+            "id": 6,
+            "user_id": 3,
+            "material_id": 1,
+            "material_name": "Plastic Bottle",
+            "quantity": 2,
+            "points_earned": 10,
+            "receipt_no": "REC-20261022-06",
+            "created_at": "2026-10-22 10:24:00"
+        },
+        {
+            "id": 7,
+            "user_id": 4,
+            "material_id": 2,
+            "material_name": "Can",
+            "quantity": 3,
+            "points_earned": 24,
+            "receipt_no": "REC-20261022-07",
+            "created_at": "2026-10-22 10:11:00"
+        },
+        {
+            "id": 8,
+            "user_id": 5,
+            "material_id": 1,
+            "material_name": "Plastic Bottle",
+            "quantity": 4,
+            "points_earned": 20,
+            "receipt_no": "REC-20261022-08",
+            "created_at": "2026-10-22 09:52:00"
+        },
+        {
+            "id": 9,
+            "user_id": 6,
+            "material_id": 2,
+            "material_name": "Can",
+            "quantity": 1,
+            "points_earned": 8,
+            "receipt_no": "REC-20261022-09",
+            "created_at": "2026-10-22 09:30:00"
+        },
+        {
+            "id": 10,
+            "user_id": 2,
+            "material_id": 1,
+            "material_name": "Plastic Bottle",
+            "quantity": 3,
+            "points_earned": 15,
+            "receipt_no": "REC-20261029-1250",
+            "created_at": "2026-10-29 02:59:39"
+        },
+        {
+            "id": 11,
+            "user_id": 2,
+            "material_id": 1,
+            "material_name": "Plastic Bottle",
+            "quantity": 5,
+            "points_earned": 25,
+            "receipt_no": "REC-20261029-8783",
+            "created_at": "2026-10-29 03:02:10"
+        },
+        {
+            "id": 12,
+            "user_id": 2,
+            "material_id": 3,
+            "material_name": "Glass Bottle",
+            "quantity": 3,
+            "points_earned": 30,
+            "receipt_no": "REC-20261029-1272",
+            "created_at": "2026-10-29 03:03:57"
+        },
+        {
+            "id": 13,
+            "user_id": 2,
+            "material_id": 1,
+            "material_name": "Plastic Bottle",
+            "quantity": 1,
+            "points_earned": 5,
+            "receipt_no": "REC-20261029-7513",
+            "created_at": "2026-10-29 04:22:48"
+        }
+    ],
+    "rewards": [
+        {
+            "id": 1,
+            "title": "10% Off at SM Lipa",
+            "category": "Discounts",
+            "points_required": 500,
+            "stock": 50,
+            "partner_name": "SM City Lipa",
+            "icon": "tag",
+            "status": "available"
+        },
+        {
+            "id": 2,
+            "title": "Eco Tote Bag",
+            "category": "Merchandise",
+            "points_required": 1000,
+            "stock": 30,
+            "partner_name": "Barangay Green Store",
+            "icon": "bag",
+            "status": "available"
+        },
+        {
+            "id": 3,
+            "title": "Discount Voucher (\u20b150) \u00b7 Robinsons Lipa",
+            "category": "Discounts",
+            "points_required": 1800,
+            "stock": 40,
+            "partner_name": "Robinsons Place Lipa",
+            "icon": "ticket",
+            "status": "available"
+        },
+        {
+            "id": 4,
+            "title": "Free Drink \u00b7 The Coffee Project",
+            "category": "Partners",
+            "points_required": 750,
+            "stock": 25,
+            "partner_name": "The Coffee Project Lipa",
+            "icon": "coffee",
+            "status": "available"
+        },
+        {
+            "id": 5,
+            "title": "EcoCoins Keychain",
+            "category": "Merchandise",
+            "points_required": 300,
+            "stock": 80,
+            "partner_name": "Barangay Green Store",
+            "icon": "key",
+            "status": "available"
+        },
+        {
+            "id": 6,
+            "title": "Movie Pass (1 Ticket) \u00b7 SM Cinema Lipa",
+            "category": "Partners",
+            "points_required": 1500,
+            "stock": 20,
+            "partner_name": "SM Cinema Lipa",
+            "icon": "film",
+            "status": "available"
+        }
+    ],
+    "redemptions": [
+        {
+            "id": 1,
+            "user_id": 2,
+            "reward_id": 5,
+            "reward_title": "EcoCoins Keychain",
+            "points_spent": 300,
+            "redemption_code": "RDM-88219-01",
+            "status": "claimed",
+            "created_at": "2026-10-15 14:00:00"
+        }
+    ]
+}
