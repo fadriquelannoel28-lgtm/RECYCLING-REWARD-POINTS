@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main class="py-4">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-3">
+        {% include 'sidebar.html' %}
+      </div>
+
+      <div class="col-lg-9">
+        <div class="mb-4">
+          <h2 class="fw-bold mb-1">My EcoPoints</h2>
+          <p class="text-muted">Track your point balance and distribution.</p>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-5">
+            <div class="card bg-success text-white border-0 shadow-sm p-4 text-center h-100 d-flex flex-column justify-content-center">
+              <span class="text-white-50 small text-uppercase fw-semibold">Current Balance</span>
+              <div class="display-4 fw-bold my-2">{{ "{:,}".format(current_user.points) }}</div>
+              <div class="small text-white-50 mb-3">EcoPoints Available</div>
+              <div>
+                <a href="{{ url_for('rewards') }}" class="btn btn-light text-success fw-bold px-4">Redeem Rewards</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-7">
+            <div class="card border-0 shadow-sm p-4 h-100">
+              <h5 class="fw-bold mb-3">Points Breakdown</h5>
+
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="eco-icon-tile tile-blue" style="width: 28px; height: 28px;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10 2h4v3h-4z"/>
+                        <path d="M8 5h8v2a4 4 0 0 1 4 4v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9a4 4 0 0 1 4-4V5z"/>
+                      </svg>
+                    </span>
+                    <span class="small fw-semibold">Plastic Bottles</span>
+                  </div>
+                  <span class="small fw-bold">{{ bottle_points }} pts ({{ bottle_pct }}%)</span>
+                </div>
+                <div class="progress" style="height: 10px;">
+                  <div class="progress-bar bg-primary" style="width: {{ bottle_pct }}%;"></div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="eco-icon-tile tile-orange" style="width: 28px; height: 28px;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="5" y="4" width="14" height="16" rx="3"/>
+                        <ellipse cx="12" cy="7" rx="5" ry="2"/>
+                      </svg>
+                    </span>
+                    <span class="small fw-semibold">Cans</span>
+                  </div>
+                  <span class="small fw-bold">{{ can_points }} pts ({{ can_pct }}%)</span>
+                </div>
+                <div class="progress" style="height: 10px;">
+                  <div class="progress-bar bg-warning" style="width: {{ can_pct }}%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="eco-icon-tile tile-purple" style="width: 28px; height: 28px;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      </svg>
+                    </span>
+                    <span class="small fw-semibold">Other Materials</span>
+                  </div>
+                  <span class="small fw-bold">{{ other_points }} pts ({{ other_pct }}%)</span>
+                </div>
+                <div class="progress" style="height: 10px;">
+                  <div class="progress-bar bg-secondary" style="width: {{ other_pct }}%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card border-0 shadow-sm p-4">
+          <h5 class="fw-bold mb-3">Points Earned History</h5>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Date</th>
+                  <th>Material</th>
+                  <th>Quantity</th>
+                  <th class="text-end">Points Earned</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if not user_transactions %}
+                  <tr>
+                    <td colspan="4" class="text-center py-4 text-muted">No points recorded yet.</td>
+                  </tr>
+                {% else %}
+                  {% for row in user_transactions %}
+                    {% set m = row.material_name|lower %}
+                    <tr>
+                      <td class="text-muted small">{{ row.created_at }}</td>
+                      <td>
+                        <div class="d-flex align-items-center gap-2">
+                          {% if 'bottle' in m or 'plastic' in m %}
+                            <span class="eco-icon-tile tile-blue" style="width: 30px; height: 30px;">
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 2h4v3h-4z"/>
+                                <path d="M8 5h8v2a4 4 0 0 1 4 4v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9a4 4 0 0 1 4-4V5z"/>
+                              </svg>
+                            </span>
+                          {% elif 'can' in m %}
+                            <span class="eco-icon-tile tile-orange" style="width: 30px; height: 30px;">
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="5" y="4" width="14" height="16" rx="3"/>
+                                <ellipse cx="12" cy="7" rx="5" ry="2"/>
+                              </svg>
+                            </span>
+                          {% else %}
+                            <span class="eco-icon-tile tile-purple" style="width: 30px; height: 30px;">
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                              </svg>
+                            </span>
+                          {% endif %}
+                          <span class="fw-semibold">{{ row.material_name }}</span>
+                        </div>
+                      </td>
+                      <td class="text-muted">{{ row.quantity }}</td>
+                      <td class="text-end fw-bold text-success">+{{ row.points_earned }} pts</td>
+                    </tr>
+                  {% endfor %}
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

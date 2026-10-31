@@ -1,0 +1,133 @@
+:root {
+  --eco-green: #1b5e3c;
+  --eco-green-light: #e8f5e9;
+  --eco-bg: #f4f9f5;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: var(--eco-bg);
+  color: #212529;
+}
+
+.bg-eco {
+  background-color: var(--eco-green) !important;
+  color: #ffffff !important;
+}
+
+.bg-eco-light {
+  background-color: var(--eco-green-light) !important;
+}
+
+.text-eco {
+  color: var(--eco-green) !important;
+}
+
+.btn-success {
+  background-color: var(--eco-green);
+  border-color: var(--eco-green);
+}
+
+.btn-success:hover,
+.btn-success:focus {
+  background-color: #14472d;
+  border-color: #14472d;
+}
+
+.btn-outline-success {
+  color: var(--eco-green);
+  border-color: var(--eco-green);
+}
+
+.btn-outline-success:hover {
+  background-color: var(--eco-green);
+  border-color: var(--eco-green);
+  color: #ffffff;
+}
+
+.card {
+  border-radius: 16px;
+}
+
+.btn {
+  border-radius: 10px;
+}
+
+.form-control, .form-select {
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+}
+
+.nav-pills .nav-link.active {
+  background-color: var(--eco-green);
+}
+
+.eco-brand-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--eco-green);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.eco-icon-tile {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tile-blue {
+  background-color: #e4f2f9;
+  color: #2980b9;
+}
+
+.tile-orange {
+  background-color: #fbf0e6;
+  color: #b8621b;
+}
+
+.tile-purple {
+  background-color: #f3ecf9;
+  color: #6f588c;
+}
+
+.tile-green {
+  background-color: #e6f7ec;
+  color: #1b5e3c;
+}
+
+.admin-sidebar {
+  background-color: #0d462b;
+  min-height: 100vh;
+}
+
+.admin-link {
+  color: #c2e2d0;
+  text-decoration: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  transition: all 0.2s ease;
+}
+
+.admin-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.admin-link.active {
+  background-color: #ffffff;
+  color: #0d462b;
+}

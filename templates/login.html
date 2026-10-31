@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main class="py-5 my-auto">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-7 col-lg-5 col-xl-4">
+        <div class="card border-0 shadow-sm p-4 p-md-5 bg-white">
+          <div class="text-center mb-4">
+            <span class="eco-brand-badge mb-3" style="width: 48px; height: 48px;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+              </svg>
+            </span>
+            <h3 class="fw-bold">Welcome Back</h3>
+            <p class="text-muted small">Log in to manage your EcoCoins account</p>
+          </div>
+
+          {% if error %}
+            <div class="alert alert-danger py-2 small rounded-3">{{ error }}</div>
+          {% endif %}
+
+          <form action="{{ url_for('login') }}" method="POST">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Email Address</label>
+              <input type="email" name="email" id="emailInput" class="form-control" placeholder="name@example.com" value="{{ email|default('') }}" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Password</label>
+              <div class="input-group">
+                <input type="password" name="password" id="passwordInput" class="form-control" placeholder="Enter password" required>
+                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="passwordInput">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-success w-100 py-2 fw-semibold mb-3">Login</button>
+
+            <div class="text-center small text-muted">
+              Don't have an account? <a href="{{ url_for('register') }}" class="text-success fw-bold text-decoration-none">Sign up</a>
+            </div>
+          </form>
+
+          <hr class="my-4">
+
+          <div class="text-center">
+            <span class="text-muted small d-block mb-2">Demo Shortcuts:</span>
+            <div class="d-flex gap-2 justify-content-center">
+              <button type="button" class="btn btn-sm btn-outline-success" onclick="document.getElementById('emailInput').value='user@example.com';document.getElementById('passwordInput').value='user123';">Resident Demo</button>
+              <button type="button" class="btn btn-sm btn-outline-dark" onclick="document.getElementById('emailInput').value='admin@ecocoins.ph';document.getElementById('passwordInput').value='admin123';">Admin Demo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

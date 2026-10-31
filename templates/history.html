@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main class="py-4">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-3">
+        {% include 'sidebar.html' %}
+      </div>
+
+      <div class="col-lg-9">
+        <div class="mb-4">
+          <h2 class="fw-bold mb-1">Recycling History</h2>
+          <p class="text-muted">Complete log of your recycling deposits.</p>
+        </div>
+
+        <div class="card border-0 shadow-sm p-4">
+          <div class="d-flex flex-wrap gap-2 mb-4 filter-container">
+            <button type="button" class="btn btn-sm btn-success filter-btn active" data-filter="all">All</button>
+            <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="plastic">Plastic Bottle</button>
+            <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="can">Can</button>
+            <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="others">Others</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Receipt #</th>
+                  <th>Date & Time</th>
+                  <th>Material</th>
+                  <th>Quantity</th>
+                  <th class="text-end">Points Earned</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if not user_transactions %}
+                  <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">No recycling records found.</td>
+                  </tr>
+                {% else %}
+                  {% for t in user_transactions %}
+                    {% set mat = t.material_name|lower %}
+                    {% if 'bottle' in mat or 'plastic' in mat %}
+                      {% set cat = 'plastic' %}
+                    {% elif 'can' in mat %}
+                      {% set cat = 'can' %}
+                    {% else %}
+                      {% set cat = 'others' %}
+                    {% endif %}
+                    <tr class="filter-item" data-category="{{ cat }}">
+                      <td class="font-monospace text-muted small">{{ t.receipt_no }}</td>
+                      <td class="text-muted small">{{ t.created_at }}</td>
+                      <td>
+                        <div class="d-flex align-items-center gap-2">
+                          {% if cat == 'plastic' %}
+                            <span class="eco-icon-tile tile-blue" style="width: 32px; height: 32px;">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 2h4v3h-4z"/>
+                                <path d="M8 5h8v2a4 4 0 0 1 4 4v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9a4 4 0 0 1 4-4V5z"/>
+                              </svg>
+                            </span>
+                          {% elif cat == 'can' %}
+                            <span class="eco-icon-tile tile-orange" style="width: 32px; height: 32px;">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="5" y="4" width="14" height="16" rx="3"/>
+                                <ellipse cx="12" cy="7" rx="5" ry="2"/>
+                              </svg>
+                            </span>
+                          {% else %}
+                            <span class="eco-icon-tile tile-purple" style="width: 32px; height: 32px;">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                              </svg>
+                            </span>
+                          {% endif %}
+                          <span class="fw-semibold">{{ t.material_name }}</span>
+                        </div>
+                      </td>
+                      <td class="text-muted">{{ t.quantity }}</td>
+                      <td class="text-end fw-bold text-success">+{{ t.points_earned }} pts</td>
+                    </tr>
+                  {% endfor %}
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

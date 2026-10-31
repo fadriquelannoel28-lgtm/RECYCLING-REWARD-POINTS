@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main class="py-5">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h1 class="fw-bold mb-2">How EcoCoins Works</h1>
+      <p class="text-muted lead">Recycle in 5 easy steps and earn rewards instantly.</p>
+    </div>
+
+    <div class="row g-4 mb-5">
+      <div class="col-md-6 col-lg">
+        <div class="card border-0 shadow-sm h-100 text-center p-3">
+          <div class="card-body">
+            <div class="badge bg-success rounded-circle p-3 fs-4 mb-3">1</div>
+            <h5 class="fw-bold">Collect</h5>
+            <p class="text-muted small mb-0">Separate plastic bottles, aluminum cans, and other recyclables at home.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg">
+        <div class="card border-0 shadow-sm h-100 text-center p-3">
+          <div class="card-body">
+            <div class="badge bg-success rounded-circle p-3 fs-4 mb-3">2</div>
+            <h5 class="fw-bold">Scan QR</h5>
+            <p class="text-muted small mb-0">Present your personal resident QR code to the station scanner.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg">
+        <div class="card border-0 shadow-sm h-100 text-center p-3">
+          <div class="card-body">
+            <div class="badge bg-success rounded-circle p-3 fs-4 mb-3">3</div>
+            <h5 class="fw-bold">Insert</h5>
+            <p class="text-muted small mb-0">Drop the recyclable into the deposit slot for sensor detection.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg">
+        <div class="card border-0 shadow-sm h-100 text-center p-3">
+          <div class="card-body">
+            <div class="badge bg-success rounded-circle p-3 fs-4 mb-3">4</div>
+            <h5 class="fw-bold">Earn Points</h5>
+            <p class="text-muted small mb-0">The system calculates points based on material type and quantity.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg">
+        <div class="card border-0 shadow-sm h-100 text-center p-3">
+          <div class="card-body">
+            <div class="badge bg-success rounded-circle p-3 fs-4 mb-3">5</div>
+            <h5 class="fw-bold">Redeem</h5>
+            <p class="text-muted small mb-0">Use your accumulated EcoPoints to claim discount vouchers and gifts.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm p-4 p-lg-5 bg-white">
+      <div class="row align-items-center g-4">
+        <div class="col-md-4 text-center">
+          <div class="p-4 bg-eco-light rounded-4 d-inline-block">
+            <i class="bi bi-robot fs-1 text-success"></i>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <h3 class="fw-bold mb-3">The Automated Collection Station</h3>
+          <p class="text-muted mb-4">
+            Our smart collection station reads your QR code, detects the materials using sensors, and records the transaction directly to the central system without manual paperwork.
+          </p>
+          {% if current_user %}
+            <a href="{{ url_for('station_simulator') }}" class="btn btn-success px-4">Test Deposit Station</a>
+          {% else %}
+            <a href="{{ url_for('register') }}" class="btn btn-success px-4">Create Your Free Account</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
