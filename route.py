@@ -1,9 +1,10 @@
+import math
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import render_template, request, redirect, url_for, session, jsonify, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import get_db, sync_to_json, get_current_user, PaymentRequired
-from pdf_reports import generate_participation_report_pdf, generate_materials_report_pdf
+from pdf_reports import generate_participation_report_pdf, generate_materials_report_pdf, generate_deposit_receipt_pdf
 
 def register_routes(app):
 
@@ -18,50 +19,62 @@ def register_routes(app):
     @app.route('/login', methods=['GET', 'POST'])
     def login():
         error = None
+        error_field = None
         message = None
         email = ''
         if request.method == 'POST':
             email = request.form.get('email', '').strip()
             password = request.form.get('password', '').strip()
 
-            conn = get_db()
-            cur = conn.cursor()
-            matched = cur.execute("SELECT * FROM users WHERE LOWER(email) = LOWER(?)", (email,)).fetchone()
-            conn.close()
-
-            if matched:
-                matched = dict(matched)
-                valid = False
-                if matched['password'] in ['user123', 'admin123', 'staff123', password]:
-                    valid = True
-                elif check_password_hash(matched['password'], password):
-                    valid = True
-
-                if valid:
-                    if matched.get('status') == 'inactive':
-                        error = f"Your {matched['role']} account has been deactivated by the Administrator. Please contact the barangay office."
-                    else:
-                        session['user_id'] = matched['id']
-                        session['user_role'] = matched['role']
-                        if matched['role'] == 'admin':
-                            return redirect(url_for('admin'))
-                        elif matched['role'] == 'staff':
-                            return redirect(url_for('staff'))
-                        return redirect(url_for('dashboard'))
-                else:
-                    error = 'Invalid email or password.'
+            if not email:
+                error = 'Please enter your email address.'
+                error_field = 'email'
+            elif not password:
+                error = 'Please enter your password.'
+                error_field = 'password'
             else:
-                error = 'Invalid email or password.'
+                conn = get_db()
+                cur = conn.cursor()
+                matched = cur.execute("SELECT * FROM users WHERE LOWER(email) = LOWER(?)", (email,)).fetchone()
+                conn.close()
+
+                if matched:
+                    matched = dict(matched)
+                    valid = False
+                    if matched['password'] in ['user123', 'admin123', 'staff123', password]:
+                        valid = True
+                    elif check_password_hash(matched['password'], password):
+                        valid = True
+
+                    if valid:
+                        if matched.get('status') == 'inactive':
+                            error = f"Your {matched['role']} account has been deactivated by the Administrator."
+                            error_field = 'email'
+                        else:
+                            session['user_id'] = matched['id']
+                            session['user_role'] = matched['role']
+                            if matched['role'] == 'admin':
+                                return redirect(url_for('admin'))
+                            elif matched['role'] == 'staff':
+                                return redirect(url_for('staff'))
+                            return redirect(url_for('dashboard'))
+                    else:
+                        error = 'The password you entered is incorrect.'
+                        error_field = 'password'
+                else:
+                    error = 'The email you entered is not registered.'
+                    error_field = 'email'
 
         info_msg = request.args.get('msg')
         if info_msg:
             message = info_msg
 
-        return render_template('login.html', error=error, message=message, email=email, active_page='login')
+        return render_template('login.html', error=error, error_field=error_field, message=message, email=email, active_page='login')
 
     @app.route('/register', methods=['GET', 'POST'])
     def register():
         error = None
+        error_field = None
         first_name = ''
         last_name = ''
         email = ''
@@ -75,18 +88,33 @@ def register_routes(app):
 
             full_name = f"{first_name} {last_name}".strip() if first_name else request.form.get('full_name', '').strip()
 
-            if not first_name or not last_name or not email or not password:
-                error = 'Please fill in all required fields.'
+            if not first_name:
+                error = 'Please enter your first name.'
+                error_field = 'first_name'
+            elif not last_name:
+                error = 'Please enter your last name.'
+                error_field = 'last_name'
+            elif not email:
+                error = 'Please enter your email address.'
+                error_field = 'email'
+            elif not password:
+                error = 'Please enter a password.'
+                error_field = 'password'
             elif len(first_name) < 2 or len(last_name) < 2:
                 error = 'Names must be at least 2 characters.'
+                error_field = 'first_name' if len(first_name) < 2 else 'last_name'
             elif any(char.isdigit() for char in (first_name + last_name)):
                 error = 'Names cannot contain numbers.'
+                error_field = 'first_name' if any(char.isdigit() for char in first_name) else 'last_name'
             elif password != confirm_password:
-                error = 'Passwords do not match.'
+                error = 'The passwords you entered do not match.'
+                error_field = 'confirm_password'
             elif len(password) < 6:
                 error = 'Password must be at least 6 characters.'
+                error_field = 'password'
             elif not terms:
                 error = 'You must agree to the Terms and Conditions.'
+                error_field = 'terms'
             else:
                 conn = get_db()
                 cur = conn.cursor()
@@ -94,6 +122,7 @@ def register_routes(app):
                 if existing:
                     conn.close()
                     error = 'An account with this email already exists.'
+                    error_field = 'email'
                 else:
                     qr_code = f'ECO-RES-{random.randint(10000, 99999)}'
                     created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -111,7 +140,7 @@ def register_routes(app):
                     session['user_role'] = 'resident'
                     return redirect(url_for('dashboard'))
 
-        return render_template('register.html', error=error, first_name=first_name, last_name=last_name, email=email, active_page='register')
+        return render_template('register.html', error=error, error_field=error_field, first_name=first_name, last_name=last_name, email=email, active_page='register')
 
     @app.route('/logout')
     def logout():
@@ -131,6 +160,7 @@ def register_routes(app):
 
             feedback = None
             feedback_type = 'success'
+            feedback_field = None
 
             if action == 'update_profile':
                 first_name = request.form.get('first_name', '').strip()
@@ -139,20 +169,32 @@ def register_routes(app):
 
                 full_name = f"{first_name} {last_name}".strip() if first_name else request.form.get('full_name', '').strip()
 
-                if not full_name or not email:
-                    feedback = 'First name, last name, and email are required.'
+                if not first_name:
+                    feedback = 'Please enter your first name.'
                     feedback_type = 'danger'
+                    feedback_field = 'first_name'
+                elif not last_name:
+                    feedback = 'Please enter your last name.'
+                    feedback_type = 'danger'
+                    feedback_field = 'last_name'
+                elif not email:
+                    feedback = 'Please enter your email address.'
+                    feedback_type = 'danger'
+                    feedback_field = 'email'
                 elif len(first_name) < 2 or len(last_name) < 2:
                     feedback = 'Names must be at least 2 characters.'
                     feedback_type = 'danger'
+                    feedback_field = 'first_name' if len(first_name) < 2 else 'last_name'
                 elif any(char.isdigit() for char in full_name):
                     feedback = 'Names cannot contain numbers.'
                     feedback_type = 'danger'
+                    feedback_field = 'first_name' if any(char.isdigit() for char in first_name) else 'last_name'
                 else:
                     existing = cur.execute("SELECT id FROM users WHERE LOWER(email) = LOWER(?) AND id != ?", (email, user['id'])).fetchone()
                     if existing:
                         feedback = 'This email is already in use by another account.'
                         feedback_type = 'danger'
+                        feedback_field = 'email'
                     else:
                         cur.execute("UPDATE users SET full_name = ?, email = ? WHERE id = ?", (full_name, email, user['id']))
                         conn.commit()
@@ -171,15 +213,26 @@ def register_routes(app):
                 elif check_password_hash(user['password'], current_pw):
                     is_valid_current = True
 
-                if not is_valid_current:
-                    feedback = 'Current password is incorrect.'
+                if not current_pw:
+                    feedback = 'Please enter your current password.'
                     feedback_type = 'danger'
+                    feedback_field = 'current_password'
+                elif not is_valid_current:
+                    feedback = 'The password you entered is incorrect.'
+                    feedback_type = 'danger'
+                    feedback_field = 'current_password'
+                elif not new_pw:
+                    feedback = 'Please enter a new password.'
+                    feedback_type = 'danger'
+                    feedback_field = 'new_password'
                 elif len(new_pw) < 6:
                     feedback = 'New password must be at least 6 characters long.'
                     feedback_type = 'danger'
+                    feedback_field = 'new_password'
                 elif new_pw != confirm_pw:
                     feedback = 'New passwords do not match.'
                     feedback_type = 'danger'
+                    feedback_field = 'confirm_password'
                 else:
                     hashed_pw = generate_password_hash(new_pw)
                     cur.execute("UPDATE users SET password = ? WHERE id = ?", (hashed_pw, user['id']))
@@ -191,17 +244,20 @@ def register_routes(app):
             conn.close()
             session['feedback'] = feedback
             session['feedback_type'] = feedback_type
+            session['feedback_field'] = feedback_field
             return redirect(url_for('account'))
 
         feedback = session.pop('feedback', None)
         feedback_type = session.pop('feedback_type', 'success')
+        feedback_field = session.pop('feedback_field', None)
 
         return render_template(
             'account.html',
             active_page='account',
             user=user,
             feedback=feedback,
-            feedback_type=feedback_type
+            feedback_type=feedback_type,
+            feedback_field=feedback_field
         )
 
     @app.route('/dashboard')
@@ -222,16 +278,81 @@ def register_routes(app):
 
         bottle_count = 0
         can_count = 0
-        other_count = 0
+        paper_count = 0
+        glass_count = 0
+        total_items = 0
+        lifetime_points = 0
+
         for t in user_txs:
             name = t.get('material_name', '').lower()
             qty = int(t.get('quantity', 0))
+            pts = int(t.get('points_earned', 0))
+            total_items += qty
+            lifetime_points += pts
             if 'bottle' in name or 'plastic' in name:
                 bottle_count += qty
             elif 'can' in name:
                 can_count += qty
+            elif 'paper' in name or 'cardboard' in name:
+                paper_count += qty
             else:
-                other_count += qty
+                glass_count += qty
+
+        other_count = paper_count + glass_count
+
+        diverted_kg = round(
+            (bottle_count * 0.035) +
+            (can_count * 0.015) +
+            (paper_count * 1.0) +
+            (glass_count * 0.25),
+            1
+        )
+
+        daily_timeline = {}
+        for t in reversed(user_txs):
+            dt = str(t.get('created_at', ''))[:10]
+            if not dt:
+                continue
+            if dt not in daily_timeline:
+                daily_timeline[dt] = {'items': 0, 'points': 0}
+            daily_timeline[dt]['items'] += int(t.get('quantity', 0))
+            daily_timeline[dt]['points'] += int(t.get('points_earned', 0))
+
+        if len(daily_timeline) < 4 and daily_timeline:
+            sorted_dates = sorted(daily_timeline.keys())
+        elif not daily_timeline:
+            sorted_dates = [datetime.now().strftime('%Y-%m-%d')]
+            daily_timeline[sorted_dates[0]] = {'items': 0, 'points': 0}
+        else:
+            sorted_dates = sorted(daily_timeline.keys())[-7:]
+
+        timeline_labels = sorted_dates
+        timeline_items = [daily_timeline[k]['items'] for k in sorted_dates]
+        timeline_points = [daily_timeline[k]['points'] for k in sorted_dates]
+
+        cat_breakdown = {
+            'Plastic': {'name': 'Plastic Bottles', 'qty': bottle_count, 'color': '#198754'},
+            'Metal': {'name': 'Aluminum Cans', 'qty': can_count, 'color': '#0d6efd'},
+            'Paper': {'name': 'Paper & Cardboard', 'qty': paper_count, 'color': '#f59e0b'},
+            'Glass': {'name': 'Glass & Others', 'qty': glass_count, 'color': '#8b5cf6'}
+        }
+        for k in cat_breakdown:
+            cat_breakdown[k]['share'] = round((cat_breakdown[k]['qty'] / max(1, total_items)) * 100, 1)
+
+        user_stats = {
+            'total_items': total_items,
+            'lifetime_points': lifetime_points,
+            'diverted_kg': diverted_kg,
+            'bottle_count': bottle_count,
+            'can_count': can_count,
+            'paper_count': paper_count,
+            'glass_count': glass_count,
+            'other_count': other_count,
+            'cat_breakdown': cat_breakdown,
+            'timeline_labels': timeline_labels,
+            'timeline_items': timeline_items,
+            'timeline_points': timeline_points
+        }
 
         return render_template(
             'dashboard.html',
@@ -240,7 +361,8 @@ def register_routes(app):
             user_redemptions=user_redemptions,
             bottle_count=bottle_count,
             can_count=can_count,
-            other_count=other_count
+            other_count=other_count,
+            user_stats=user_stats
         )
 
     @app.route('/ecopoints')
@@ -315,12 +437,107 @@ def register_routes(app):
         if user['role'] == 'admin':
             return redirect(url_for('admin'))
 
+        message = session.pop('message', None)
+        message_type = session.pop('message_type', 'success')
+
         conn = get_db()
         cur = conn.cursor()
         user_redemptions = [dict(r) for r in cur.execute("SELECT * FROM redemptions WHERE user_id = ? ORDER BY created_at DESC", (user['id'],)).fetchall()]
         conn.close()
 
-        return render_template('reward_history.html', active_page='reward_history', redemptions=user_redemptions)
+        return render_template('reward_history.html', active_page='reward_history', redemptions=user_redemptions, message=message, message_type=message_type)
+
+    @app.route('/confirm-received', methods=['POST'])
+    def confirm_received():
+        user = get_current_user()
+        if not user:
+            return redirect(url_for('login'))
+
+        redemption_id = int(request.form.get('redemption_id', 0))
+        conn = get_db()
+        cur = conn.cursor()
+        redemp = cur.execute("SELECT * FROM redemptions WHERE id = ? AND user_id = ? AND status = 'released'", (redemption_id, user['id'])).fetchone()
+
+        if redemp:
+            redemp = dict(redemp)
+            cur.execute("UPDATE redemptions SET status = 'received' WHERE id = ?", (redemption_id,))
+            conn.commit()
+            sync_to_json()
+            session['message'] = f"Reward {redemp['reward_title']} ({redemp['redemption_code']}) confirmed received! Thank you for participating in EcoCoins recycling."
+            session['message_type'] = 'success'
+        else:
+            session['message'] = "Voucher not found or not yet released by Barangay Staff."
+            session['message_type'] = 'danger'
+
+        conn.close()
+        return redirect(url_for('reward_history'))
+
+    @app.route('/confirm-claim', methods=['POST'])
+    def confirm_claim():
+        user = get_current_user()
+        if not user:
+            return redirect(url_for('login'))
+
+        prompt = session.pop('claim_prompt', None)
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET cancel_count = 0 WHERE id = ?", (user['id'],))
+        conn.commit()
+        conn.close()
+
+        if prompt:
+            session['message'] = f"Reward claim for {prompt['title']} confirmed! Voucher code {prompt['code']} is ready for handover."
+        else:
+            session['message'] = "Reward claim successfully confirmed! Ready for handover."
+        session['message_type'] = 'success'
+        return redirect(url_for('rewards'))
+
+    @app.route('/cancel-claim', methods=['POST'])
+    def cancel_claim():
+        user = get_current_user()
+        if not user:
+            return redirect(url_for('login'))
+
+        prompt = session.pop('claim_prompt', None)
+        redemption_id = int(request.form.get('redemption_id', 0))
+        if not redemption_id and prompt:
+            redemption_id = int(prompt.get('redemption_id', 0))
+
+        conn = get_db()
+        cur = conn.cursor()
+        redemp = cur.execute("SELECT * FROM redemptions WHERE id = ? AND user_id = ? AND status = 'claimed'", (redemption_id, user['id'])).fetchone()
+
+        if redemp:
+            redemp = dict(redemp)
+            cur.execute("UPDATE users SET points = points + ? WHERE id = ?", (redemp['points_spent'], user['id']))
+            cur.execute("UPDATE rewards SET stock = stock + 1 WHERE id = ?", (redemp['reward_id'],))
+            cur.execute("DELETE FROM redemptions WHERE id = ?", (redemption_id,))
+
+            curr_cancels = int(user.get('cancel_count') or 0) + 1
+            now = datetime.now()
+            if curr_cancels >= 3:
+                timeout_until = (now + timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
+                cur.execute("UPDATE users SET cancel_count = ?, claim_timeout_until = ? WHERE id = ?", (curr_cancels, timeout_until, user['id']))
+                session['message'] = f"Claim cancelled and {redemp['points_spent']} EcoPoints refunded. Warning: Due to persistent cancellations, reward claiming is timed out for 5 minutes."
+                session['message_type'] = 'danger'
+            elif curr_cancels >= 2:
+                timeout_until = (now + timedelta(minutes=2)).strftime('%Y-%m-%d %H:%M:%S')
+                cur.execute("UPDATE users SET cancel_count = ?, claim_timeout_until = ? WHERE id = ?", (curr_cancels, timeout_until, user['id']))
+                session['message'] = f"Claim cancelled and {redemp['points_spent']} EcoPoints refunded. Notice: Due to repeated cancellations, reward claiming is timed out for 2 minutes."
+                session['message_type'] = 'danger'
+            else:
+                cur.execute("UPDATE users SET cancel_count = ? WHERE id = ?", (curr_cancels, user['id']))
+                session['message'] = f"Claim cancelled and {redemp['points_spent']} EcoPoints have been refunded to your account."
+                session['message_type'] = 'success'
+
+            conn.commit()
+            sync_to_json()
+        else:
+            session['message'] = "No active claim found to cancel or claim has already been processed."
+            session['message_type'] = 'danger'
+
+        conn.close()
+        return redirect(url_for('rewards'))
 
     @app.route('/rewards', methods=['GET', 'POST'])
     def rewards():
@@ -333,6 +550,18 @@ def register_routes(app):
         if request.method == 'POST':
             if not user:
                 return redirect(url_for('login'))
+
+            if user.get('claim_timeout_until'):
+                try:
+                    timeout_dt = datetime.strptime(user['claim_timeout_until'], '%Y-%m-%d %H:%M:%S')
+                    if datetime.now() < timeout_dt:
+                        rem = int((timeout_dt - datetime.now()).total_seconds())
+                        rem_m, rem_s = divmod(rem, 60)
+                        session['message'] = f"Reward claiming is on cooldown due to repeated cancellations. Please wait {rem_m}m {rem_s}s before redeeming again."
+                        session['message_type'] = 'danger'
+                        return redirect(url_for('rewards'))
+                except Exception:
+                    pass
 
             conn = get_db()
             cur = conn.cursor()
@@ -358,12 +587,18 @@ def register_routes(app):
                         "INSERT INTO redemptions (user_id, reward_id, reward_title, points_spent, redemption_code, status, created_at) VALUES (?, ?, ?, ?, ?, 'claimed', ?)",
                         (user['id'], reward['id'], reward['title'], reward['points_required'], code, now_str)
                     )
+                    redemption_id = cur.lastrowid
                     cur.execute("UPDATE users SET points = MAX(0, points - ?) WHERE id = ?", (reward['points_required'], user['id']))
                     cur.execute("UPDATE rewards SET stock = MAX(0, stock - 1) WHERE id = ?", (reward['id'],))
                     conn.commit()
 
-                    session['message'] = f'Reward redeemed successfully! Your claim voucher code is: {code}. You can present this code to Barangay Staff to claim your item.'
-                    session['message_type'] = 'success'
+                    session['claim_prompt'] = {
+                        'redemption_id': redemption_id,
+                        'code': code,
+                        'title': reward['title'],
+                        'points': reward['points_required'],
+                        'started_at': now_str
+                    }
                     sync_to_json()
 
             conn.close()
@@ -371,6 +606,42 @@ def register_routes(app):
 
         message = session.pop('message', None)
         message_type = session.pop('message_type', 'success')
+
+        claim_prompt = session.get('claim_prompt')
+        claim_remaining_seconds = 0
+        if claim_prompt:
+            try:
+                started_dt = datetime.strptime(claim_prompt['started_at'], '%Y-%m-%d %H:%M:%S')
+                elapsed = (datetime.now() - started_dt).total_seconds()
+            except Exception:
+                elapsed = 25
+            if elapsed >= 20:
+                session.pop('claim_prompt', None)
+                if user:
+                    conn_auto = get_db()
+                    cur_auto = conn_auto.cursor()
+                    cur_auto.execute("UPDATE users SET cancel_count = 0 WHERE id = ?", (user['id'],))
+                    conn_auto.commit()
+                    conn_auto.close()
+                claim_prompt = None
+                claim_remaining_seconds = 0
+            else:
+                claim_remaining_seconds = max(1, int(20 - elapsed))
+
+        claim_cooldown_seconds = 0
+        if user and user.get('claim_timeout_until'):
+            try:
+                timeout_dt = datetime.strptime(user['claim_timeout_until'], '%Y-%m-%d %H:%M:%S')
+                if datetime.now() < timeout_dt:
+                    claim_cooldown_seconds = int((timeout_dt - datetime.now()).total_seconds())
+                else:
+                    conn_cd = get_db()
+                    cur_cd = conn_cd.cursor()
+                    cur_cd.execute("UPDATE users SET claim_timeout_until = NULL WHERE id = ?", (user['id'],))
+                    conn_cd.commit()
+                    conn_cd.close()
+            except Exception:
+                pass
 
         conn = get_db()
         cur = conn.cursor()
@@ -389,7 +660,10 @@ def register_routes(app):
             redemptions=user_redemptions,
             user_points=user_points,
             message=message,
-            message_type=message_type
+            message_type=message_type,
+            claim_prompt=claim_prompt,
+            claim_remaining_seconds=claim_remaining_seconds,
+            claim_cooldown_seconds=claim_cooldown_seconds
         )
 
     @app.route('/staff', methods=['GET', 'POST'])
@@ -419,6 +693,9 @@ def register_routes(app):
 
                 if not resident:
                     feedback = 'Resident QR Code not found.'
+                    feedback_type = 'danger'
+                elif resident['role'] != 'resident':
+                    feedback = 'EcoPoints can only be awarded to registered resident accounts. Staff and admin accounts cannot receive points.'
                     feedback_type = 'danger'
                 elif not material:
                     feedback = 'Invalid material selected.'
@@ -459,7 +736,7 @@ def register_routes(app):
                     redemp = dict(redemp)
                     cur.execute("UPDATE redemptions SET status = 'released' WHERE id = ?", (redemption_id,))
                     conn.commit()
-                    feedback = f"Reward voucher {redemp['redemption_code']} verified and released to resident."
+                    feedback = f"Reward voucher {redemp['redemption_code']} released. Waiting for resident confirmation."
                     feedback_type = 'success'
                     sync_to_json()
 
@@ -468,6 +745,8 @@ def register_routes(app):
             session['feedback_type'] = feedback_type
             if receipt:
                 session['receipt'] = receipt
+            if action == 'record_deposit' and qr_code:
+                return redirect(url_for('staff', tab=tab, qr=qr_code))
             return redirect(url_for('staff', tab=tab))
 
         feedback = session.pop('feedback', None)
@@ -494,9 +773,158 @@ def register_routes(app):
         """).fetchall()]
 
         total_points_distributed = sum(int(t.get('points_earned', 0)) for t in all_txs)
-        pending_claims_count = sum(1 for r in all_redemptions if r.get('status') != 'released')
+        pending_claims_count = sum(1 for r in all_redemptions if r.get('status') == 'claimed')
         today_str = datetime.now().strftime('%Y-%m-%d')
         today_txs_count = sum(1 for t in all_txs if t.get('created_at', '').startswith(today_str))
+
+        mat_counts = {'Plastic Bottles': 0, 'Cans': 0, 'Others': 0}
+        cat_breakdown = {
+            'Plastic': {'name': 'Plastic Bottles', 'qty': 0, 'color': '#198754'},
+            'Metal': {'name': 'Aluminum Cans', 'qty': 0, 'color': '#0d6efd'},
+            'Paper': {'name': 'Paper & Cardboard', 'qty': 0, 'color': '#f59e0b'},
+            'Glass': {'name': 'Glass & Others', 'qty': 0, 'color': '#8b5cf6'}
+        }
+        total_items_collected = 0
+        for t in all_txs:
+            m_name = str(t.get('material_name', '')).lower()
+            q = int(t.get('quantity', 0))
+            total_items_collected += q
+            if 'bottle' in m_name or 'plastic' in m_name:
+                mat_counts['Plastic Bottles'] += q
+                cat_breakdown['Plastic']['qty'] += q
+            elif 'can' in m_name:
+                mat_counts['Cans'] += q
+                cat_breakdown['Metal']['qty'] += q
+            elif 'paper' in m_name or 'cardboard' in m_name:
+                mat_counts['Others'] += q
+                cat_breakdown['Paper']['qty'] += q
+            else:
+                mat_counts['Others'] += q
+                cat_breakdown['Glass']['qty'] += q
+
+        for k in cat_breakdown:
+            cat_breakdown[k]['share'] = round((cat_breakdown[k]['qty'] / max(1, total_items_collected)) * 100, 1)
+
+        diverted_kg = round(
+            (cat_breakdown['Plastic']['qty'] * 0.035) +
+            (cat_breakdown['Metal']['qty'] * 0.015) +
+            (cat_breakdown['Paper']['qty'] * 1.0) +
+            (cat_breakdown['Glass']['qty'] * 0.25),
+            1
+        )
+
+        daily_timeline = {}
+        for t in reversed(all_txs):
+            dt = str(t.get('created_at', ''))[:10]
+            if not dt:
+                continue
+            if dt not in daily_timeline:
+                daily_timeline[dt] = {'items': 0, 'points': 0}
+            daily_timeline[dt]['items'] += int(t.get('quantity', 0))
+            daily_timeline[dt]['points'] += int(t.get('points_earned', 0))
+
+        if len(daily_timeline) < 5:
+            base_dates = ['2026-10-22', '2026-10-26', '2026-10-29', '2026-10-31', '2026-11-01']
+            for d in base_dates:
+                if d not in daily_timeline:
+                    daily_timeline[d] = {'items': 0, 'points': 0}
+
+        sorted_dates = sorted(daily_timeline.keys())[-7:]
+        timeline_labels = sorted_dates
+        timeline_items = [daily_timeline[k]['items'] for k in sorted_dates]
+        timeline_points = [daily_timeline[k]['points'] for k in sorted_dates]
+
+        svg_w, svg_h = 560, 240
+        pad_l, pad_r, pad_t, pad_b = 40, 24, 25, 35
+        plot_w = svg_w - pad_l - pad_r
+        plot_h = svg_h - pad_t - pad_b
+        n_dates = len(sorted_dates)
+
+        max_it = max(timeline_items) if timeline_items and max(timeline_items) > 0 else 10
+        max_pt = max(timeline_points) if timeline_points and max(timeline_points) > 0 else 50
+        max_it = int(math.ceil(max_it / 5.0) * 5)
+        max_pt = int(math.ceil(max_pt / 25.0) * 25)
+
+        items_coords = []
+        pts_coords = []
+        for i in range(n_dates):
+            x = pad_l + (plot_w * i / (n_dates - 1)) if n_dates > 1 else pad_l + plot_w / 2
+            y_it = pad_t + plot_h - (plot_h * (timeline_items[i] / max_it))
+            y_pt = pad_t + plot_h - (plot_h * (timeline_points[i] / max_pt))
+            items_coords.append({'x': round(x, 1), 'y': round(y_it, 1), 'val': timeline_items[i]})
+            pts_coords.append({'x': round(x, 1), 'y': round(y_pt, 1), 'val': timeline_points[i]})
+
+        def build_curve(coords):
+            if not coords:
+                return '', ''
+            p = f"M {coords[0]['x']},{coords[0]['y']}"
+            for i in range(1, len(coords)):
+                prev = coords[i-1]
+                curr = coords[i]
+                mx = round((prev['x'] + curr['x']) / 2, 1)
+                p += f" C {mx},{prev['y']} {mx},{curr['y']} {curr['x']},{curr['y']}"
+            area = f"{p} L {coords[-1]['x']},{pad_t + plot_h} L {coords[0]['x']},{pad_t + plot_h} Z"
+            return p, area
+
+        p_items, a_items = build_curve(items_coords)
+        p_pts, a_pts = build_curve(pts_coords)
+
+        x_axis_labels = []
+        for i, dt in enumerate(sorted_dates):
+            x = pad_l + (plot_w * i / (n_dates - 1)) if n_dates > 1 else pad_l + plot_w / 2
+            short_lbl = dt[5:].replace('-', '/')
+            x_axis_labels.append({'x': round(x, 1), 'y': svg_h - 12, 'text': short_lbl})
+
+        grid_lines = []
+        for g_idx in range(5):
+            frac = g_idx / 4.0
+            y_val = pad_t + plot_h - (plot_h * frac)
+            it_val = int(round(max_it * frac))
+            grid_lines.append({
+                'y': round(y_val, 1),
+                'x1': pad_l,
+                'x2': svg_w - pad_r,
+                'it_label': it_val
+            })
+
+        circ = 339.29
+        donut_slices = []
+        cur_offset = 0.0
+        tot_donut = max(1, total_items_collected)
+        donut_specs = [
+            ('Plastics', cat_breakdown['Plastic']['qty'], '#10b981', 'Plastics'),
+            ('Cans', cat_breakdown['Metal']['qty'], '#3b82f6', 'Cans & Metal'),
+            ('Paper', cat_breakdown['Paper']['qty'], '#f59e0b', 'Paper & Card'),
+            ('Glass/Other', cat_breakdown['Glass']['qty'], '#8b5cf6', 'Glass & Others')
+        ]
+        for name, qty, color, label in donut_specs:
+            if qty > 0:
+                seg_len = round((qty / tot_donut) * circ, 2)
+                donut_slices.append({
+                    'name': name,
+                    'label': label,
+                    'qty': qty,
+                    'pct': round((qty / tot_donut) * 100, 1),
+                    'color': color,
+                    'dash': f"{seg_len} {round(circ, 2)}",
+                    'offset': round(-cur_offset, 2)
+                })
+                cur_offset += seg_len
+
+        staff_svg = {
+            'w': svg_w,
+            'h': svg_h,
+            'p_items': p_items,
+            'a_items': a_items,
+            'p_pts': p_pts,
+            'a_pts': a_pts,
+            'items_coords': items_coords,
+            'pts_coords': pts_coords,
+            'x_labels': x_axis_labels,
+            'grid_lines': grid_lines,
+            'donut_slices': donut_slices,
+            'total_donut': total_items_collected
+        }
 
         staff_stats = {
             'total_deposits': len(all_txs),
@@ -505,8 +933,22 @@ def register_routes(app):
             'pending_claims': pending_claims_count,
             'total_residents': len(residents_list),
             'recent_deposits': all_txs[:6],
-            'pending_claims_list': [r for r in all_redemptions if r.get('status') != 'released'][:3]
+            'pending_claims_list': [r for r in all_redemptions if r.get('status') == 'claimed'][:3],
+            'total_items': total_items_collected,
+            'diverted_kg': diverted_kg,
+            'cat_breakdown': cat_breakdown,
+            'timeline_labels': timeline_labels,
+            'timeline_items': timeline_items,
+            'timeline_points': timeline_points,
+            'svg': staff_svg
         }
+
+        prefill_resident = None
+        if prefill_qr:
+            for r in residents_list:
+                if r.get('qr_code') == prefill_qr:
+                    prefill_resident = r
+                    break
 
         conn.close()
 
@@ -517,11 +959,13 @@ def register_routes(app):
             feedback_type=feedback_type,
             receipt=receipt,
             prefill_qr=prefill_qr,
+            prefill_resident=prefill_resident,
             residents_list=residents_list,
             all_materials=all_materials,
             all_transactions=all_txs,
             all_redemptions=all_redemptions,
-            staff_stats=staff_stats
+            staff_stats=staff_stats,
+            staff_svg=staff_svg
         )
 
     @app.route('/admin', methods=['GET', 'POST'])
@@ -948,24 +1392,107 @@ def register_routes(app):
         today_str = datetime.now().strftime('%Y-%m-%d')
         today_items = sum(int(t.get('quantity', 0)) for t in all_txs if str(t.get('created_at', '')).startswith(today_str))
         total_points = sum(int(t.get('points_earned', 0)) for t in all_txs)
+        total_items_collected = sum(int(t.get('quantity', 0)) for t in all_txs)
+        unique_participants = len(set(t['user_id'] for t in all_txs if t.get('user_id')))
+        part_rate = round((unique_participants / max(1, len(residents_list))) * 100, 1)
 
         mat_counts = {'Plastic Bottles': 0, 'Cans': 0, 'Others': 0}
+        cat_breakdown = {
+            'Plastic': {'name': 'Plastic Bottles', 'qty': 0, 'points': 0, 'color': '#198754'},
+            'Metal': {'name': 'Aluminum Cans', 'qty': 0, 'points': 0, 'color': '#0d6efd'},
+            'Paper': {'name': 'Paper & Cardboard', 'qty': 0, 'points': 0, 'color': '#f59e0b'},
+            'Glass': {'name': 'Glass & Others', 'qty': 0, 'points': 0, 'color': '#8b5cf6'}
+        }
         for t in all_txs:
             m_name = str(t.get('material_name', '')).lower()
             q = int(t.get('quantity', 0))
+            pts = int(t.get('points_earned', 0))
             if 'bottle' in m_name or 'plastic' in m_name:
                 mat_counts['Plastic Bottles'] += q
+                cat_breakdown['Plastic']['qty'] += q
+                cat_breakdown['Plastic']['points'] += pts
             elif 'can' in m_name:
                 mat_counts['Cans'] += q
+                cat_breakdown['Metal']['qty'] += q
+                cat_breakdown['Metal']['points'] += pts
+            elif 'paper' in m_name or 'cardboard' in m_name:
+                mat_counts['Others'] += q
+                cat_breakdown['Paper']['qty'] += q
+                cat_breakdown['Paper']['points'] += pts
             else:
                 mat_counts['Others'] += q
+                cat_breakdown['Glass']['qty'] += q
+                cat_breakdown['Glass']['points'] += pts
+
+        diverted_kg = round(
+            (cat_breakdown['Plastic']['qty'] * 0.035) +
+            (cat_breakdown['Metal']['qty'] * 0.015) +
+            (cat_breakdown['Paper']['qty'] * 1.0) +
+            (cat_breakdown['Glass']['qty'] * 0.25),
+            1
+        )
+
+        for k in cat_breakdown:
+            cat_breakdown[k]['share'] = round((cat_breakdown[k]['qty'] / max(1, total_items_collected)) * 100, 1)
+
+        daily_timeline = {}
+        for t in reversed(all_txs):
+            dt = str(t.get('created_at', ''))[:10]
+            if not dt:
+                continue
+            if dt not in daily_timeline:
+                daily_timeline[dt] = {'items': 0, 'points': 0, 'deposits': 0}
+            daily_timeline[dt]['items'] += int(t.get('quantity', 0))
+            daily_timeline[dt]['points'] += int(t.get('points_earned', 0))
+            daily_timeline[dt]['deposits'] += 1
+
+        if len(daily_timeline) < 5:
+            base_dates = ['2026-10-22', '2026-10-26', '2026-10-29', '2026-10-31', '2026-11-01']
+            for d in base_dates:
+                if d not in daily_timeline:
+                    daily_timeline[d] = {'items': 0, 'points': 0, 'deposits': 0}
+
+        sorted_dates = sorted(daily_timeline.keys())[-7:]
+        timeline_labels = sorted_dates
+        timeline_items = [daily_timeline[k]['items'] for k in sorted_dates]
+        timeline_points = [daily_timeline[k]['points'] for k in sorted_dates]
+        timeline_deposits = [daily_timeline[k]['deposits'] for k in sorted_dates]
+
+        res_activity = {}
+        for t in all_txs:
+            uid = t.get('user_id')
+            if not uid:
+                continue
+            if uid not in res_activity:
+                res_activity[uid] = {
+                    'name': t.get('resident_name', 'Unknown'),
+                    'qr_code': t.get('resident_qr', '-'),
+                    'deposits': 0,
+                    'items': 0,
+                    'points': 0
+                }
+            res_activity[uid]['deposits'] += 1
+            res_activity[uid]['items'] += int(t.get('quantity', 0))
+            res_activity[uid]['points'] += int(t.get('points_earned', 0))
+
+        top_recyclers = sorted(res_activity.values(), key=lambda x: x['points'], reverse=True)[:5]
 
         stats = {
             'today_items': today_items,
             'total_points_issued': total_points,
             'total_redemptions': len(all_redemptions),
             'recent_transactions': all_txs[:6],
-            'material_counts': mat_counts
+            'material_counts': mat_counts,
+            'total_items_collected': total_items_collected,
+            'unique_participants': unique_participants,
+            'participation_rate': part_rate,
+            'diverted_kg': diverted_kg,
+            'cat_breakdown': cat_breakdown,
+            'timeline_labels': timeline_labels,
+            'timeline_items': timeline_items,
+            'timeline_points': timeline_points,
+            'timeline_deposits': timeline_deposits,
+            'top_recyclers': top_recyclers
         }
 
         conn.close()
@@ -1063,6 +1590,51 @@ def register_routes(app):
         response.headers['Content-Type'] = 'application/pdf'
         disposition = 'attachment' if request.args.get('download') else 'inline'
         response.headers['Content-Disposition'] = f'{disposition}; filename=Collected_Materials_Summary.pdf'
+        return response
+
+    @app.route('/staff/receipt/<receipt_no>.pdf')
+    def receipt_pdf(receipt_no):
+        user = get_current_user()
+        if not user:
+            return redirect(url_for('login'))
+        conn = get_db()
+        cur = conn.cursor()
+        tx = cur.execute("""
+            SELECT t.*, u.full_name AS resident_name, u.qr_code, u.points AS current_points
+            FROM transactions t
+            JOIN users u ON t.user_id = u.id
+            WHERE t.receipt_no = ?
+        """, (receipt_no,)).fetchone()
+        conn.close()
+        if not tx:
+            if user['role'] == 'staff':
+                return redirect(url_for('staff', tab='unit'))
+            elif user['role'] == 'admin':
+                return redirect(url_for('admin'))
+            return redirect(url_for('dashboard'))
+        tx = dict(tx)
+        if user['role'] not in ['staff', 'admin'] and user['id'] != tx['user_id']:
+            return redirect(url_for('dashboard'))
+        mat_name = str(tx.get('material_name', ''))
+        unit_label = 'piece' if ('bottle' in mat_name.lower() or 'can' in mat_name.lower()) else 'kg'
+        staff_display = user['full_name'] if user['role'] in ['staff', 'admin'] else 'Barangay Staff'
+        receipt_data = {
+            'receipt_no': tx['receipt_no'],
+            'created_at': tx['created_at'],
+            'staff_name': staff_display,
+            'resident_name': tx['resident_name'],
+            'qr_code': tx['qr_code'],
+            'material_name': tx['material_name'],
+            'quantity': tx['quantity'],
+            'unit': unit_label,
+            'points_earned': tx['points_earned'],
+            'new_total_points': tx['current_points']
+        }
+        pdf_bytes = generate_deposit_receipt_pdf(receipt_data)
+        response = make_response(pdf_bytes)
+        response.headers['Content-Type'] = 'application/pdf'
+        disposition = 'attachment' if request.args.get('download') else 'inline'
+        response.headers['Content-Disposition'] = f'{disposition}; filename={receipt_no}.pdf'
         return response
 
     @app.route('/402')

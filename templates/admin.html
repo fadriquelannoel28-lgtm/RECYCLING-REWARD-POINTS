@@ -10,6 +10,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
   <style>
     .crud-dropdown-btn {
       border: 1.5px solid #2e7d32;
@@ -234,117 +235,207 @@
               {% endif %}
             </span>
             <div>
-              <div class="fw-bold small text-uppercase" style="letter-spacing: 0.5px; opacity: 0.85;">Admin Notice</div>
-              <span>{{ feedback }}</span>
+              <div class="bubble-title">Admin Notice</div>
+              <span class="bubble-text">{{ feedback }}</span>
             </div>
           </div>
-          <button type="button" class="bubble-close-btn" aria-label="Close">&times;</button>
+          <div class="toast-actions">
+            <span class="toast-timer-pill"><i class="bi bi-clock"></i> <span class="toast-timer-val">20s</span></span>
+            <button type="button" class="bubble-close-btn" aria-label="Close">&times;</button>
+          </div>
+          <div class="toast-progress-track">
+            <div class="toast-progress-bar"></div>
+          </div>
         </div>
       {% endif %}
 
       {% if tab == 'dashboard' %}
-        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
           <div>
-            <h3 class="fw-bold mb-1">Barangay Admin Dashboard</h3>
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+              <h3 class="fw-bold mb-0" style="color: var(--eco-forest);">Barangay Admin Dashboard</h3>
+              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                <i class="bi bi-shield-check me-1"></i>Station Network Active
+              </span>
+            </div>
             <p class="text-muted mb-0">City and Barangay administration overview for EcoCoins recycling network.</p>
           </div>
-          <div class="d-flex gap-2">
-            <a href="{{ url_for('staff') }}" class="btn btn-outline-success">
-              <i class="bi bi-qr-code-scan me-1"></i>Open Staff Collection Hub
+          <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('staff') }}" class="btn btn-outline-success btn-pill d-flex align-items-center gap-2">
+              <i class="bi bi-qr-code-scan"></i>
+              <span>Staff Hub</span>
             </a>
-            <a href="{{ url_for('admin', tab='reports') }}" class="btn btn-success">
-              <i class="bi bi-file-earmark-bar-graph me-1"></i>View Reports
+            <a href="{{ url_for('admin', tab='reports') }}" class="btn btn-forest btn-pill d-flex align-items-center gap-2">
+              <i class="bi bi-file-earmark-bar-graph"></i>
+              <span>View Reports</span>
             </a>
+            <button class="btn btn-accent btn-pill d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addResidentModal">
+              <i class="bi bi-person-plus"></i>
+              <span>Add Resident</span>
+            </button>
           </div>
         </div>
 
         <div class="row g-3 mb-4">
-          <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm p-3">
-              <span class="text-muted small fw-semibold">Registered Residents</span>
-              <h3 class="fw-bold my-1">{{ residents_list|length }}</h3>
-              <span class="text-muted small">Active community members</span>
+          <div class="col-6 col-xl-3">
+            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Residents</span>
+                <span class="badge bg-info-subtle text-info rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                  <i class="bi bi-people fs-6"></i>
+                </span>
+              </div>
+              <h3 class="fw-bold mb-0" style="color: var(--eco-forest);">{{ residents_list|length }}</h3>
+              <span class="text-muted small mt-1 d-block">{{ stats.participation_rate }}% community participation</span>
             </div>
           </div>
 
-          <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm p-3">
-              <span class="text-muted small fw-semibold">Today's Collections</span>
-              <h3 class="fw-bold my-1">{{ stats.today_items }}</h3>
-              <span class="text-muted small">Items deposited today</span>
+          <div class="col-6 col-xl-3">
+            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Recyclables</span>
+                <span class="badge bg-success-subtle text-success rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                  <i class="bi bi-recycle fs-6"></i>
+                </span>
+              </div>
+              <h3 class="fw-bold mb-0 text-success">{{ stats.total_items_collected }} <span class="fs-6 text-muted fw-normal">units</span></h3>
+              <span class="text-muted small mt-1 d-block">+{{ stats.today_items }} collected today</span>
             </div>
           </div>
 
-          <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm p-3">
-              <span class="text-muted small fw-semibold">EcoPoints Issued</span>
-              <h3 class="fw-bold text-success my-1">{{ "{:,}".format(stats.total_points_issued) }}</h3>
-              <span class="text-muted small">Total rewards credited</span>
+          <div class="col-6 col-xl-3">
+            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">EcoPoints Issued</span>
+                <span class="badge bg-warning-subtle text-warning rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                  <i class="bi bi-coin fs-6"></i>
+                </span>
+              </div>
+              <h3 class="fw-bold mb-0" style="color: var(--eco-forest);">{{ "{:,}".format(stats.total_points_issued) }}</h3>
+              <span class="text-muted small mt-1 d-block">{{ stats.total_redemptions }} vouchers claimed</span>
             </div>
           </div>
 
-          <div class="col-sm-6 col-xl-3">
-            <div class="card bg-success text-white border-0 shadow-sm p-3">
-              <span class="text-white-50 small fw-semibold">Rewards Claimed</span>
-              <h3 class="fw-bold my-1">{{ stats.total_redemptions }}</h3>
-              <span class="text-white-50 small">Vouchers claimed</span>
+          <div class="col-6 col-xl-3">
+            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Waste Diverted</span>
+                <span class="badge bg-success-subtle text-success rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                  <i class="bi bi-tree fs-6"></i>
+                </span>
+              </div>
+              <h3 class="fw-bold mb-0 text-success">~{{ stats.diverted_kg }} <span class="fs-6 text-muted fw-normal">kg</span></h3>
+              <span class="text-muted small mt-1 d-block">Barangay environmental offset</span>
             </div>
           </div>
         </div>
 
-        <div class="row g-4">
-          <div class="col-lg-8">
-            <div class="card border-0 shadow-sm p-4 h-100">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold mb-0">Recent Recycling Activities</h5>
-                <a href="{{ url_for('admin', tab='monitoring') }}" class="btn btn-sm btn-outline-success">View All</a>
+        <div class="row g-4 mb-4">
+          <div class="col-lg-7">
+            <div class="card rounded-4 border-0 shadow-sm p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                  <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Recycling Activity Trend</h5>
+                  <p class="text-muted small mb-0">Daily recyclable volumes and points awarded.</p>
+                </div>
+                <span class="badge bg-light text-muted border rounded-pill px-3 py-1 small">
+                  <i class="bi bi-graph-up me-1"></i>Live Trend
+                </span>
               </div>
-
-              <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Receipt #</th>
-                      <th>Date & Time</th>
-                      <th>Resident</th>
-                      <th>Material</th>
-                      <th>Quantity</th>
-                      <th class="text-end">Points Earned</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for t in stats.recent_transactions %}
-                      <tr>
-                        <td class="font-monospace text-muted small">{{ t.receipt_no }}</td>
-                        <td class="text-muted small">{{ t.created_at }}</td>
-                        <td class="fw-semibold">{{ t.resident_name }}</td>
-                        <td>{{ t.material_name }}</td>
-                        <td>{{ t.quantity }}</td>
-                        <td class="text-end fw-bold text-success">+{{ t.points_earned }} pts</td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+              <div style="height: 250px; position: relative;">
+                <canvas id="adminDashLineChart"></canvas>
               </div>
             </div>
           </div>
 
-          <div class="col-lg-4">
-            <div class="card border-0 shadow-sm p-4 h-100">
-              <h5 class="fw-bold mb-3">Material Tonnage Breakdown</h5>
-              <div class="d-flex justify-content-between py-2 border-bottom">
-                <span class="text-muted">Plastic Bottles:</span>
-                <strong class="text-primary">{{ stats.material_counts['Plastic Bottles'] }} pcs</strong>
+          <div class="col-lg-5">
+            <div class="card rounded-4 border-0 shadow-sm p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                  <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Collected Streams</h5>
+                  <p class="text-muted small mb-0">Material share across all hubs.</p>
+                </div>
+                <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 small">
+                  {{ stats.total_items_collected }} Total Items
+                </span>
               </div>
-              <div class="d-flex justify-content-between py-2 border-bottom">
-                <span class="text-muted">Aluminum Cans:</span>
-                <strong class="text-warning">{{ stats.material_counts['Cans'] }} pcs</strong>
+              <div style="height: 190px; position: relative;">
+                <canvas id="adminDashPieChart"></canvas>
               </div>
-              <div class="d-flex justify-content-between py-2">
-                <span class="text-muted">Other Recyclables:</span>
-                <strong class="text-purple">{{ stats.material_counts['Others'] }} pcs/kg</strong>
+              <div class="row g-2 mt-2 pt-2 border-top">
+                <div class="col-6">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #198754; flex-shrink: 0;"></span>
+                    <span class="small text-muted text-truncate">Plastics:</span>
+                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Plastic']['qty'] }}</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #0d6efd; flex-shrink: 0;"></span>
+                    <span class="small text-muted text-truncate">Cans:</span>
+                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Metal']['qty'] }}</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #f59e0b; flex-shrink: 0;"></span>
+                    <span class="small text-muted text-truncate">Paper:</span>
+                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Paper']['qty'] }}</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #8b5cf6; flex-shrink: 0;"></span>
+                    <span class="small text-muted text-truncate">Glass/Other:</span>
+                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Glass']['qty'] }}</span>
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div class="card rounded-4 border-0 shadow-sm p-4 mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+              <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Recent Recycling Activities</h5>
+              <p class="text-muted small mb-0">Latest verified recyclable deposits across the barangay network.</p>
+            </div>
+            <a href="{{ url_for('admin', tab='monitoring') }}" class="btn btn-sm btn-outline-success btn-pill">
+              View All Logs
+            </a>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light small">
+                <tr>
+                  <th>Receipt #</th>
+                  <th>Date & Time</th>
+                  <th>Resident</th>
+                  <th>Material</th>
+                  <th>Quantity</th>
+                  <th class="text-end">Points Earned</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for t in stats.recent_transactions %}
+                  <tr>
+                    <td class="font-monospace text-muted small">
+                      <a href="{{ url_for('receipt_pdf', receipt_no=t.receipt_no) }}" target="_blank" class="text-decoration-none font-monospace small text-success fw-semibold" title="View official PDF receipt">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>{{ t.receipt_no }}
+                      </a>
+                    </td>
+                    <td class="text-muted small">{{ t.created_at }}</td>
+                    <td class="fw-semibold">{{ t.resident_name }}</td>
+                    <td>{{ t.material_name }}</td>
+                    <td class="text-muted small">{{ t.quantity }} pcs</td>
+                    <td class="text-end fw-bold text-success">+{{ t.points_earned }} pts</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -418,10 +509,10 @@
                           </li>
                           <li><hr class="dropdown-divider my-1"></li>
                           <li>
-                            <form action="{{ url_for('admin', tab='residents') }}" method="POST">
+                            <form action="{{ url_for('admin', tab='residents') }}" method="POST" data-confirm-modal="true" data-confirm-title="Confirm Account Status Change" data-confirm-message="Are you sure you want to {{ 'activate' if res.status == 'inactive' else 'deactivate' }} {{ res.full_name }}?" data-confirm-btn="Confirm" data-confirm-color="{{ 'btn-success' if res.status == 'inactive' else 'btn-warning' }}">
                               <input type="hidden" name="admin_action" value="toggle_resident_status">
                               <input type="hidden" name="res_id" value="{{ res.id }}">
-                              <button type="submit" class="crud-menu-item">
+                              <button type="submit" class="crud-menu-item" data-confirm-modal="true">
                                 {% if res.status == 'inactive' %}
                                   <span class="crud-icon-box green"><i class="bi bi-play-circle"></i></span>
                                   <span>Activate</span>
@@ -433,10 +524,10 @@
                             </form>
                           </li>
                           <li>
-                            <form action="{{ url_for('admin', tab='residents') }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this resident account?');">
+                            <form action="{{ url_for('admin', tab='residents') }}" method="POST" data-confirm-modal="true" data-confirm-title="Remove Resident Account" data-confirm-message="Are you sure you want to remove {{ res.full_name }}? All associated profile data will be permanently deleted." data-confirm-btn="Confirm" data-confirm-color="btn-danger">
                               <input type="hidden" name="admin_action" value="delete_resident">
                               <input type="hidden" name="res_id" value="{{ res.id }}">
-                              <button type="submit" class="crud-menu-item text-danger">
+                              <button type="submit" class="crud-menu-item text-danger" data-confirm-modal="true">
                                 <span class="crud-icon-box red"><i class="bi bi-trash"></i></span>
                                 <span>Remove Account</span>
                               </button>
@@ -555,10 +646,10 @@
                           </li>
                           <li><hr class="dropdown-divider my-1"></li>
                           <li>
-                            <form action="{{ url_for('admin', tab='staff') }}" method="POST">
+                            <form action="{{ url_for('admin', tab='staff') }}" method="POST" data-confirm-modal="true" data-confirm-title="Confirm Staff Status Change" data-confirm-message="Are you sure you want to {{ 'activate' if stf.status == 'inactive' else 'deactivate' }} {{ stf.full_name }}?" data-confirm-btn="Confirm" data-confirm-color="{{ 'btn-success' if stf.status == 'inactive' else 'btn-warning' }}">
                               <input type="hidden" name="admin_action" value="toggle_staff_status">
                               <input type="hidden" name="staff_id" value="{{ stf.id }}">
-                              <button type="submit" class="crud-menu-item">
+                              <button type="submit" class="crud-menu-item" data-confirm-modal="true">
                                 {% if stf.status == 'inactive' %}
                                   <span class="crud-icon-box green"><i class="bi bi-play-circle"></i></span>
                                   <span>Activate</span>
@@ -570,10 +661,10 @@
                             </form>
                           </li>
                           <li>
-                            <form action="{{ url_for('admin', tab='staff') }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this staff account?');">
+                            <form action="{{ url_for('admin', tab='staff') }}" method="POST" data-confirm-modal="true" data-confirm-title="Remove Staff Account" data-confirm-message="Are you sure you want to remove {{ stf.full_name }}? The staff member will lose access immediately." data-confirm-btn="Confirm" data-confirm-color="btn-danger">
                               <input type="hidden" name="admin_action" value="delete_staff">
                               <input type="hidden" name="staff_id" value="{{ stf.id }}">
-                              <button type="submit" class="crud-menu-item text-danger">
+                              <button type="submit" class="crud-menu-item text-danger" data-confirm-modal="true">
                                 <span class="crud-icon-box red"><i class="bi bi-trash"></i></span>
                                 <span>Remove Account</span>
                               </button>
@@ -680,10 +771,10 @@
                           </li>
                           <li><hr class="dropdown-divider my-1"></li>
                           <li>
-                            <form action="{{ url_for('admin', tab='materials') }}" method="POST">
+                            <form action="{{ url_for('admin', tab='materials') }}" method="POST" data-confirm-modal="true" data-confirm-title="Confirm Material Status Change" data-confirm-message="Are you sure you want to {{ 'activate' if m.status == 'inactive' else 'deactivate' }} {{ m.name }}?" data-confirm-btn="Confirm" data-confirm-color="{{ 'btn-success' if m.status == 'inactive' else 'btn-warning' }}">
                               <input type="hidden" name="admin_action" value="toggle_material_status">
                               <input type="hidden" name="mat_id" value="{{ m.id }}">
-                              <button type="submit" class="crud-menu-item">
+                              <button type="submit" class="crud-menu-item" data-confirm-modal="true">
                                 {% if m.status == 'inactive' %}
                                   <span class="crud-icon-box green"><i class="bi bi-play-circle"></i></span>
                                   <span>Activate</span>
@@ -695,10 +786,10 @@
                             </form>
                           </li>
                           <li>
-                            <form action="{{ url_for('admin', tab='materials') }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this material?');">
+                            <form action="{{ url_for('admin', tab='materials') }}" method="POST" data-confirm-modal="true" data-confirm-title="Remove Material" data-confirm-message="Are you sure you want to remove {{ m.name }}? This action cannot be undone." data-confirm-btn="Confirm" data-confirm-color="btn-danger">
                               <input type="hidden" name="admin_action" value="delete_material">
                               <input type="hidden" name="mat_id" value="{{ m.id }}">
-                              <button type="submit" class="crud-menu-item text-danger">
+                              <button type="submit" class="crud-menu-item text-danger" data-confirm-modal="true">
                                 <span class="crud-icon-box red"><i class="bi bi-trash"></i></span>
                                 <span>Remove Material</span>
                               </button>
@@ -810,10 +901,10 @@
                           </li>
                           <li><hr class="dropdown-divider my-1"></li>
                           <li>
-                            <form action="{{ url_for('admin', tab='rewards') }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this reward?');">
+                            <form action="{{ url_for('admin', tab='rewards') }}" method="POST" data-confirm-modal="true" data-confirm-title="Remove Reward" data-confirm-message="Are you sure you want to remove {{ rw.title }} from the catalog? Residents will no longer be able to claim it." data-confirm-btn="Confirm" data-confirm-color="btn-danger">
                               <input type="hidden" name="admin_action" value="delete_reward">
                               <input type="hidden" name="reward_id" value="{{ rw.id }}">
-                              <button type="submit" class="crud-menu-item text-danger">
+                              <button type="submit" class="crud-menu-item text-danger" data-confirm-modal="true">
                                 <span class="crud-icon-box red"><i class="bi bi-trash"></i></span>
                                 <span>Remove Reward</span>
                               </button>
@@ -922,41 +1013,259 @@
         </div>
 
       {% elif tab == 'reports' %}
-        <div class="mb-4">
-          <h3 class="fw-bold mb-1">Barangay Recycling Reports</h3>
-          <p class="text-muted mb-0">Official summary report for barangay environmental compliance.</p>
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+              <h3 class="fw-bold mb-0">Barangay Recycling & Environmental Analytics</h3>
+              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">Official Compliance</span>
+            </div>
+            <p class="text-muted mb-0">Live community recycling monitoring, material streams, resident participation, and official records for Barangay Pinagkawitan, Lipa City.</p>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('report_participation_pdf') }}" target="_blank" class="btn btn-outline-secondary btn-sm btn-pill d-flex align-items-center gap-2">
+              <i class="bi bi-file-earmark-pdf text-danger"></i>
+              <span>Participation PDF</span>
+            </a>
+            <a href="{{ url_for('report_materials_pdf') }}" target="_blank" class="btn btn-outline-secondary btn-sm btn-pill d-flex align-items-center gap-2">
+              <i class="bi bi-file-earmark-pdf text-danger"></i>
+              <span>Materials PDF</span>
+            </a>
+            <button onclick="window.print()" class="btn btn-forest btn-sm btn-pill d-flex align-items-center gap-2">
+              <i class="bi bi-printer"></i>
+              <span>Print Report</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-lg-3">
+            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Total Recyclables</span>
+                <span class="badge bg-success-subtle text-success rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                  <i class="bi bi-recycle fs-6"></i>
+                </span>
+              </div>
+              <h3 class="fw-bold mb-0" style="color: var(--eco-forest);">{{ stats.total_items_collected }} <span class="fs-6 text-muted fw-normal">units</span></h3>
+              <span class="text-muted small mt-1 d-block">{{ all_transactions|length }} verified deposits recorded</span>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">EcoPoints Circulated</span>
+                <span class="badge bg-warning-subtle text-warning rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                  <i class="bi bi-coin fs-6"></i>
+                </span>
+              </div>
+              <h3 class="fw-bold mb-0 text-success">{{ "{:,}".format(stats.total_points_issued) }} <span class="fs-6 text-muted fw-normal">pts</span></h3>
+              <span class="text-muted small mt-1 d-block">{{ all_redemptions|length }} reward vouchers claimed</span>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Community Reach</span>
+                <span class="badge bg-info-subtle text-info rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                  <i class="bi bi-people fs-6"></i>
+                </span>
+              </div>
+              <h3 class="fw-bold mb-0 text-primary">{{ stats.participation_rate }}%</h3>
+              <span class="text-muted small mt-1 d-block">{{ stats.unique_participants }} of {{ residents_list|length }} residents active</span>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Waste Diverted</span>
+                <span class="badge bg-success-subtle text-success rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                  <i class="bi bi-tree fs-6"></i>
+                </span>
+              </div>
+              <h3 class="fw-bold mb-0" style="color: #0d462b;">~{{ stats.diverted_kg }} <span class="fs-6 text-muted fw-normal">kg</span></h3>
+              <span class="text-muted small mt-1 d-block">Estimated municipal landfill offset</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+          <div class="col-lg-7">
+            <div class="card rounded-4 border-0 shadow-sm p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                  <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Collection Activity & Points Issuance Trend</h5>
+                  <p class="text-muted small mb-0">Timeline trend of recyclables gathered and EcoPoints awarded.</p>
+                </div>
+                <span class="badge bg-light text-muted border rounded-pill px-3 py-1 small">
+                  <i class="bi bi-graph-up me-1"></i>Timeline
+                </span>
+              </div>
+              <div style="height: 280px; position: relative;">
+                <canvas id="collectionLineChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-5">
+            <div class="card rounded-4 border-0 shadow-sm p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                  <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Material Category Share</h5>
+                  <p class="text-muted small mb-0">Proportion of collected recyclables by category.</p>
+                </div>
+                <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 small">
+                  {{ stats.total_items_collected }} Total Items
+                </span>
+              </div>
+              <div style="height: 220px; position: relative;">
+                <canvas id="materialsPieChart"></canvas>
+              </div>
+              <div class="row g-2 mt-2 pt-2 border-top">
+                <div class="col-6">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #198754; flex-shrink: 0;"></span>
+                    <span class="small text-muted text-truncate">Plastics:</span>
+                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Plastic']['qty'] }}</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #0d6efd; flex-shrink: 0;"></span>
+                    <span class="small text-muted text-truncate">Cans:</span>
+                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Metal']['qty'] }}</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #f59e0b; flex-shrink: 0;"></span>
+                    <span class="small text-muted text-truncate">Paper:</span>
+                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Paper']['qty'] }}</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #8b5cf6; flex-shrink: 0;"></span>
+                    <span class="small text-muted text-truncate">Glass/Other:</span>
+                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Glass']['qty'] }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+          <div class="col-lg-7">
+            <div class="card rounded-4 border-0 shadow-sm p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Material Stream Performance</h5>
+                  <p class="text-muted small mb-0">Barangay collection quantities, points awarded, and percentage volume.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light small">
+                    <tr>
+                      <th>Material Stream</th>
+                      <th>Category</th>
+                      <th class="text-center">Units Collected</th>
+                      <th class="text-end">Points Awarded</th>
+                      <th class="text-end">% Share</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for key, item in stats.cat_breakdown.items() %}
+                    <tr>
+                      <td class="fw-semibold">
+                        <span class="d-inline-block rounded-circle me-2" style="width: 8px; height: 8px; background-color: {{ item.color }};"></span>
+                        {{ item.name }}
+                      </td>
+                      <td><span class="badge bg-light text-dark border">{{ key }}</span></td>
+                      <td class="text-center fw-bold">{{ item.qty }}</td>
+                      <td class="text-end text-success fw-bold">+{{ item.points }} pts</td>
+                      <td class="text-end">
+                        <div class="d-flex align-items-center justify-content-end gap-2">
+                          <span class="small fw-semibold">{{ item.share }}%</span>
+                          <div class="progress flex-grow-0" style="width: 50px; height: 6px;">
+                            <div class="progress-bar" style="width: {{ item.share }}%; background-color: {{ item.color }};"></div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-5">
+            <div class="card rounded-4 border-0 shadow-sm p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Top Participating Residents</h5>
+                  <p class="text-muted small mb-0">Honor roll of most active barangay recyclers.</p>
+                </div>
+                <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 small">Honor Roll</span>
+              </div>
+              <div class="list-group list-group-flush">
+                {% for r in stats.top_recyclers %}
+                <div class="list-group-item d-flex align-items-center justify-content-between px-0 py-2 border-0 border-bottom">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="badge {% if loop.index == 1 %}bg-warning text-dark{% elif loop.index == 2 %}bg-secondary text-white{% elif loop.index == 3 %}bg-danger text-white{% else %}bg-light text-dark border{% endif %} rounded-circle" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+                      {{ loop.index }}
+                    </span>
+                    <div>
+                      <div class="fw-semibold small mb-0">{{ r.name }}</div>
+                      <span class="text-muted" style="font-size: 0.75rem;">{{ r.qr_code }} • {{ r.deposits }} deposits</span>
+                    </div>
+                  </div>
+                  <span class="badge bg-success-subtle text-success fw-bold px-2 py-1 small">+{{ r.points }} pts</span>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted small">No resident deposits recorded yet.</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Official Barangay Compliance Documents</h5>
+          <p class="text-muted small mb-0">Generate signed, certified PDF reports for municipal submission, council review, and environmental audit documentation.</p>
         </div>
 
         <div class="row g-4">
           <div class="col-md-6">
             <div class="card rounded-4 border-0 shadow-sm p-4 h-100 d-flex flex-column justify-content-between">
               <div>
-                <div class="d-flex align-items-center mb-3">
-                  <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
-                    <i class="bi bi-people fs-6"></i>
-                  </span>
-                  <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Community Participation Report</h5>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                  <div class="d-flex align-items-center">
+                    <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+                      <i class="bi bi-people fs-6"></i>
+                    </span>
+                    <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Community Participation Report</h5>
+                  </div>
+                  <span class="badge bg-success-subtle text-success">PDF Certified</span>
                 </div>
+                <p class="text-muted small mb-3">Formal barangay report detailing community registry, collection staff roster, resident engagement rate, and redemption statistics.</p>
                 <ul class="list-group list-group-flush mb-4">
                   <li class="list-group-item d-flex justify-content-between px-0">
-                    <span>Registered Residents:</span>
-                    <span class="fw-bold">{{ residents_list|length }}</span>
+                    <span class="text-muted small">Registered Residents:</span>
+                    <span class="fw-bold small">{{ residents_list|length }}</span>
                   </li>
                   <li class="list-group-item d-flex justify-content-between px-0">
-                    <span>Active Collection Staff:</span>
-                    <span class="fw-bold">{{ staff_list|length }}</span>
+                    <span class="text-muted small">Active Collection Staff:</span>
+                    <span class="fw-bold small">{{ staff_list|length }}</span>
                   </li>
                   <li class="list-group-item d-flex justify-content-between px-0">
-                    <span>Total Deposits Recorded:</span>
-                    <span class="fw-bold">{{ all_transactions|length }}</span>
+                    <span class="text-muted small">Total Deposits Recorded:</span>
+                    <span class="fw-bold small">{{ all_transactions|length }}</span>
                   </li>
                   <li class="list-group-item d-flex justify-content-between px-0">
-                    <span>Total Points Issued:</span>
-                    <span class="fw-bold text-success">{{ "{:,}".format(stats.total_points_issued) }} pts</span>
-                  </li>
-                  <li class="list-group-item d-flex justify-content-between px-0">
-                    <span>Total Rewards Claimed:</span>
-                    <span class="fw-bold">{{ all_redemptions|length }}</span>
+                    <span class="text-muted small">Total EcoPoints Issued:</span>
+                    <span class="fw-bold text-success small">{{ "{:,}".format(stats.total_points_issued) }} pts</span>
                   </li>
                 </ul>
               </div>
@@ -975,24 +1284,32 @@
           <div class="col-md-6">
             <div class="card rounded-4 border-0 shadow-sm p-4 h-100 d-flex flex-column justify-content-between">
               <div>
-                <div class="d-flex align-items-center mb-3">
-                  <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
-                    <i class="bi bi-recycle fs-6"></i>
-                  </span>
-                  <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Collected Materials Summary</h5>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                  <div class="d-flex align-items-center">
+                    <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+                      <i class="bi bi-recycle fs-6"></i>
+                    </span>
+                    <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Collected Materials Summary</h5>
+                  </div>
+                  <span class="badge bg-success-subtle text-success">PDF Certified</span>
                 </div>
+                <p class="text-muted small mb-3">Detailed inventory of all recycled plastics, aluminum cans, and municipal recyclables divert calculations.</p>
                 <ul class="list-group list-group-flush mb-4">
                   <li class="list-group-item d-flex justify-content-between px-0">
-                    <span>Plastic Bottles:</span>
-                    <span class="fw-bold">{{ stats.material_counts['Plastic Bottles'] }} pcs</span>
+                    <span class="text-muted small">Plastic Bottles Collected:</span>
+                    <span class="fw-bold small">{{ stats.material_counts['Plastic Bottles'] }} pcs</span>
                   </li>
                   <li class="list-group-item d-flex justify-content-between px-0">
-                    <span>Aluminum Cans:</span>
-                    <span class="fw-bold">{{ stats.material_counts['Cans'] }} pcs</span>
+                    <span class="text-muted small">Aluminum Cans Collected:</span>
+                    <span class="fw-bold small">{{ stats.material_counts['Cans'] }} pcs</span>
                   </li>
                   <li class="list-group-item d-flex justify-content-between px-0">
-                    <span>Other Recyclables:</span>
-                    <span class="fw-bold">{{ stats.material_counts['Others'] }} pcs/kg</span>
+                    <span class="text-muted small">Other Recyclables:</span>
+                    <span class="fw-bold small">{{ stats.material_counts['Others'] }} pcs/kg</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between px-0">
+                    <span class="text-muted small">Estimated Landfill Diversion:</span>
+                    <span class="fw-bold text-success small">~{{ stats.diverted_kg }} kg</span>
                   </li>
                 </ul>
               </div>
@@ -1315,10 +1632,10 @@
                           </li>
                         {% else %}
                           <li>
-                            <form action="{{ url_for('admin', tab='staff') }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this station?');">
+                            <form action="{{ url_for('admin', tab='staff') }}" method="POST" data-confirm-modal="true" data-confirm-title="Delete Collection Station" data-confirm-message="Are you sure you want to delete {{ stn.station_name }}? This action cannot be undone." data-confirm-btn="Confirm" data-confirm-color="btn-danger">
                               <input type="hidden" name="admin_action" value="delete_station">
                               <input type="hidden" name="station_id" value="{{ stn.id }}">
-                              <button type="submit" class="crud-menu-item text-danger">
+                              <button type="submit" class="crud-menu-item text-danger" data-confirm-modal="true">
                                 <span class="crud-icon-box red"><i class="bi bi-trash"></i></span>
                                 <span>Delete</span>
                               </button>
@@ -1920,10 +2237,222 @@
   </div>
 </div>
 
+<div class="modal fade" id="universalConfirmModal" tabindex="-1" aria-hidden="true" style="backdrop-filter: blur(4px);">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+    <div class="modal-content rounded-4 border-0 shadow-lg p-3">
+      <div class="modal-body text-center p-4">
+        <div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-circle" id="confirmModalIconWrapper" style="width: 64px; height: 64px; background: rgba(220, 53, 69, 0.1); color: #dc3545;">
+          <i class="bi bi-exclamation-triangle fs-2" id="confirmModalIcon"></i>
+        </div>
+        <h5 class="fw-bold text-dark mb-2" id="confirmModalTitle">Are you sure?</h5>
+        <p class="text-muted small mb-4" id="confirmModalMessage">This action cannot be undone.</p>
+        <div class="d-flex justify-content-center gap-2">
+          <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal" id="confirmModalCancelBtn">Cancel</button>
+          <button type="button" class="btn btn-danger rounded-pill px-4 fw-semibold shadow-sm" id="confirmModalProceedBtn">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  const pieCanvas = document.getElementById('materialsPieChart');
+  if (pieCanvas && typeof Chart !== 'undefined') {
+    new Chart(pieCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: ['Plastic Bottles', 'Aluminum Cans', 'Paper & Cardboard', 'Glass & Others'],
+        datasets: [{
+          data: [
+            {{ stats.cat_breakdown['Plastic']['qty']|default(0) }},
+            {{ stats.cat_breakdown['Metal']['qty']|default(0) }},
+            {{ stats.cat_breakdown['Paper']['qty']|default(0) }},
+            {{ stats.cat_breakdown['Glass']['qty']|default(0) }}
+          ],
+          backgroundColor: ['#198754', '#0d6efd', '#f59e0b', '#8b5cf6'],
+          borderWidth: 2,
+          borderColor: '#ffffff',
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const val = context.parsed || 0;
+                const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+                return ' ' + context.label + ': ' + val + ' (' + pct + '%)';
+              }
+            }
+          }
+        },
+        cutout: '68%'
+      }
+    });
+  }
+
+  const lineCanvas = document.getElementById('collectionLineChart');
+  if (lineCanvas && typeof Chart !== 'undefined') {
+    new Chart(lineCanvas, {
+      type: 'line',
+      data: {
+        labels: {{ stats.timeline_labels|tojson }},
+        datasets: [
+          {
+            label: 'Items Collected',
+            data: {{ stats.timeline_items|tojson }},
+            borderColor: '#198754',
+            backgroundColor: 'rgba(25, 135, 84, 0.1)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointBackgroundColor: '#198754'
+          },
+          {
+            label: 'Points Awarded',
+            data: {{ stats.timeline_points|tojson }},
+            borderColor: '#0d6efd',
+            backgroundColor: 'rgba(13, 110, 253, 0.05)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointBackgroundColor: '#0d6efd'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              boxWidth: 12,
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 12 }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 } }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: '#f1f5f9' },
+            ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 } }
+          }
+        }
+      }
+    });
+  }
+
+  const adminDashPie = document.getElementById('adminDashPieChart');
+  if (adminDashPie && typeof Chart !== 'undefined') {
+    new Chart(adminDashPie, {
+      type: 'doughnut',
+      data: {
+        labels: ['Plastic Bottles', 'Aluminum Cans', 'Paper & Cardboard', 'Glass & Others'],
+        datasets: [{
+          data: [
+            {{ stats.cat_breakdown['Plastic']['qty']|default(0) }},
+            {{ stats.cat_breakdown['Metal']['qty']|default(0) }},
+            {{ stats.cat_breakdown['Paper']['qty']|default(0) }},
+            {{ stats.cat_breakdown['Glass']['qty']|default(0) }}
+          ],
+          backgroundColor: ['#198754', '#0d6efd', '#f59e0b', '#8b5cf6'],
+          borderWidth: 2,
+          borderColor: '#ffffff',
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const val = context.parsed || 0;
+                const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+                return ' ' + context.label + ': ' + val + ' (' + pct + '%)';
+              }
+            }
+          }
+        },
+        cutout: '68%'
+      }
+    });
+  }
+
+  const adminDashLine = document.getElementById('adminDashLineChart');
+  if (adminDashLine && typeof Chart !== 'undefined') {
+    new Chart(adminDashLine, {
+      type: 'line',
+      data: {
+        labels: {{ stats.timeline_labels|tojson }},
+        datasets: [
+          {
+            label: 'Items Collected',
+            data: {{ stats.timeline_items|tojson }},
+            borderColor: '#198754',
+            backgroundColor: 'rgba(25, 135, 84, 0.1)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointBackgroundColor: '#198754'
+          },
+          {
+            label: 'Points Awarded',
+            data: {{ stats.timeline_points|tojson }},
+            borderColor: '#0d6efd',
+            backgroundColor: 'rgba(13, 110, 253, 0.05)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointBackgroundColor: '#0d6efd'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              boxWidth: 12,
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 12 }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 } }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: '#f1f5f9' },
+            ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 } }
+          }
+        }
+      }
+    });
+  }
   document.querySelectorAll('.edit-staff-btn').forEach(btn => {
     btn.addEventListener('click', function() {
       document.getElementById('editStaffId').value = this.getAttribute('data-id');

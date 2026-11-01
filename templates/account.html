@@ -49,11 +49,17 @@
                 {% endif %}
               </span>
               <div>
-                <div class="fw-bold small text-uppercase" style="letter-spacing: 0.5px; opacity: 0.85;">Account Update</div>
-                <span>{{ feedback }}</span>
+                <div class="bubble-title">Account Update</div>
+                <span class="bubble-text">{{ feedback }}</span>
               </div>
             </div>
-            <button type="button" class="bubble-close-btn" aria-label="Close">&times;</button>
+            <div class="toast-actions">
+              <span class="toast-timer-pill"><i class="bi bi-clock"></i> <span class="toast-timer-val">20s</span></span>
+              <button type="button" class="bubble-close-btn" aria-label="Close">&times;</button>
+            </div>
+            <div class="toast-progress-track">
+              <div class="toast-progress-bar"></div>
+            </div>
           </div>
         {% endif %}
 
@@ -116,23 +122,39 @@
               </div>
               <p class="text-muted small mb-3">Update your display name and contact email address.</p>
 
-              <form action="{{ url_for('account') }}" method="POST">
+              <form action="{{ url_for('account') }}" method="POST" id="updateProfileForm" novalidate>
                 <input type="hidden" name="action" value="update_profile">
 
                 <div class="row g-2 mb-3">
                   <div class="col-12 col-sm-6">
-                    <label class="form-label small fw-semibold">First Name</label>
-                    <input type="text" name="first_name" class="form-control" value="{{ current_user.full_name.split(' ', 1)[0] if current_user.full_name else '' }}" minlength="2" maxlength="50" pattern="^[A-Za-zÀ-ÿ\s\.\-']{2,}$" title="First name must be at least 2 characters and contain letters only (no numbers)." required>
+                    <div class="messenger-field-group {% if feedback and feedback_type == 'danger' and feedback_field == 'first_name' %}has-error{% endif %}" id="profileFnGroup">
+                      <label class="form-label" for="profileFnInput">First Name</label>
+                      <input type="text" name="first_name" id="profileFnInput" class="form-control {% if feedback and feedback_type == 'danger' and feedback_field == 'first_name' %}is-invalid{% endif %}" value="{{ current_user.full_name.split(' ', 1)[0] if current_user.full_name else '' }}" autocomplete="given-name">
+                      <div class="messenger-error-msg" id="profileFnError" {% if not (feedback and feedback_type == 'danger' and feedback_field == 'first_name') %}style="display: none;"{% endif %}>
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span class="msg-text">{{ feedback if (feedback and feedback_type == 'danger' and feedback_field == 'first_name') else 'Please enter your first name.' }}</span>
+                      </div>
+                    </div>
                   </div>
                   <div class="col-12 col-sm-6">
-                    <label class="form-label small fw-semibold">Last Name</label>
-                    <input type="text" name="last_name" class="form-control" value="{{ current_user.full_name.split(' ', 1)[1] if current_user.full_name and ' ' in current_user.full_name else '' }}" minlength="2" maxlength="50" pattern="^[A-Za-zÀ-ÿ\s\.\-']{2,}$" title="Last name must be at least 2 characters and contain letters only (no numbers)." required>
+                    <div class="messenger-field-group {% if feedback and feedback_type == 'danger' and feedback_field == 'last_name' %}has-error{% endif %}" id="profileLnGroup">
+                      <label class="form-label" for="profileLnInput">Last Name</label>
+                      <input type="text" name="last_name" id="profileLnInput" class="form-control {% if feedback and feedback_type == 'danger' and feedback_field == 'last_name' %}is-invalid{% endif %}" value="{{ current_user.full_name.split(' ', 1)[1] if current_user.full_name and ' ' in current_user.full_name else '' }}" autocomplete="family-name">
+                      <div class="messenger-error-msg" id="profileLnError" {% if not (feedback and feedback_type == 'danger' and feedback_field == 'last_name') %}style="display: none;"{% endif %}>
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span class="msg-text">{{ feedback if (feedback and feedback_type == 'danger' and feedback_field == 'last_name') else 'Please enter your last name.' }}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div class="mb-3">
-                  <label class="form-label small fw-semibold">Email Address</label>
-                  <input type="email" name="email" class="form-control" value="{{ current_user.email }}" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Please enter a valid email address." required>
+                <div class="messenger-field-group mb-3 {% if feedback and feedback_type == 'danger' and feedback_field == 'email' %}has-error{% endif %}" id="profileEmailGroup">
+                  <label class="form-label" for="profileEmailInput">Email Address</label>
+                  <input type="email" name="email" id="profileEmailInput" class="form-control {% if feedback and feedback_type == 'danger' and feedback_field == 'email' %}is-invalid{% endif %}" value="{{ current_user.email }}" autocomplete="email">
+                  <div class="messenger-error-msg" id="profileEmailError" {% if not (feedback and feedback_type == 'danger' and feedback_field == 'email') %}style="display: none;"{% endif %}>
+                    <i class="bi bi-exclamation-circle"></i>
+                    <span class="msg-text">{{ feedback if (feedback and feedback_type == 'danger' and feedback_field == 'email') else 'Please enter a valid email address.' }}</span>
+                  </div>
                 </div>
 
                 {% if current_user.role == 'resident' %}
@@ -143,7 +165,7 @@
                   </div>
                 {% endif %}
 
-                <button type="submit" class="btn btn-forest px-4 btn-pill w-100 mt-2">
+                <button type="submit" class="btn btn-forest px-4 btn-pill w-100 mt-2" id="saveProfileBtn">
                   <span>Save Changes</span>
                   <i class="bi bi-check-lg ms-1"></i>
                 </button>
@@ -161,40 +183,52 @@
               </div>
               <p class="text-muted small mb-3">Change your account password to keep your account secure.</p>
 
-              <form action="{{ url_for('account') }}" method="POST">
+              <form action="{{ url_for('account') }}" method="POST" id="changePasswordForm" novalidate>
                 <input type="hidden" name="action" value="change_password">
 
-                <div class="mb-3">
-                  <label class="form-label small fw-semibold">Current Password</label>
+                <div class="messenger-field-group mb-3 {% if feedback and feedback_type == 'danger' and feedback_field == 'current_password' %}has-error{% endif %}" id="curPwGroup">
+                  <label class="form-label" for="curPassInput">Current Password</label>
                   <div class="input-group">
-                    <input type="password" name="current_password" id="curPassInput" class="form-control" placeholder="Enter current password" required>
-                    <button type="button" class="btn btn-outline-secondary toggle-password" data-target="curPassInput">
+                    <input type="password" name="current_password" id="curPassInput" class="form-control {% if feedback and feedback_type == 'danger' and feedback_field == 'current_password' %}is-invalid{% endif %}" placeholder="Enter current password" autocomplete="current-password">
+                    <button type="button" class="btn btn-outline-secondary toggle-password" data-target="curPassInput" aria-label="Toggle password visibility">
                       <i class="bi bi-eye"></i>
                     </button>
                   </div>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label small fw-semibold">New Password</label>
-                  <div class="input-group">
-                    <input type="password" name="new_password" id="newPassInput" class="form-control" placeholder="Min 6 characters" required>
-                    <button type="button" class="btn btn-outline-secondary toggle-password" data-target="newPassInput">
-                      <i class="bi bi-eye"></i>
-                    </button>
+                  <div class="messenger-error-msg" id="curPwError" {% if not (feedback and feedback_type == 'danger' and feedback_field == 'current_password') %}style="display: none;"{% endif %}>
+                    <i class="bi bi-exclamation-circle"></i>
+                    <span class="msg-text">{{ feedback if (feedback and feedback_type == 'danger' and feedback_field == 'current_password') else 'Please enter your current password.' }}</span>
                   </div>
                 </div>
 
-                <div class="mb-3">
-                  <label class="form-label small fw-semibold">Confirm New Password</label>
+                <div class="messenger-field-group mb-3 {% if feedback and feedback_type == 'danger' and feedback_field == 'new_password' %}has-error{% endif %}" id="newPwGroup">
+                  <label class="form-label" for="newPassInput">New Password</label>
                   <div class="input-group">
-                    <input type="password" name="confirm_password" id="confirmPassInput" class="form-control" placeholder="Repeat new password" required>
-                    <button type="button" class="btn btn-outline-secondary toggle-password" data-target="confirmPassInput">
+                    <input type="password" name="new_password" id="newPassInput" class="form-control {% if feedback and feedback_type == 'danger' and feedback_field == 'new_password' %}is-invalid{% endif %}" placeholder="Min 6 characters" autocomplete="new-password">
+                    <button type="button" class="btn btn-outline-secondary toggle-password" data-target="newPassInput" aria-label="Toggle password visibility">
                       <i class="bi bi-eye"></i>
                     </button>
                   </div>
+                  <div class="messenger-error-msg" id="newPwError" {% if not (feedback and feedback_type == 'danger' and feedback_field == 'new_password') %}style="display: none;"{% endif %}>
+                    <i class="bi bi-exclamation-circle"></i>
+                    <span class="msg-text">{{ feedback if (feedback and feedback_type == 'danger' and feedback_field == 'new_password') else 'New password must be at least 6 characters long.' }}</span>
+                  </div>
                 </div>
 
-                <button type="submit" class="btn btn-accent px-4 btn-pill w-100 mt-2">
+                <div class="messenger-field-group mb-3 {% if feedback and feedback_type == 'danger' and feedback_field == 'confirm_password' %}has-error{% endif %}" id="confirmPwGroup">
+                  <label class="form-label" for="confirmPassInput">Confirm New Password</label>
+                  <div class="input-group">
+                    <input type="password" name="confirm_password" id="confirmPassInput" class="form-control {% if feedback and feedback_type == 'danger' and feedback_field == 'confirm_password' %}is-invalid{% endif %}" placeholder="Repeat new password" autocomplete="new-password">
+                    <button type="button" class="btn btn-outline-secondary toggle-password" data-target="confirmPassInput" aria-label="Toggle password visibility">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </div>
+                  <div class="messenger-error-msg" id="confirmPwError" {% if not (feedback and feedback_type == 'danger' and feedback_field == 'confirm_password') %}style="display: none;"{% endif %}>
+                    <i class="bi bi-exclamation-circle"></i>
+                    <span class="msg-text">{{ feedback if (feedback and feedback_type == 'danger' and feedback_field == 'confirm_password') else 'New passwords do not match.' }}</span>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-accent px-4 btn-pill w-100 mt-2" id="updatePasswordBtn">
                   <span>Update Password</span>
                   <i class="bi bi-key ms-1"></i>
                 </button>

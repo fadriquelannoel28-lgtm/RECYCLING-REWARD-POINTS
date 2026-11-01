@@ -6,13 +6,83 @@
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
       <div>
         <h1 class="fw-bold mb-1">Community Rewards Catalog</h1>
-        <p class="text-muted mb-0">Redeem your accumulated EcoPoints for essential food items, household goods, and eco merchandise.</p>
+        <p class="text-muted mb-1">Redeem your accumulated EcoPoints for essential food items, household goods, and eco merchandise.</p>
+        <p class="text-muted small mb-0 d-flex align-items-center gap-2 flex-wrap">
+          <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1">
+            <i class="bi bi-arrow-repeat me-1"></i>Monthly Restock
+          </span>
+          <span>New rewards, groceries, and essentials are restocked every month.</span>
+        </p>
       </div>
       <div class="badge bg-success fs-6 py-2 px-3 rounded-pill d-inline-flex align-items-center gap-2">
         <i class="bi bi-coin"></i>
         <span>{{ "{:,}".format(user_points) }} EcoPoints Available</span>
       </div>
     </div>
+
+    {% if claim_cooldown_seconds > 0 %}
+      <div class="card border-0 shadow-sm rounded-4 mb-4 p-4 position-relative overflow-hidden" style="background: #ffffff; border-left: 6px solid #dc3545 !important;">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <span class="eco-icon-tile tile-orange flex-shrink-0" style="width: 46px; height: 46px; border-radius: 12px; background: rgba(220, 53, 69, 0.1); color: #dc3545;">
+              <i class="bi bi-hourglass-bottom fs-4"></i>
+            </span>
+            <div>
+              <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                <h5 class="fw-bold mb-0 text-danger">Reward Claiming On Cooldown</h5>
+                <span class="badge bg-danger text-white rounded-pill px-3 py-1 font-monospace" id="cooldownTimerBadge">
+                  <i class="bi bi-stopwatch me-1"></i><span id="cooldownDisplay" data-seconds="{{ claim_cooldown_seconds|default(0) }}">--:--</span>
+                </span>
+              </div>
+              <p class="text-muted mb-0 small">
+                Reward claiming privileges are temporarily on cooldown due to repeated cancellations. You can claim items once the timer expires.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if claim_prompt %}
+      <div class="card border-0 shadow-sm rounded-4 mb-4 p-4 position-relative overflow-hidden" id="claimDecisionAlert" style="background: #ffffff; border-left: 6px solid #198754 !important;">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div class="d-flex align-items-start gap-3">
+            <span class="eco-icon-tile tile-mint flex-shrink-0" style="width: 48px; height: 48px; border-radius: 12px;">
+              <i class="bi bi-shield-check text-success fs-4"></i>
+            </span>
+            <div>
+              <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Reward Claim Confirmation</h5>
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning px-2.5 py-1 rounded-pill">
+                  <i class="bi bi-clock me-1"></i>Auto-confirming in <strong id="claimSecondsCount">{{ claim_remaining_seconds }}</strong>s
+                </span>
+              </div>
+              <p class="text-muted mb-0 small">
+                You claimed <strong class="text-dark">{{ claim_prompt.title }}</strong> for <strong class="text-success">{{ "{:,}".format(claim_prompt.points) }} EcoPoints</strong> (Code: <span class="font-monospace fw-bold">{{ claim_prompt.code }}</span>). Pick an option below or it will auto-confirm.
+              </p>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <form action="{{ url_for('confirm_claim') }}" method="POST" id="confirmClaimForm" class="m-0">
+              <button type="submit" class="btn btn-success btn-pill px-4 fw-semibold shadow-sm d-inline-flex align-items-center gap-2" id="confirmClaimBtn">
+                <i class="bi bi-check2-circle"></i>
+                <span>Confirm Claim</span>
+              </button>
+            </form>
+            <form action="{{ url_for('cancel_claim') }}" method="POST" id="cancelClaimForm" class="m-0" data-confirm-modal="true" data-confirm-title="Cancel Reward Claim" data-confirm-message="Are you sure you want to cancel your claim and refund {{ claim_prompt.points }} EcoPoints?" data-confirm-btn="Confirm Cancel" data-confirm-color="btn-danger">
+              <input type="hidden" name="redemption_id" value="{{ claim_prompt.redemption_id }}">
+              <button type="submit" class="btn btn-outline-danger btn-pill px-4 fw-semibold d-inline-flex align-items-center gap-2" id="cancelClaimBtn" data-confirm-modal="true">
+                <i class="bi bi-x-circle"></i>
+                <span>Cancel & Refund</span>
+              </button>
+            </form>
+          </div>
+        </div>
+        <div class="progress mt-3" style="height: 4px; background: rgba(25, 135, 84, 0.1);">
+          <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" id="claimProgressBar" role="progressbar" style="width: 100%;"></div>
+        </div>
+      </div>
+    {% endif %}
 
     {% if message %}
       <div class="eco-bubble-alert eco-bubble-{{ 'danger' if message_type == 'danger' else 'resident' }} mb-4" role="alert">
@@ -25,11 +95,17 @@
             {% endif %}
           </span>
           <div>
-            <div class="fw-bold small text-uppercase" style="letter-spacing: 0.5px; opacity: 0.85;">Reward Notification</div>
-            <span>{{ message }}</span>
+            <div class="bubble-title">Reward Notification</div>
+            <span class="bubble-text">{{ message }}</span>
           </div>
         </div>
-        <button type="button" class="bubble-close-btn" aria-label="Close">&times;</button>
+        <div class="toast-actions">
+          <span class="toast-timer-pill"><i class="bi bi-clock"></i> <span class="toast-timer-val">20s</span></span>
+          <button type="button" class="bubble-close-btn" aria-label="Close">&times;</button>
+        </div>
+        <div class="toast-progress-track">
+          <div class="toast-progress-bar"></div>
+        </div>
       </div>
     {% endif %}
 
@@ -80,6 +156,10 @@
             <div>
               {% if not current_user %}
                 <a href="{{ url_for('login') }}" class="btn btn-outline-secondary btn-sm w-100 btn-pill">Login to Redeem</a>
+              {% elif claim_cooldown_seconds > 0 %}
+                <button class="btn btn-light btn-sm w-100 text-muted" disabled>
+                  <i class="bi bi-hourglass-split me-1"></i>On Cooldown
+                </button>
               {% elif can_afford and r.stock > 0 %}
                 <button type="button" class="btn btn-accent btn-sm w-100 btn-pill btn-redeem" data-bs-toggle="modal" data-bs-target="#redeemModal" data-id="{{ r.id }}" data-title="{{ r.title }}" data-points="{{ '{:,}'.format(cost) }}">
                   <span>Redeem Reward</span>
@@ -149,13 +229,17 @@
                     <span class="badge bg-light text-dark border font-monospace fs-6 px-2 py-1">{{ rd.redemption_code }}</span>
                   </td>
                   <td>
-                    {% if rd.status == 'released' %}
+                    {% if rd.status == 'received' %}
                       <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">
-                        <i class="bi bi-check-circle me-1"></i>Item Released
+                        <i class="bi bi-check2-all me-1"></i>Handed Over
+                      </span>
+                    {% elif rd.status == 'released' %}
+                      <span class="badge bg-info-subtle text-info border border-info-subtle px-2.5 py-1 rounded-pill">
+                        <i class="bi bi-box-seam me-1"></i>Released
                       </span>
                     {% else %}
                       <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-2.5 py-1 rounded-pill">
-                        <i class="bi bi-hourglass-split me-1"></i>Ready for Pickup
+                        <i class="bi bi-hourglass-split me-1"></i>Ready for Handover
                       </span>
                     {% endif %}
                   </td>
@@ -240,6 +324,47 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('modalRewardPoints').textContent = this.getAttribute('data-points') + ' pts';
     });
   });
+
+  const claimCountEl = document.getElementById('claimSecondsCount');
+  const claimProgEl = document.getElementById('claimProgressBar');
+  const confirmForm = document.getElementById('confirmClaimForm');
+  if (claimCountEl && confirmForm) {
+    let timeLeft = parseInt(claimCountEl.textContent, 10) || 20;
+    const totalDuration = 20;
+    const timerInterval = setInterval(function() {
+      timeLeft -= 1;
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        claimCountEl.textContent = '0';
+        if (claimProgEl) claimProgEl.style.width = '0%';
+        confirmForm.submit();
+      } else {
+        claimCountEl.textContent = String(timeLeft);
+        if (claimProgEl) {
+          const pct = Math.max(0, Math.min(100, (timeLeft / totalDuration) * 100));
+          claimProgEl.style.width = pct + '%';
+        }
+      }
+    }, 1000);
+  }
+
+  const cooldownDisplay = document.getElementById('cooldownDisplay');
+  if (cooldownDisplay) {
+    let cdLeft = parseInt(cooldownDisplay.getAttribute('data-seconds') || '0', 10);
+    function updateCd() {
+      if (cdLeft <= 0) {
+        cooldownDisplay.textContent = '00:00';
+        window.location.reload();
+        return;
+      }
+      const m = Math.floor(cdLeft / 60);
+      const s = cdLeft % 60;
+      cooldownDisplay.textContent = (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
+      cdLeft -= 1;
+      setTimeout(updateCd, 1000);
+    }
+    updateCd();
+  }
 });
 </script>
 {% endblock %}

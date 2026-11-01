@@ -10,19 +10,23 @@
       "points": 0,
       "created_at": "2026-10-01 08:00:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 2,
-      "full_name": "Barangay Staff",
-      "email": "staff@barangay.gov.ph",
+      "full_name": "Eduardo Santos",
+      "email": "eduardo.santos@example.com",
       "password": "scrypt:32768:8:1$zRmGvXSAvdd9VSVz$c0eb0732113c4612d74bca0c96430984608329e21a6d188e218f2f03091d0f2e644473f8ba6fa6d23e50d24820866a932773acb7566911f392b6cc5474ae4e7a",
       "role": "resident",
       "qr_code": "ECO-RES-88219",
-      "points": 300,
+      "points": 450,
       "created_at": "2026-10-10 09:30:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 3,
@@ -31,10 +35,12 @@
       "password": "scrypt:32768:8:1$iIXpZ2yBkirDTV2F$cb4e32d6dccc0c36ef0fd63aa85a4e20735d141afa12c013b3e416da53d64395c7eae3f108c0e32171ea28838a4fabf0ff7bf34d0b27fdf5f40e7ebddb74f21c",
       "role": "resident",
       "qr_code": "ECO-RES-10492",
-      "points": 350,
+      "points": 165,
       "created_at": "2026-10-12 11:20:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 4,
@@ -46,7 +52,9 @@
       "points": 960,
       "created_at": "2026-10-14 14:15:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 5,
@@ -55,10 +63,12 @@
       "password": "scrypt:32768:8:1$OCLFuCC13gw7wzcG$b45aba2c9c78d6a5b89744f7788562726dff16bc8955c26397b038b2233d6152963acf2bb9ae968c3cc5a6815f21dde53a7f3f638e9130cd673cb54bf49af72b",
       "role": "resident",
       "qr_code": "ECO-RES-50123",
-      "points": 1115,
+      "points": 755,
       "created_at": "2026-10-15 16:40:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 6,
@@ -70,7 +80,9 @@
       "points": 620,
       "created_at": "2026-10-16 10:10:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 7,
@@ -82,7 +94,9 @@
       "points": 0,
       "created_at": "2026-10-02 08:00:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 9,
@@ -94,7 +108,9 @@
       "points": 350,
       "created_at": "2026-10-15 08:30:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 10,
@@ -106,7 +122,9 @@
       "points": 720,
       "created_at": "2026-10-15 09:15:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 11,
@@ -118,7 +136,9 @@
       "points": 540,
       "created_at": "2026-10-16 10:00:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 12,
@@ -130,7 +150,9 @@
       "points": 285,
       "created_at": "2026-10-16 11:20:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 13,
@@ -142,7 +164,9 @@
       "points": 930,
       "created_at": "2026-10-17 08:45:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 14,
@@ -154,7 +178,9 @@
       "points": 418,
       "created_at": "2026-10-17 13:10:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 15,
@@ -166,7 +192,9 @@
       "points": 650,
       "created_at": "2026-10-18 09:05:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 16,
@@ -178,7 +206,9 @@
       "points": 165,
       "created_at": "2026-10-18 14:30:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 17,
@@ -190,7 +220,9 @@
       "points": 980,
       "created_at": "2026-10-19 10:15:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 18,
@@ -202,7 +234,9 @@
       "points": 320,
       "created_at": "2026-10-19 15:40:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 19,
@@ -214,7 +248,9 @@
       "points": 470,
       "created_at": "2026-10-20 08:25:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 20,
@@ -226,7 +262,9 @@
       "points": 810,
       "created_at": "2026-10-20 11:50:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 21,
@@ -238,7 +276,9 @@
       "points": 220,
       "created_at": "2026-10-21 09:40:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 22,
@@ -250,19 +290,9 @@
       "points": 610,
       "created_at": "2026-10-21 14:15:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
-    },
-    {
-      "id": 23,
-      "full_name": "Kevin Mark Navarro",
-      "email": "kevin.navarro@example.com",
-      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
-      "role": "resident",
-      "qr_code": "ECO-RES-30115",
-      "points": 660,
-      "created_at": "2026-10-22 10:30:00",
-      "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 24,
@@ -274,7 +304,9 @@
       "points": 390,
       "created_at": "2026-10-22 16:05:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 25,
@@ -286,7 +318,9 @@
       "points": 740,
       "created_at": "2026-10-23 08:50:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 26,
@@ -298,7 +332,9 @@
       "points": 510,
       "created_at": "2026-10-23 13:35:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 27,
@@ -310,7 +346,9 @@
       "points": 180,
       "created_at": "2026-10-24 09:10:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 28,
@@ -322,7 +360,9 @@
       "points": 850,
       "created_at": "2026-10-24 15:20:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 29,
@@ -334,7 +374,9 @@
       "points": 430,
       "created_at": "2026-10-25 10:45:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 30,
@@ -346,7 +388,9 @@
       "points": 670,
       "created_at": "2026-10-25 14:00:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 31,
@@ -358,7 +402,9 @@
       "points": 290,
       "created_at": "2026-10-26 08:15:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 32,
@@ -370,7 +416,9 @@
       "points": 920,
       "created_at": "2026-10-26 11:30:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 33,
@@ -382,7 +430,9 @@
       "points": 360,
       "created_at": "2026-10-27 09:25:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 34,
@@ -394,7 +444,9 @@
       "points": 580,
       "created_at": "2026-10-27 15:10:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 35,
@@ -406,7 +458,9 @@
       "points": 770,
       "created_at": "2026-10-28 10:05:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 36,
@@ -418,7 +472,9 @@
       "points": 240,
       "created_at": "2026-10-28 14:40:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 37,
@@ -430,7 +486,9 @@
       "points": 610,
       "created_at": "2026-10-29 08:40:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     },
     {
       "id": 38,
@@ -442,7 +500,9 @@
       "points": 880,
       "created_at": "2026-10-29 13:15:00",
       "status": "active",
-      "station_name": "Barangay Pinagkawitan, Lipa City"
+      "station_name": "Barangay Pinagkawitan, Lipa City",
+      "claim_timeout_until": null,
+      "cancel_count": 0
     }
   ],
   "materials": [
@@ -459,14 +519,6 @@
       "name": "Can",
       "category": "Metal",
       "points_per_unit": 8,
-      "unit": "piece",
-      "status": "active"
-    },
-    {
-      "id": 3,
-      "name": "Glass Bottle",
-      "category": "Glass",
-      "points_per_unit": 10,
       "unit": "piece",
       "status": "active"
     },
@@ -659,6 +711,46 @@
       "points_earned": 15,
       "receipt_no": "REC-20261101-2589",
       "created_at": "2026-11-01 07:53:46"
+    },
+    {
+      "id": 19,
+      "user_id": 3,
+      "material_id": 1,
+      "material_name": "Plastic Bottle",
+      "quantity": 1,
+      "points_earned": 5,
+      "receipt_no": "REC-20261101-4695",
+      "created_at": "2026-11-01 21:12:19"
+    },
+    {
+      "id": 20,
+      "user_id": 3,
+      "material_id": 1,
+      "material_name": "Plastic Bottle",
+      "quantity": 1,
+      "points_earned": 5,
+      "receipt_no": "REC-20261101-4533",
+      "created_at": "2026-11-01 21:21:08"
+    },
+    {
+      "id": 21,
+      "user_id": 3,
+      "material_id": 1,
+      "material_name": "Plastic Bottle",
+      "quantity": 1,
+      "points_earned": 5,
+      "receipt_no": "REC-20261101-7944",
+      "created_at": "2026-11-01 21:21:46"
+    },
+    {
+      "id": 22,
+      "user_id": 23,
+      "material_id": 1,
+      "material_name": "Plastic Bottle",
+      "quantity": 1,
+      "points_earned": 5,
+      "receipt_no": "REC-20261101-5860",
+      "created_at": "2026-11-01 21:40:13"
     }
   ],
   "rewards": [
@@ -685,7 +777,7 @@
       "title": "Delata Pack (2 Sardinas + 1 Corned Beef)",
       "category": "Canned Goods",
       "points_required": 250,
-      "stock": 73,
+      "stock": 72,
       "partner_name": "Barangay Relief Hub",
       "status": "available"
     },
@@ -712,7 +804,7 @@
       "title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
       "category": "Food Staples",
       "points_required": 180,
-      "stock": 83,
+      "stock": 78,
       "partner_name": "Barangay Food Bank",
       "status": "available"
     },
@@ -733,208 +825,27 @@
       "stock": 43,
       "partner_name": "Barangay Green Store",
       "status": "available"
+    },
+    {
+      "id": 27,
+      "title": "Paper Bag",
+      "category": "Household",
+      "points_required": 100,
+      "stock": 0,
+      "partner_name": "Brgy. Pinagkawitan",
+      "status": "available"
     }
   ],
   "redemptions": [
     {
       "id": 1,
-      "user_id": 2,
-      "reward_id": 5,
-      "reward_title": "EcoCoins Keychain",
-      "points_spent": 300,
-      "redemption_code": "RDM-88219-01",
-      "status": "released",
-      "created_at": "2026-10-15 14:00:00"
-    },
-    {
-      "id": 2,
-      "user_id": 2,
-      "reward_id": 5,
-      "reward_title": "EcoCoins Keychain",
-      "points_spent": 300,
-      "redemption_code": "RDM-64023",
-      "status": "released",
-      "created_at": "2026-10-31 08:09:27"
-    },
-    {
-      "id": 3,
-      "user_id": 2,
-      "reward_id": 5,
-      "reward_title": "EcoCoins Keychain",
-      "points_spent": 300,
-      "redemption_code": "RDM-25296",
-      "status": "released",
-      "created_at": "2026-10-31 08:11:14"
-    },
-    {
-      "id": 4,
-      "user_id": 2,
-      "reward_id": 15,
-      "reward_title": "Free Load",
-      "points_spent": 100,
-      "redemption_code": "RDM-23248",
-      "status": "released",
-      "created_at": "2026-10-31 18:28:07"
-    },
-    {
-      "id": 5,
-      "user_id": 2,
+      "user_id": 5,
       "reward_id": 24,
       "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
       "points_spent": 180,
-      "redemption_code": "RDM-90646",
-      "status": "released",
-      "created_at": "2026-10-31 23:46:01"
-    },
-    {
-      "id": 6,
-      "user_id": 2,
-      "reward_id": 24,
-      "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
-      "points_spent": 180,
-      "redemption_code": "RDM-58179",
-      "status": "released",
-      "created_at": "2026-10-31 23:46:02"
-    },
-    {
-      "id": 7,
-      "user_id": 2,
-      "reward_id": 24,
-      "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
-      "points_spent": 180,
-      "redemption_code": "RDM-50855",
-      "status": "released",
-      "created_at": "2026-10-31 23:46:04"
-    },
-    {
-      "id": 8,
-      "user_id": 2,
-      "reward_id": 24,
-      "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
-      "points_spent": 180,
-      "redemption_code": "RDM-47496",
-      "status": "released",
-      "created_at": "2026-10-31 23:46:05"
-    },
-    {
-      "id": 9,
-      "user_id": 2,
-      "reward_id": 24,
-      "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
-      "points_spent": 180,
-      "redemption_code": "RDM-95764",
-      "status": "released",
-      "created_at": "2026-10-31 23:46:07"
-    },
-    {
-      "id": 10,
-      "user_id": 2,
-      "reward_id": 24,
-      "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
-      "points_spent": 180,
-      "redemption_code": "RDM-73440",
-      "status": "released",
-      "created_at": "2026-10-31 23:46:08"
-    },
-    {
-      "id": 11,
-      "user_id": 2,
-      "reward_id": 24,
-      "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
-      "points_spent": 180,
-      "redemption_code": "RDM-27373",
-      "status": "released",
-      "created_at": "2026-10-31 23:46:10"
-    },
-    {
-      "id": 12,
-      "user_id": 2,
-      "reward_id": 23,
-      "reward_title": "Eco Tote Bag (Reusable)",
-      "points_spent": 200,
-      "redemption_code": "RDM-59937",
-      "status": "released",
-      "created_at": "2026-11-01 07:34:53"
-    },
-    {
-      "id": 13,
-      "user_id": 2,
-      "reward_id": 21,
-      "reward_title": "Delata Pack (2 Sardinas + 1 Corned Beef)",
-      "points_spent": 250,
-      "redemption_code": "RDM-59306",
-      "status": "released",
-      "created_at": "2026-11-01 07:34:55"
-    },
-    {
-      "id": 14,
-      "user_id": 2,
-      "reward_id": 26,
-      "reward_title": "Stainless Water Tumbler (500ml)",
-      "points_spent": 500,
-      "redemption_code": "RDM-88978",
-      "status": "released",
-      "created_at": "2026-11-01 07:34:57"
-    },
-    {
-      "id": 15,
-      "user_id": 2,
-      "reward_id": 20,
-      "reward_title": "5kg Dinorado Rice (Bigas)",
-      "points_spent": 1400,
-      "redemption_code": "RDM-90630",
-      "status": "released",
-      "created_at": "2026-11-01 07:35:00"
-    },
-    {
-      "id": 16,
-      "user_id": 2,
-      "reward_id": 23,
-      "reward_title": "Eco Tote Bag (Reusable)",
-      "points_spent": 200,
-      "redemption_code": "RDM-59559",
-      "status": "released",
-      "created_at": "2026-11-01 07:35:01"
-    },
-    {
-      "id": 17,
-      "user_id": 2,
-      "reward_id": 23,
-      "reward_title": "Eco Tote Bag (Reusable)",
-      "points_spent": 200,
-      "redemption_code": "RDM-53104",
-      "status": "released",
-      "created_at": "2026-11-01 07:35:02"
-    },
-    {
-      "id": 18,
-      "user_id": 2,
-      "reward_id": 25,
-      "reward_title": "Family Hygiene Kit (Bath Soap, Detergent, Toothpaste)",
-      "points_spent": 350,
-      "redemption_code": "RDM-36726",
-      "status": "released",
-      "created_at": "2026-11-01 07:35:04"
-    },
-    {
-      "id": 19,
-      "user_id": 2,
-      "reward_id": 26,
-      "reward_title": "Stainless Water Tumbler (500ml)",
-      "points_spent": 500,
-      "redemption_code": "RDM-62463",
-      "status": "released",
-      "created_at": "2026-11-01 07:35:06"
-    },
-    {
-      "id": 20,
-      "user_id": 2,
-      "reward_id": 21,
-      "reward_title": "Delata Pack (2 Sardinas + 1 Corned Beef)",
-      "points_spent": 250,
-      "redemption_code": "RDM-77945",
-      "status": "released",
-      "created_at": "2026-11-01 07:35:10"
+      "redemption_code": "RDM-32217",
+      "status": "received",
+      "created_at": "2026-11-02 00:10:25"
     }
   ],
   "stations": [

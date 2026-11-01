@@ -2,9 +2,9 @@ import io
 from datetime import datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_RIGHT
+from reportlab.lib.enums import TA_RIGHT, TA_CENTER
 from db import get_db
 
 def _draw_footer(canvas, doc):
@@ -252,4 +252,128 @@ def generate_materials_report_pdf():
     story.append(t_sig)
 
     doc.build(story, onFirstPage=_draw_footer)
+    return buf.getvalue()
+
+def generate_deposit_receipt_pdf(receipt_data):
+    buf = io.BytesIO()
+    page_w = 260
+    page_h = 370
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=(page_w, page_h),
+        leftMargin=16,
+        rightMargin=16,
+        topMargin=16,
+        bottomMargin=14
+    )
+
+    base = getSampleStyleSheet()['Normal']
+    title_style = ParagraphStyle('RTitle', parent=base, fontName='Helvetica-Bold', fontSize=15, leading=18, alignment=TA_CENTER, textColor=colors.HexColor('#0d462b'))
+    sub_center = ParagraphStyle('RSubCenter', parent=base, fontName='Helvetica-Bold', fontSize=7.5, leading=10, alignment=TA_CENTER, textColor=colors.HexColor('#198754'))
+    center_muted = ParagraphStyle('RCMuted', parent=base, fontName='Helvetica', fontSize=7.5, leading=10, alignment=TA_CENTER, textColor=colors.HexColor('#64748b'))
+    label_style = ParagraphStyle('RLabel', parent=base, fontName='Helvetica', fontSize=8, leading=10, textColor=colors.HexColor('#64748b'))
+    val_style = ParagraphStyle('RVal', parent=base, fontName='Helvetica-Bold', fontSize=8, leading=10, alignment=TA_RIGHT, textColor=colors.HexColor('#0f172a'))
+    val_code = ParagraphStyle('RValCode', parent=base, fontName='Helvetica-Bold', fontSize=8, leading=10, alignment=TA_RIGHT, textColor=colors.HexColor('#0d462b'))
+    pts_bold = ParagraphStyle('RPtsBold', parent=base, fontName='Helvetica-Bold', fontSize=8.5, leading=11, alignment=TA_RIGHT, textColor=colors.HexColor('#198754'))
+    th_style = ParagraphStyle('RTH', parent=base, fontName='Helvetica-Bold', fontSize=8, leading=10, textColor=colors.HexColor('#0d462b'))
+    th_style_r = ParagraphStyle('RTHR', parent=base, fontName='Helvetica-Bold', fontSize=8, leading=10, alignment=TA_RIGHT, textColor=colors.HexColor('#0d462b'))
+    big_pts_val = ParagraphStyle('RBigPts', parent=base, fontName='Helvetica-Bold', fontSize=12, leading=14, alignment=TA_RIGHT, textColor=colors.HexColor('#0d462b'))
+    big_pts_lbl = ParagraphStyle('RBigLbl', parent=base, fontName='Helvetica-Bold', fontSize=9, leading=14, textColor=colors.HexColor('#0d462b'))
+
+    story = []
+
+    story.append(Paragraph('<font color="#0d462b">&#9632;</font>  <b>EcoCoins</b>', title_style))
+    story.append(Spacer(1, 3))
+    story.append(Paragraph('OFFICIAL DEPOSIT RECEIPT', sub_center))
+    story.append(Spacer(1, 2))
+    story.append(Paragraph('Barangay Pinagkawitan, Lipa City', center_muted))
+    story.append(Paragraph('Collection Hub STN-LP-01', center_muted))
+    story.append(Spacer(1, 8))
+
+    story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor('#cbd5e1'), spaceBefore=0, spaceAfter=8))
+
+    usable_w = page_w - 32
+    col1 = usable_w * 0.42
+    col2 = usable_w * 0.58
+
+    meta_rows = [
+        [Paragraph('Receipt No:', label_style), Paragraph(receipt_data.get('receipt_no', '-'), val_code)],
+        [Paragraph('Date & Time:', label_style), Paragraph(receipt_data.get('created_at', '-'), val_style)],
+        [Paragraph('Staff Operator:', label_style), Paragraph(receipt_data.get('staff_name', 'Barangay Staff'), val_style)],
+        [Paragraph('Resident Name:', label_style), Paragraph(receipt_data.get('resident_name', '-'), val_style)],
+        [Paragraph('Resident QR:', label_style), Paragraph(receipt_data.get('qr_code', '-'), val_code)],
+    ]
+    t_meta = Table(meta_rows, colWidths=[col1, col2])
+    t_meta.setStyle(TableStyle([
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    story.append(t_meta)
+    story.append(Spacer(1, 6))
+
+    story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor('#cbd5e1'), spaceBefore=0, spaceAfter=6))
+
+    mat_w1 = usable_w * 0.46
+    mat_w2 = usable_w * 0.24
+    mat_w3 = usable_w * 0.30
+
+    item_rows = [
+        [Paragraph('Material', th_style), Paragraph('Qty', th_style_r), Paragraph('Points', th_style_r)],
+        [
+            Paragraph(receipt_data.get('material_name', '-'), label_style),
+            Paragraph(f"{receipt_data.get('quantity', 1)} {receipt_data.get('unit', 'pc')}", val_style),
+            Paragraph(f"+{receipt_data.get('points_earned', 0)} pts", pts_bold)
+        ]
+    ]
+    t_item = Table(item_rows, colWidths=[mat_w1, mat_w2, mat_w3])
+    t_item.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LINEBELOW', (0, 0), (-1, 0), 0.5, colors.HexColor('#cbd5e1')),
+    ]))
+    story.append(t_item)
+    story.append(Spacer(1, 6))
+
+    story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor('#cbd5e1'), spaceBefore=0, spaceAfter=6))
+
+    new_bal = receipt_data.get('new_total_points', 0)
+    earned = receipt_data.get('points_earned', 0)
+    prev_bal = max(0, new_bal - earned)
+
+    summary_rows = [
+        [Paragraph('Points Awarded:', label_style), Paragraph(f"+{earned} pts", pts_bold)],
+        [Paragraph('Previous Balance:', label_style), Paragraph(f"{prev_bal:,} pts", val_style)],
+        [Paragraph('NEW TOTAL BALANCE:', big_pts_lbl), Paragraph(f"{new_bal:,} pts", big_pts_val)],
+    ]
+    t_summary = Table(summary_rows, colWidths=[col1 + 10, col2 - 10])
+    t_summary.setStyle(TableStyle([
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LINEABOVE', (0, 2), (-1, 2), 0.5, colors.HexColor('#86efac')),
+        ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#f0fdf4')),
+        ('LEFTPADDING', (0, 2), (-1, 2), 4),
+        ('RIGHTPADDING', (0, 2), (-1, 2), 4),
+        ('TOPPADDING', (0, 2), (-1, 2), 4),
+        ('BOTTOMPADDING', (0, 2), (-1, 2), 4),
+    ]))
+    story.append(t_summary)
+    story.append(Spacer(1, 8))
+
+    story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor('#e2e8f0'), spaceBefore=0, spaceAfter=8))
+
+    story.append(Paragraph('Thank you for helping keep Barangay Pinagkawitan clean & green!', center_muted))
+    story.append(Spacer(1, 3))
+    story.append(Paragraph('EcoCoins • Verified Community Recycling System', center_muted))
+
+    doc.build(story)
     return buf.getvalue()

@@ -17,48 +17,50 @@
             <p class="text-muted small">Log in to manage your EcoCoins account</p>
           </div>
 
-          {% if error %}
-            <div class="eco-bubble-alert eco-bubble-danger mb-4" role="alert">
-              <div class="bubble-content">
-                <span class="bubble-icon"><i class="bi bi-exclamation-circle-fill"></i></span>
-                <div>
-                  <div class="fw-bold small text-uppercase" style="letter-spacing: 0.5px; opacity: 0.85;">Login Notice</div>
-                  <span>{{ error }}</span>
-                </div>
-              </div>
-              <button type="button" class="bubble-close-btn" aria-label="Close">&times;</button>
-            </div>
-          {% endif %}
           {% if message %}
             <div class="eco-bubble-alert eco-bubble-resident mb-4" role="alert">
               <div class="bubble-content">
                 <span class="bubble-icon"><i class="bi bi-check-circle-fill"></i></span>
                 <div>
-                  <div class="fw-bold small text-uppercase" style="letter-spacing: 0.5px; opacity: 0.85;">Notification</div>
-                  <span>{{ message }}</span>
+                  <div class="bubble-title">Notification</div>
+                  <span class="bubble-text">{{ message }}</span>
                 </div>
               </div>
-              <button type="button" class="bubble-close-btn" aria-label="Close">&times;</button>
+              <div class="toast-actions">
+                <span class="toast-timer-pill"><i class="bi bi-clock"></i> <span class="toast-timer-val">20s</span></span>
+                <button type="button" class="bubble-close-btn" aria-label="Close">&times;</button>
+              </div>
+              <div class="toast-progress-track">
+                <div class="toast-progress-bar"></div>
+              </div>
             </div>
           {% endif %}
 
-          <form action="{{ url_for('login') }}" method="POST">
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Email Address</label>
-              <input type="email" name="email" id="emailInput" class="form-control" placeholder="name@example.com" value="{{ email|default('') }}" required>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Password</label>
-              <div class="input-group">
-                <input type="password" name="password" id="passwordInput" class="form-control" placeholder="Enter password" minlength="6" required>
-                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="passwordInput">
-                  <i class="bi bi-eye"></i>
-                </button>
+          <form action="{{ url_for('login') }}" method="POST" id="loginForm" novalidate>
+            <div class="messenger-field-group mb-3 {% if error and error_field == 'email' %}has-error{% endif %}" id="emailGroup">
+              <label class="form-label" for="emailInput">Email Address</label>
+              <input type="email" name="email" id="emailInput" class="form-control {% if error and error_field == 'email' %}is-invalid{% endif %}" placeholder="name@example.com" value="{{ email|default('') }}" autocomplete="email">
+              <div class="messenger-error-msg" id="emailError" {% if not (error and error_field == 'email') %}style="display: none;"{% endif %}>
+                <i class="bi bi-exclamation-circle"></i>
+                <span class="msg-text">{{ error if (error and error_field == 'email') else 'Please enter your email address.' }}</span>
               </div>
             </div>
 
-            <button type="submit" class="btn btn-accent w-100 py-2 fw-bold mb-3 btn-pill">
+            <div class="messenger-field-group mb-3 {% if error and (error_field == 'password' or not error_field) %}has-error{% endif %}" id="passwordGroup">
+              <label class="form-label" for="passwordInput">Password</label>
+              <div class="input-group">
+                <input type="password" name="password" id="passwordInput" class="form-control {% if error and (error_field == 'password' or not error_field) %}is-invalid{% endif %}" placeholder="Enter password" autocomplete="current-password">
+                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="passwordInput" aria-label="Toggle password visibility">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+              <div class="messenger-error-msg" id="passwordError" {% if not (error and (error_field == 'password' or not error_field)) %}style="display: none;"{% endif %}>
+                <i class="bi bi-exclamation-circle"></i>
+                <span class="msg-text">{{ error if (error and (error_field == 'password' or not error_field)) else 'Please enter your password.' }}</span>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-accent w-100 py-2 fw-bold mb-3 btn-pill" id="loginSubmitBtn">
               <span>Login</span>
               <i class="bi bi-arrow-right ms-1"></i>
             </button>
@@ -73,9 +75,9 @@
           <div class="text-center">
             <span class="text-muted small d-block mb-2">Demo Shortcuts:</span>
             <div class="d-flex gap-2 justify-content-center flex-wrap">
-              <button type="button" class="btn btn-sm btn-outline-success" onclick="document.getElementById('emailInput').value='user@example.com';document.getElementById('passwordInput').value='user123';">Resident Demo</button>
-              <button type="button" class="btn btn-sm btn-outline-warning text-dark" onclick="document.getElementById('emailInput').value='staff@ecocoins.ph';document.getElementById('passwordInput').value='staff123';">Staff Demo</button>
-              <button type="button" class="btn btn-sm btn-outline-dark" onclick="document.getElementById('emailInput').value='admin@ecocoins.ph';document.getElementById('passwordInput').value='admin123';">Admin Demo</button>
+              <button type="button" class="btn btn-sm btn-outline-success demo-shortcut-btn" data-email="maria@example.com" data-pass="user123">Resident Demo</button>
+              <button type="button" class="btn btn-sm btn-outline-warning text-dark demo-shortcut-btn" data-email="staff@ecocoins.ph" data-pass="staff123">Staff Demo</button>
+              <button type="button" class="btn btn-sm btn-outline-dark demo-shortcut-btn" data-email="admin@ecocoins.ph" data-pass="admin123">Admin Demo</button>
             </div>
           </div>
         </div>

@@ -87,6 +87,18 @@ def init_db():
     except Exception:
         pass
 
+    try:
+        cur.execute("ALTER TABLE users ADD COLUMN claim_timeout_until TEXT DEFAULT NULL")
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
+        cur.execute("ALTER TABLE users ADD COLUMN cancel_count INTEGER DEFAULT 0")
+        conn.commit()
+    except Exception:
+        pass
+
     cur.execute('''CREATE TABLE IF NOT EXISTS materials (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,

@@ -17,61 +17,78 @@
             <p class="text-muted small">Join EcoCoins and earn rewards for recycling</p>
           </div>
 
-          {% if error %}
-            <div class="eco-bubble-alert eco-bubble-danger mb-4" role="alert">
-              <div class="bubble-content">
-                <span class="bubble-icon"><i class="bi bi-exclamation-circle-fill"></i></span>
-                <div>
-                  <div class="fw-bold small text-uppercase" style="letter-spacing: 0.5px; opacity: 0.85;">Registration Notice</div>
-                  <span>{{ error }}</span>
-                </div>
-              </div>
-              <button type="button" class="bubble-close-btn" aria-label="Close">&times;</button>
-            </div>
-          {% endif %}
-
-          <form action="{{ url_for('register') }}" method="POST">
+          <form action="{{ url_for('register') }}" method="POST" id="registerForm" novalidate>
             <div class="row g-2 mb-3">
               <div class="col-12 col-sm-6">
-                <label class="form-label small fw-semibold">First Name</label>
-                <input type="text" name="first_name" class="form-control" placeholder="Juan" value="{{ first_name|default('') }}" minlength="2" maxlength="50" pattern="^[A-Za-zÀ-ÿ\s\.\-']{2,}$" title="First name must be at least 2 characters and contain letters only (no numbers)." required>
+                <div class="messenger-field-group {% if error and error_field == 'first_name' %}has-error{% endif %}" id="firstNameGroup">
+                  <label class="form-label" for="regFirstName">First Name</label>
+                  <input type="text" name="first_name" id="regFirstName" class="form-control {% if error and error_field == 'first_name' %}is-invalid{% endif %}" placeholder="Juan" value="{{ first_name|default('') }}" autocomplete="given-name">
+                  <div class="messenger-error-msg" id="firstNameError" {% if not (error and error_field == 'first_name') %}style="display: none;"{% endif %}>
+                    <i class="bi bi-exclamation-circle"></i>
+                    <span class="msg-text">{{ error if (error and error_field == 'first_name') else 'Please enter your first name.' }}</span>
+                  </div>
+                </div>
               </div>
               <div class="col-12 col-sm-6">
-                <label class="form-label small fw-semibold">Last Name</label>
-                <input type="text" name="last_name" class="form-control" placeholder="Dela Cruz" value="{{ last_name|default('') }}" minlength="2" maxlength="50" pattern="^[A-Za-zÀ-ÿ\s\.\-']{2,}$" title="Last name must be at least 2 characters and contain letters only (no numbers)." required>
+                <div class="messenger-field-group {% if error and error_field == 'last_name' %}has-error{% endif %}" id="lastNameGroup">
+                  <label class="form-label" for="regLastName">Last Name</label>
+                  <input type="text" name="last_name" id="regLastName" class="form-control {% if error and error_field == 'last_name' %}is-invalid{% endif %}" placeholder="Dela Cruz" value="{{ last_name|default('') }}" autocomplete="family-name">
+                  <div class="messenger-error-msg" id="lastNameError" {% if not (error and error_field == 'last_name') %}style="display: none;"{% endif %}>
+                    <i class="bi bi-exclamation-circle"></i>
+                    <span class="msg-text">{{ error if (error and error_field == 'last_name') else 'Please enter your last name.' }}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Email Address</label>
-              <input type="email" name="email" class="form-control" placeholder="name@example.com" value="{{ email|default('') }}" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Please enter a valid email address." required>
+            <div class="messenger-field-group mb-3 {% if error and error_field == 'email' %}has-error{% endif %}" id="regEmailGroup">
+              <label class="form-label" for="regEmail">Email Address</label>
+              <input type="email" name="email" id="regEmail" class="form-control {% if error and error_field == 'email' %}is-invalid{% endif %}" placeholder="name@example.com" value="{{ email|default('') }}" autocomplete="email">
+              <div class="messenger-error-msg" id="regEmailError" {% if not (error and error_field == 'email') %}style="display: none;"{% endif %}>
+                <i class="bi bi-exclamation-circle"></i>
+                <span class="msg-text">{{ error if (error and error_field == 'email') else 'Please enter a valid email address.' }}</span>
+              </div>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Password</label>
+            <div class="messenger-field-group mb-3 {% if error and error_field == 'password' %}has-error{% endif %}" id="regPassGroup">
+              <label class="form-label" for="regPass">Password</label>
               <div class="input-group">
-                <input type="password" name="password" id="regPass" class="form-control" placeholder="Create password" minlength="6" maxlength="64" title="Password must be at least 6 characters long." required>
-                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="regPass">
+                <input type="password" name="password" id="regPass" class="form-control {% if error and error_field == 'password' %}is-invalid{% endif %}" placeholder="Create password" autocomplete="new-password">
+                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="regPass" aria-label="Toggle password visibility">
                   <i class="bi bi-eye"></i>
                 </button>
               </div>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Confirm Password</label>
-              <div class="input-group">
-                <input type="password" name="confirm_password" id="regConfirmPass" class="form-control" placeholder="Repeat password" minlength="6" maxlength="64" title="Please confirm your password." required>
-                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="regConfirmPass">
-                  <i class="bi bi-eye"></i>
-                </button>
+              <div class="messenger-error-msg" id="regPassError" {% if not (error and error_field == 'password') %}style="display: none;"{% endif %}>
+                <i class="bi bi-exclamation-circle"></i>
+                <span class="msg-text">{{ error if (error and error_field == 'password') else 'Password must be at least 6 characters.' }}</span>
               </div>
             </div>
 
-            <div class="form-check mb-3">
-              <input class="form-check-input" type="checkbox" name="terms" id="termsCheck" required>
-              <label class="form-check-label small text-muted" for="termsCheck">
-                I agree to the <a href="#" class="text-success text-decoration-none">Terms and Conditions</a>
-              </label>
+            <div class="messenger-field-group mb-3 {% if error and error_field == 'confirm_password' %}has-error{% endif %}" id="regConfirmGroup">
+              <label class="form-label" for="regConfirmPass">Confirm Password</label>
+              <div class="input-group">
+                <input type="password" name="confirm_password" id="regConfirmPass" class="form-control {% if error and error_field == 'confirm_password' %}is-invalid{% endif %}" placeholder="Repeat password" autocomplete="new-password">
+                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="regConfirmPass" aria-label="Toggle password visibility">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+              <div class="messenger-error-msg" id="regConfirmError" {% if not (error and error_field == 'confirm_password') %}style="display: none;"{% endif %}>
+                <i class="bi bi-exclamation-circle"></i>
+                <span class="msg-text">{{ error if (error and error_field == 'confirm_password') else 'Passwords do not match.' }}</span>
+              </div>
+            </div>
+
+            <div class="mb-3" id="termsGroup">
+              <div class="form-check">
+                <input class="form-check-input {% if error and error_field == 'terms' %}is-invalid{% endif %}" type="checkbox" name="terms" id="termsCheck">
+                <label class="form-check-label small text-muted" for="termsCheck">
+                  I agree to the <a href="#" class="text-success text-decoration-none">Terms and Conditions</a>
+                </label>
+              </div>
+              <div class="messenger-error-msg" id="termsError" {% if not (error and error_field == 'terms') %}style="display: none;"{% endif %}>
+                <i class="bi bi-exclamation-circle"></i>
+                <span class="msg-text">{{ error if (error and error_field == 'terms') else 'You must agree to the Terms and Conditions.' }}</span>
+              </div>
             </div>
 
             <button type="submit" class="btn btn-accent w-100 py-2 fw-bold mb-3 btn-pill">
