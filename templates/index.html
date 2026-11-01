@@ -1,115 +1,172 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<main class="py-5">
+<main class="py-4 py-lg-5">
   <div class="container">
-    <div class="row align-items-center g-5 mb-5">
-      <div class="col-lg-6">
-        <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fw-semibold mb-3">
-          Small Actions. Big Impact.
-        </span>
-        <h1 class="display-4 fw-bold text-dark mb-3">
-          Recycle Today,<br>
-          Earn <span class="text-success">EcoPoints!</span>
-        </h1>
-        <p class="lead text-muted mb-4">
-          Turn your recyclable materials into rewards. Scan your QR code at the EcoCoins automated collection station and be part of a cleaner barangay.
-        </p>
-        <div class="d-flex flex-wrap gap-2">
-          {% if current_user %}
-            <a href="{{ url_for('dashboard') }}" class="btn btn-success btn-lg px-4">Go to Dashboard</a>
-            <a href="{{ url_for('station_simulator') }}" class="btn btn-outline-success btn-lg px-4">Deposit Recyclables</a>
-          {% else %}
-            <a href="{{ url_for('register') }}" class="btn btn-success btn-lg px-4">Get Started</a>
-            <a href="{{ url_for('how_it_works') }}" class="btn btn-outline-success btn-lg px-4">Learn More</a>
-          {% endif %}
+    <div class="position-relative text-center pt-2 pt-md-4 mb-4 mb-md-5">
+      <div class="d-none d-md-block position-absolute" style="top: 15px; left: 2%;">
+        <div class="hero-floating-card">
+          <span class="eco-icon-tile tile-green fs-4">
+            <i class="bi bi-bag-check"></i>
+          </span>
+          <div class="text-start">
+            <div class="fw-bold small mb-0">1kg Fresh Rice</div>
+            <div class="text-accent fw-bold small">300 EcoPoints</div>
+          </div>
+          <a href="{{ url_for('rewards') }}" class="hero-pill-arrow text-decoration-none">
+            <i class="bi bi-arrow-up-right"></i>
+          </a>
         </div>
       </div>
 
-      <div class="col-lg-6">
-        <div class="card border-0 shadow bg-white p-4 text-center">
-          <div class="p-4 bg-eco-light rounded-4 mb-3">
-            <i class="bi bi-cpu fs-1 text-success d-block mb-2"></i>
-            <h4 class="fw-bold text-success mb-1">EcoCoins Station</h4>
-            <p class="text-muted small mb-3">Automated Smart Recycling Terminal</p>
-            <div class="d-flex justify-content-center gap-2">
-              <div class="d-flex align-items-center gap-2 py-1 px-3 border rounded-pill bg-white shadow-sm">
-                <span class="eco-icon-tile tile-blue" style="width: 24px; height: 24px;">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M10 2h4v3h-4z"/>
-                    <path d="M8 5h8v2a4 4 0 0 1 4 4v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9a4 4 0 0 1 4-4V5z"/>
-                  </svg>
-                </span>
-                <span class="small fw-semibold">Plastic Bottle</span>
-              </div>
-              <div class="d-flex align-items-center gap-2 py-1 px-3 border rounded-pill bg-white shadow-sm">
-                <span class="eco-icon-tile tile-orange" style="width: 24px; height: 24px;">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="5" y="4" width="14" height="16" rx="3"/>
-                    <ellipse cx="12" cy="7" rx="5" ry="2"/>
-                  </svg>
-                </span>
-                <span class="small fw-semibold">Can</span>
-              </div>
-            </div>
+      <div class="d-none d-md-block position-absolute" style="top: 15px; right: 2%;">
+        <div class="hero-floating-card">
+          <span class="eco-icon-tile tile-orange fs-4">
+            <i class="bi bi-play-circle"></i>
+          </span>
+          <div class="text-start">
+            <div class="fw-bold small mb-0">Drop-Off Guide</div>
+            <div class="text-muted small">Fast &amp; Verified</div>
           </div>
-          <div class="row g-2 text-start">
-            <div class="col-6">
-              <div class="border rounded-3 p-3 h-100">
-                <i class="bi bi-qr-code text-success fs-4 mb-1 d-block"></i>
-                <div class="fw-bold small">1. Scan QR</div>
-                <div class="text-muted small">Personal resident pass</div>
-              </div>
+          <a href="{{ url_for('how_it_works') }}" class="hero-pill-arrow text-decoration-none">
+            <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="d-inline-flex align-items-center gap-2 bg-white px-3 py-1 rounded-pill border shadow-sm mb-3">
+        <span class="badge bg-accent text-white rounded-pill px-2 py-0.5 small">OFFICIAL</span>
+        <span class="small fw-semibold" style="color: var(--eco-forest);">Barangay Automated Recycling Hub</span>
+      </div>
+
+      <h1 class="hero-display-title mb-3">
+        Everything Your<br>Community Loves
+      </h1>
+
+      <p class="lead mx-auto mb-4" style="max-width: 650px; color: var(--eco-muted); font-size: 1.15rem;">
+        Turn recyclable bottles, aluminum cans, and paper into fresh rice, food staples, and essentials through verified barangay collection drop-offs.
+      </p>
+
+      <div class="d-flex justify-content-center flex-wrap gap-2 mb-4">
+        {% if current_user %}
+          <a href="{{ url_for('dashboard') }}" class="btn btn-forest px-4">
+            <i class="bi bi-grid me-1"></i>My Resident Hub
+          </a>
+          <a href="{{ url_for('rewards') }}" class="btn btn-accent px-4">
+            <span>Browse Catalog</span>
+            <i class="bi bi-arrow-right"></i>
+          </a>
+        {% else %}
+          <a href="{{ url_for('register') }}" class="btn btn-accent px-4">
+            <span>Get Started Free</span>
+            <i class="bi bi-arrow-right"></i>
+          </a>
+          <a href="{{ url_for('how_it_works') }}" class="btn btn-outline-success px-4">
+            <span>Learn How It Works</span>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="row g-3 g-lg-4 align-items-stretch mb-5">
+      <div class="col-md-4">
+        <div class="hero-split-left shadow-sm">
+          <div>
+            <div class="display-4 fw-bold mb-2" style="font-weight: 800; color: var(--eco-forest);">98K+</div>
+            <div class="avatar-stack mb-3">
+              <span class="avatar-stack-item bg-success"><i class="bi bi-person-fill"></i></span>
+              <span class="avatar-stack-item bg-primary"><i class="bi bi-person-fill"></i></span>
+              <span class="avatar-stack-item bg-warning text-dark"><i class="bi bi-person-fill"></i></span>
+              <span class="avatar-stack-item bg-dark"><i class="bi bi-plus-lg"></i></span>
             </div>
-            <div class="col-6">
-              <div class="border rounded-3 p-3 h-100">
-                <i class="bi bi-box-seam text-success fs-4 mb-1 d-block"></i>
-                <div class="fw-bold small">2. Insert Item</div>
-                <div class="text-muted small">Bottles, cans, paper</div>
-              </div>
+            <div class="fw-bold mb-1" style="color: var(--eco-forest);">Active Barangay Residents</div>
+            <p class="small mb-0" style="color: var(--eco-muted);">Participating in local green initiatives and recycling drives.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="hero-split-center">
+          <div class="mb-3">
+            <span class="badge bg-white text-dark rounded-pill px-3 py-1.5 fw-bold small mb-2 shadow-sm">
+              <i class="bi bi-shield-check text-success me-1"></i>Verified Collection Hub
+            </span>
+            <h3 class="fw-bold text-white mb-2">Best Rewards For Your Family</h3>
+            <p class="text-white-50 small mb-4">
+              Exchange accumulated EcoPoints for premium rice, canned goods, cooking staples, and eco merchandise.
+            </p>
+          </div>
+          <a href="{{ url_for('rewards') }}" class="btn btn-accent btn-lg px-4 mx-auto">
+            <span>Explore Products</span>
+            <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="hero-split-right shadow-sm">
+          <div>
+            <div class="display-4 fw-bold mb-2 d-flex align-items-center justify-content-md-end gap-2" style="font-weight: 800; color: var(--eco-forest);">
+              <span>4.9</span>
+              <i class="bi bi-star-fill text-warning fs-3"></i>
             </div>
+            <div class="fw-bold mb-1" style="color: var(--eco-forest);">Community Satisfaction</div>
+            <p class="small mb-0" style="color: var(--eco-muted);">Based on verified drop-off transactions and prompt rewards release.</p>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="row g-4 pt-3">
-      <div class="col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm h-100 p-3">
-          <div class="card-body">
-            <div class="text-success fs-2 mb-2"><i class="bi bi-trash3"></i></div>
-            <h5 class="fw-bold mb-2">Reduce Waste</h5>
-            <p class="text-muted small mb-0">Keep recyclables out of regular trash and help maintain cleanliness in your barangay.</p>
-          </div>
-        </div>
+    <div class="pt-4 mb-5">
+      <div class="text-center mb-4">
+        <span class="badge bg-white text-dark border px-3 py-1.5 rounded-pill fw-bold small shadow-sm mb-2">SIMPLE WORKFLOW</span>
+        <h2 class="fw-bold" style="color: var(--eco-forest);">How EcoCoins Works</h2>
+        <p class="text-muted">A fair, transparent, staff-verified circular reward system.</p>
       </div>
 
-      <div class="col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm h-100 p-3">
-          <div class="card-body">
-            <div class="text-success fs-2 mb-2"><i class="bi bi-coin"></i></div>
-            <h5 class="fw-bold mb-2">Earn EcoPoints</h5>
-            <p class="text-muted small mb-0">Points are calculated automatically for every piece or kilogram of recyclable deposited.</p>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="card h-100 p-4 shadow-sm border-0">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <span class="eco-icon-tile tile-blue fs-4">
+                <i class="bi bi-qr-code-scan"></i>
+              </span>
+              <div>
+                <span class="badge bg-light text-secondary border">Step 01</span>
+                <h5 class="fw-bold mb-0 mt-1" style="color: var(--eco-forest);">Show Resident QR</h5>
+              </div>
+            </div>
+            <p class="text-muted small mb-0">Open your personal Resident QR code from your dashboard and present it to the station staff.</p>
           </div>
         </div>
-      </div>
 
-      <div class="col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm h-100 p-3">
-          <div class="card-body">
-            <div class="text-success fs-2 mb-2"><i class="bi bi-gift"></i></div>
-            <h5 class="fw-bold mb-2">Get Rewards</h5>
-            <p class="text-muted small mb-0">Exchange your points for grocery vouchers, local partner discounts, and merchandise.</p>
+        <div class="col-md-4">
+          <div class="card h-100 p-4 shadow-sm border-0">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <span class="eco-icon-tile tile-orange fs-4">
+                <i class="bi bi-boxes"></i>
+              </span>
+              <div>
+                <span class="badge bg-light text-secondary border">Step 02</span>
+                <h5 class="fw-bold mb-0 mt-1" style="color: var(--eco-forest);">Staff Verification</h5>
+              </div>
+            </div>
+            <p class="text-muted small mb-0">Barangay Staff counts your bottles, cans, or paper, automatically computes the points, and records the deposit.</p>
           </div>
         </div>
-      </div>
 
-      <div class="col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm h-100 p-3">
-          <div class="card-body">
-            <div class="text-success fs-2 mb-2"><i class="bi bi-people"></i></div>
-            <h5 class="fw-bold mb-2">Community Support</h5>
-            <p class="text-muted small mb-0">Join your neighbors in building a sustainable and eco-friendly barangay community.</p>
+        <div class="col-md-4">
+          <div class="card h-100 p-4 shadow-sm border-0">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <span class="eco-icon-tile tile-green fs-4">
+                <i class="bi bi-gift"></i>
+              </span>
+              <div>
+                <span class="badge bg-light text-secondary border">Step 03</span>
+                <h5 class="fw-bold mb-0 mt-1" style="color: var(--eco-forest);">Claim Real Rewards</h5>
+              </div>
+            </div>
+            <p class="text-muted small mb-0">Points appear instantly on your balance. Redeem them anytime for rice, canned goods, and community items.</p>
           </div>
         </div>
       </div>

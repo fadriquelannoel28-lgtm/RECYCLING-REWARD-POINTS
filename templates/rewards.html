@@ -5,8 +5,8 @@
   <div class="container">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
       <div>
-        <h1 class="fw-bold mb-1">Rewards Catalog</h1>
-        <p class="text-muted mb-0">Redeem your accumulated EcoPoints for partner vouchers and discounts.</p>
+        <h1 class="fw-bold mb-1">Community Rewards Catalog</h1>
+        <p class="text-muted mb-0">Redeem your accumulated EcoPoints for essential food items, household goods, and eco merchandise.</p>
       </div>
       <div class="badge bg-success fs-6 py-2 px-3 rounded-pill d-inline-flex align-items-center gap-2">
         <i class="bi bi-coin"></i>
@@ -23,9 +23,10 @@
 
     <div class="d-flex flex-wrap gap-2 mb-4 filter-container">
       <button type="button" class="btn btn-sm btn-success filter-btn active" data-filter="all">All</button>
-      <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="Discounts">Discounts</button>
-      <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="Merchandise">Merchandise</button>
-      <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="Partners">Partners</button>
+      <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="Food Staples">Food Staples (Bigas, Noodles)</button>
+      <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="Canned Goods">Canned Goods (Delata)</button>
+      <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="Merchandise">Merchandise (Tote Bag, Payong)</button>
+      <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="Household">Household Goods</button>
     </div>
 
     <div class="row g-4 mb-5">
@@ -38,44 +39,43 @@
             <div>
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="d-flex align-items-center gap-2">
-                  {% if r.category == 'Merchandise' %}
-                    <span class="eco-icon-tile tile-green" style="width: 32px; height: 32px;">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
-                        <path d="M3 6h18"/>
-                        <path d="M16 10a4 4 0 0 1-8 0"/>
-                      </svg>
+                  {% if r.category == 'Food Staples' %}
+                    <span class="eco-icon-tile tile-green" style="width: 34px; height: 34px;">
+                      <i class="bi bi-bag-check fs-5"></i>
                     </span>
-                  {% elif r.category == 'Discounts' %}
-                    <span class="eco-icon-tile tile-orange" style="width: 32px; height: 32px;">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/>
-                        <circle cx="7" cy="7" r=".5" fill="currentColor"/>
-                      </svg>
+                  {% elif r.category == 'Canned Goods' %}
+                    <span class="eco-icon-tile tile-orange" style="width: 34px; height: 34px;">
+                      <i class="bi bi-box2 fs-5"></i>
+                    </span>
+                  {% elif r.category == 'Household' %}
+                    <span class="eco-icon-tile tile-purple" style="width: 34px; height: 34px;">
+                      <i class="bi bi-shield-plus fs-5"></i>
                     </span>
                   {% else %}
-                    <span class="eco-icon-tile tile-blue" style="width: 32px; height: 32px;">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 8h1a4 4 0 1 1 0 8h-1"/>
-                        <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
-                        <line x1="6" y1="2" x2="6" y2="4"/>
-                      </svg>
+                    <span class="eco-icon-tile tile-blue" style="width: 34px; height: 34px;">
+                      <i class="bi bi-gift fs-5"></i>
                     </span>
                   {% endif %}
                   <span class="badge bg-light text-success border">{{ r.category }}</span>
                 </div>
-                <span class="fw-bold text-success fs-5">{{ "{:,}".format(cost) }} pts</span>
+                <span class="fw-bold text-accent fs-5">{{ "{:,}".format(cost) }} pts</span>
               </div>
-              <h5 class="fw-bold mb-1">{{ r.title }}</h5>
-              <p class="text-muted small mb-3">Partner: {{ r.partner_name if r.partner_name else 'Barangay Program' }}</p>
+              <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">{{ r.title }}</h5>
+              <div class="text-muted small mb-2">Partner: {{ r.partner_name if r.partner_name else 'Barangay Program' }}</div>
+              <div class="small text-muted mb-3"><i class="bi bi-boxes me-1"></i>Stock Available: <strong>{{ r.stock }} units</strong></div>
             </div>
 
             <div>
               {% if not current_user %}
-                <a href="{{ url_for('login') }}" class="btn btn-outline-secondary btn-sm w-100">Login to Redeem</a>
-              {% elif can_afford %}
-                <button type="button" class="btn btn-success btn-sm w-100 btn-redeem" data-bs-toggle="modal" data-bs-target="#redeemModal" data-id="{{ r.id }}" data-title="{{ r.title }}" data-points="{{ '{:,}'.format(cost) }}">
-                  Redeem Reward
+                <a href="{{ url_for('login') }}" class="btn btn-outline-secondary btn-sm w-100 btn-pill">Login to Redeem</a>
+              {% elif can_afford and r.stock > 0 %}
+                <button type="button" class="btn btn-accent btn-sm w-100 btn-pill btn-redeem" data-bs-toggle="modal" data-bs-target="#redeemModal" data-id="{{ r.id }}" data-title="{{ r.title }}" data-points="{{ '{:,}'.format(cost) }}">
+                  <span>Redeem Reward</span>
+                  <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+              {% elif r.stock <= 0 %}
+                <button class="btn btn-light btn-sm w-100 text-muted" disabled>
+                  Out of Stock
                 </button>
               {% else %}
                 <button class="btn btn-light btn-sm w-100 text-muted" disabled>
@@ -85,12 +85,30 @@
             </div>
           </div>
         </div>
+      {% else %}
+        <div class="col-12 text-center py-5">
+          <div class="card border-0 shadow-sm p-5 bg-white">
+            <span class="eco-icon-tile tile-orange mx-auto mb-3" style="width: 64px; height: 64px; border-radius: 50%;">
+              <i class="bi bi-gift fs-2"></i>
+            </span>
+            <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">No Rewards or Items Yet</h5>
+            <p class="text-muted small mb-0">The barangay catalog currently has no rewards listed or all items are out of stock. Please check back soon!</p>
+          </div>
+        </div>
       {% endfor %}
     </div>
 
     {% if current_user and redemptions %}
       <div class="card border-0 shadow-sm p-4">
-        <h5 class="fw-bold mb-3">My Claimed Vouchers</h5>
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div>
+            <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">My Claimed Vouchers</h5>
+            <div class="text-muted small">Showing up to 5 most recent vouchers</div>
+          </div>
+          <a href="{{ url_for('reward_history') }}" class="btn btn-sm btn-outline-success btn-pill">
+            <i class="bi bi-clock-history me-1"></i>View All Claim History
+          </a>
+        </div>
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
@@ -99,26 +117,48 @@
                 <th>Reward Item</th>
                 <th>Points Spent</th>
                 <th>Voucher Code</th>
-                <th>Status</th>
+                <th>Claim Status</th>
               </tr>
             </thead>
             <tbody>
-              {% for rd in redemptions %}
+              {% for rd in redemptions[:5] %}
                 <tr>
                   <td class="text-muted small">{{ rd.created_at }}</td>
-                  <td class="fw-semibold">{{ rd.reward_title }}</td>
-                  <td class="text-muted">{{ "{:,}".format(rd.points_spent) }} pts</td>
+                  <td class="fw-semibold">
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="eco-icon-tile tile-mint" style="width: 28px; height: 28px;">
+                        <i class="bi bi-gift-fill" style="font-size: 0.85rem;"></i>
+                      </span>
+                      <span>{{ rd.reward_title }}</span>
+                    </div>
+                  </td>
+                  <td class="text-success fw-bold">{{ "{:,}".format(rd.points_spent) }} pts</td>
                   <td>
                     <span class="badge bg-light text-dark border font-monospace fs-6 px-2 py-1">{{ rd.redemption_code }}</span>
                   </td>
                   <td>
-                    <span class="badge bg-success-subtle text-success">Claimed</span>
+                    {% if rd.status == 'released' %}
+                      <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">
+                        <i class="bi bi-check-circle me-1"></i>Item Released
+                      </span>
+                    {% else %}
+                      <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-2.5 py-1 rounded-pill">
+                        <i class="bi bi-hourglass-split me-1"></i>Ready for Pickup
+                      </span>
+                    {% endif %}
                   </td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
+        {% if redemptions|length > 5 %}
+          <div class="text-center pt-3 border-top mt-3">
+            <a href="{{ url_for('reward_history') }}" class="text-success small fw-bold text-decoration-none">
+              View all {{ redemptions|length }} claims in My Reward Claiming History <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+        {% endif %}
       </div>
     {% endif %}
   </div>
@@ -128,26 +168,66 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content rounded-4 border-0">
       <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold">Confirm Redemption</h5>
+        <h5 class="modal-title fw-bold">Confirm Reward Claim</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form action="{{ url_for('rewards') }}" method="POST">
-        <input type="hidden" name="action" value="redeem">
         <input type="hidden" name="reward_id" id="modalRewardId">
-        <div class="modal-body py-4">
-          <p class="text-muted mb-2">Are you sure you want to redeem:</p>
-          <h5 class="fw-bold text-dark mb-3" id="modalRewardTitle">Reward Title</h5>
-          <div class="p-3 rounded-3 bg-light d-flex justify-content-between align-items-center">
-            <span class="text-muted small">Points Deducted:</span>
-            <span class="fw-bold text-success fs-5"><span id="modalRewardPoints">0</span> pts</span>
+        <div class="modal-body py-3">
+          <p class="text-muted small mb-3">Your EcoPoints balance will be deducted immediately upon claiming. You will receive a voucher code to claim the item at the Barangay Hub.</p>
+          <div class="bg-light p-3 rounded-3 mb-2">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Item:</span>
+              <strong id="modalRewardTitle">-</strong>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Points Deducted:</span>
+              <strong class="text-success" id="modalRewardPoints">-</strong>
+            </div>
           </div>
         </div>
         <div class="modal-footer border-0 pt-0">
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success px-4">Confirm</button>
+          <button type="submit" class="btn btn-success px-4">Confirm & Redeem</button>
         </div>
       </form>
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  const items = document.querySelectorAll('.filter-item');
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      filterBtns.forEach(b => {
+        b.classList.remove('btn-success', 'active');
+        b.classList.add('btn-outline-success');
+      });
+      this.classList.remove('btn-outline-success');
+      this.classList.add('btn-success', 'active');
+
+      const filter = this.getAttribute('data-filter');
+      items.forEach(item => {
+        if (filter === 'all' || item.getAttribute('data-category') === filter) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    });
+  });
+
+  const redeemButtons = document.querySelectorAll('.btn-redeem');
+  redeemButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.getElementById('modalRewardId').value = this.getAttribute('data-id');
+      document.getElementById('modalRewardTitle').textContent = this.getAttribute('data-title');
+      document.getElementById('modalRewardPoints').textContent = this.getAttribute('data-points') + ' pts';
+    });
+  });
+});
+</script>
 {% endblock %}

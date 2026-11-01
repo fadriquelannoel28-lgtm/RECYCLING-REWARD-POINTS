@@ -20,6 +20,9 @@
           {% if error %}
             <div class="alert alert-danger py-2 small rounded-3">{{ error }}</div>
           {% endif %}
+          {% if message %}
+            <div class="alert alert-success py-2 small rounded-3">{{ message }}</div>
+          {% endif %}
 
           <form action="{{ url_for('login') }}" method="POST">
             <div class="mb-3">
@@ -37,10 +40,13 @@
               </div>
             </div>
 
-            <button type="submit" class="btn btn-success w-100 py-2 fw-semibold mb-3">Login</button>
+            <button type="submit" class="btn btn-accent w-100 py-2 fw-bold mb-3 btn-pill">
+              <span>Login</span>
+              <i class="bi bi-arrow-right ms-1"></i>
+            </button>
 
             <div class="text-center small text-muted">
-              Don't have an account? <a href="{{ url_for('register') }}" class="text-success fw-bold text-decoration-none">Sign up</a>
+              Don't have an account? <a href="{{ url_for('register') }}" class="fw-bold text-decoration-none" style="color: var(--eco-forest);">Sign up</a>
             </div>
           </form>
 
@@ -48,8 +54,9 @@
 
           <div class="text-center">
             <span class="text-muted small d-block mb-2">Demo Shortcuts:</span>
-            <div class="d-flex gap-2 justify-content-center">
+            <div class="d-flex gap-2 justify-content-center flex-wrap">
               <button type="button" class="btn btn-sm btn-outline-success" onclick="document.getElementById('emailInput').value='user@example.com';document.getElementById('passwordInput').value='user123';">Resident Demo</button>
+              <button type="button" class="btn btn-sm btn-outline-warning text-dark" onclick="document.getElementById('emailInput').value='staff@ecocoins.ph';document.getElementById('passwordInput').value='staff123';">Staff Demo</button>
               <button type="button" class="btn btn-sm btn-outline-dark" onclick="document.getElementById('emailInput').value='admin@ecocoins.ph';document.getElementById('passwordInput').value='admin123';">Admin Demo</button>
             </div>
           </div>

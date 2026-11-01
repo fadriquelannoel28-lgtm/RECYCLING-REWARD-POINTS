@@ -22,9 +22,15 @@
           {% endif %}
 
           <form action="{{ url_for('register') }}" method="POST">
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Full Name</label>
-              <input type="text" name="full_name" class="form-control" placeholder="Juan Dela Cruz" value="{{ full_name|default('') }}" required>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label small fw-semibold">First Name</label>
+                <input type="text" name="first_name" class="form-control" placeholder="Juan" value="{{ first_name|default('') }}" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Last Name</label>
+                <input type="text" name="last_name" class="form-control" placeholder="Dela Cruz" value="{{ last_name|default('') }}" required>
+              </div>
             </div>
 
             <div class="mb-3">
@@ -59,10 +65,13 @@
               </label>
             </div>
 
-            <button type="submit" class="btn btn-success w-100 py-2 fw-semibold mb-3">Register</button>
+            <button type="submit" class="btn btn-accent w-100 py-2 fw-bold mb-3 btn-pill">
+              <span>Create Resident Account</span>
+              <i class="bi bi-arrow-right ms-1"></i>
+            </button>
 
             <div class="text-center small text-muted">
-              Already have an account? <a href="{{ url_for('login') }}" class="text-success fw-bold text-decoration-none">Login</a>
+              Already have an account? <a href="{{ url_for('login') }}" class="fw-bold text-decoration-none" style="color: var(--eco-forest);">Login</a>
             </div>
           </form>
         </div>

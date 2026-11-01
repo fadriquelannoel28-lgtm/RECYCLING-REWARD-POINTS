@@ -1,0 +1,952 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Staff Collection Hub - EcoCoins</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg bg-white border-bottom shadow-sm sticky-top py-2">
+  <div class="container-fluid px-3 px-lg-4">
+    <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-dark fs-5" href="{{ url_for('staff') }}">
+      <span class="eco-brand-badge bg-success text-white">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+          <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+        </svg>
+      </span>
+      <span>EcoCoins</span>
+      <span class="badge bg-warning text-dark fw-bold ms-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">STAFF HUB</span>
+    </a>
+
+    <div class="d-none d-md-flex align-items-center gap-2 text-muted small">
+      <i class="bi bi-geo-alt-fill text-success"></i>
+      <span>Barangay Poblacion Collection Unit</span>
+    </div>
+
+    <div class="d-flex align-items-center gap-3">
+      <span class="text-dark small fw-semibold d-none d-sm-inline">
+        <i class="bi bi-person-badge text-success me-1"></i>{{ current_user.full_name }}
+      </span>
+      <a href="{{ url_for('account') }}" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
+        <i class="bi bi-person-gear"></i>
+        <span>Account</span>
+      </a>
+      <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
+        <i class="bi bi-box-arrow-right"></i>
+        <span>Logout</span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid py-4 px-3 px-lg-4">
+  {% if feedback %}
+    <div class="alert alert-{{ feedback_type|default('success') }} alert-dismissible fade show rounded-3 mb-4" role="alert">
+      {{ feedback }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endif %}
+
+  <div class="row g-4">
+    <div class="col-lg-3 col-xl-2">
+      <div class="card border-0 shadow-sm p-3 sticky-top" style="top: 75px;">
+        <div class="text-uppercase small fw-bold text-muted mb-2" style="font-size: 0.72rem; letter-spacing: 1px;">Station Modules</div>
+        <nav class="nav nav-pills flex-column gap-1">
+          <a href="{{ url_for('staff', tab='dashboard') }}" class="nav-link py-2 px-3 {% if tab == 'dashboard' or not tab %}active bg-success text-white{% else %}text-dark{% endif %}">
+            <i class="bi bi-grid me-2"></i> Dashboard
+          </a>
+          <a href="{{ url_for('staff', tab='unit') }}" class="nav-link py-2 px-3 {% if tab == 'unit' %}active bg-success text-white{% else %}text-dark{% endif %}">
+            <i class="bi bi-qr-code-scan me-2"></i> Collection Unit
+          </a>
+          <a href="{{ url_for('staff', tab='history') }}" class="nav-link py-2 px-3 {% if tab == 'history' %}active bg-success text-white{% else %}text-dark{% endif %}">
+            <i class="bi bi-clock-history me-2"></i> Deposit History
+          </a>
+          <a href="{{ url_for('staff', tab='claims') }}" class="nav-link py-2 px-3 {% if tab == 'claims' %}active bg-success text-white{% else %}text-dark{% endif %}">
+            <i class="bi bi-gift me-2"></i> Reward Claims
+          </a>
+          <a href="{{ url_for('staff', tab='residents') }}" class="nav-link py-2 px-3 {% if tab == 'residents' %}active bg-success text-white{% else %}text-dark{% endif %}">
+            <i class="bi bi-people me-2"></i> Residents List
+          </a>
+        </nav>
+      </div>
+    </div>
+
+    <div class="col-lg-9 col-xl-10">
+      {% if tab == 'dashboard' or not tab %}
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <div>
+            <h3 class="fw-bold mb-1" style="color: var(--eco-forest);">Staff Station Dashboard</h3>
+            <p class="text-muted mb-0">Live summary of barangay collections, resident activities, and reward handovers.</p>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+              <i class="bi bi-shield-check me-1"></i>Station Active
+            </span>
+            <a href="{{ url_for('staff', tab='unit') }}" class="btn btn-accent btn-pill d-flex align-items-center gap-2">
+              <i class="bi bi-qr-code-scan"></i>
+              <span>Launch Collection Unit</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm p-3 h-100 bg-white">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Total Deposits</span>
+                <span class="eco-icon-tile tile-blue" style="width: 38px; height: 38px;">
+                  <i class="bi bi-recycle fs-5"></i>
+                </span>
+              </div>
+              <div class="fs-3 fw-bold" style="color: var(--eco-forest);">{{ "{:,}".format(staff_stats.total_deposits) }}</div>
+              <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
+                <span class="small text-muted">Today: <strong>+{{ staff_stats.today_deposits }}</strong></span>
+                <a href="{{ url_for('staff', tab='history') }}" class="small text-success text-decoration-none fw-semibold">View Log &rarr;</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm p-3 h-100 bg-white">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">EcoPoints Awarded</span>
+                <span class="eco-icon-tile tile-mint" style="width: 38px; height: 38px;">
+                  <i class="bi bi-coin fs-5"></i>
+                </span>
+              </div>
+              <div class="fs-3 fw-bold text-success">{{ "{:,}".format(staff_stats.total_points) }}</div>
+              <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
+                <span class="small text-muted">Community Total</span>
+                <a href="{{ url_for('staff', tab='history') }}" class="small text-success text-decoration-none fw-semibold">Breakdown &rarr;</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm p-3 h-100 bg-white">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Vouchers to Release</span>
+                <span class="eco-icon-tile tile-orange" style="width: 38px; height: 38px;">
+                  <i class="bi bi-gift fs-5"></i>
+                </span>
+              </div>
+              <div class="fs-3 fw-bold text-accent">{{ staff_stats.pending_claims }}</div>
+              <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
+                <span class="small text-muted">Ready for pickup</span>
+                <a href="{{ url_for('staff', tab='claims') }}" class="small text-accent text-decoration-none fw-semibold">Hand Over &rarr;</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm p-3 h-100 bg-white">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Registered Residents</span>
+                <span class="eco-icon-tile tile-purple" style="width: 38px; height: 38px;">
+                  <i class="bi bi-people fs-5"></i>
+                </span>
+              </div>
+              <div class="fs-3 fw-bold" style="color: var(--eco-forest);">{{ "{:,}".format(staff_stats.total_residents) }}</div>
+              <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
+                <span class="small text-muted">Barangay Poblacion</span>
+                <a href="{{ url_for('staff', tab='residents') }}" class="small text-success text-decoration-none fw-semibold">Directory &rarr;</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+          <div class="col-lg-7">
+            <div class="card border-0 shadow-sm p-4 h-100 bg-white">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Recent Deposit History</h5>
+                  <div class="text-muted small">Latest recyclable drop-offs recorded at this station</div>
+                </div>
+                <a href="{{ url_for('staff', tab='history') }}" class="btn btn-sm btn-outline-success btn-pill">
+                  View All History
+                </a>
+              </div>
+
+              {% if not all_transactions %}
+                <div class="text-center py-4 text-muted small">No deposits recorded yet.</div>
+              {% else %}
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Resident</th>
+                        <th>Material</th>
+                        <th>Qty</th>
+                        <th class="text-end">Points Awarded</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for t in all_transactions[:6] %}
+                        {% set mat = t.material_name|lower %}
+                        <tr>
+                          <td>
+                            <div class="fw-semibold text-dark">{{ t.resident_name }}</div>
+                            <div class="text-muted small font-monospace">{{ t.created_at }}</div>
+                          </td>
+                          <td>
+                            <div class="d-flex align-items-center gap-2">
+                              {% if 'bottle' in mat or 'plastic' in mat %}
+                                <span class="eco-icon-tile tile-blue" style="width: 28px; height: 28px;">
+                                  <i class="bi bi-cup-straw"></i>
+                                </span>
+                              {% elif 'can' in mat %}
+                                <span class="eco-icon-tile tile-orange" style="width: 28px; height: 28px;">
+                                  <i class="bi bi-box2"></i>
+                                </span>
+                              {% else %}
+                                <span class="eco-icon-tile tile-purple" style="width: 28px; height: 28px;">
+                                  <i class="bi bi-file-earmark-text"></i>
+                                </span>
+                              {% endif %}
+                              <span class="small fw-semibold">{{ t.material_name }}</span>
+                            </div>
+                          </td>
+                          <td class="text-muted small">{{ t.quantity }}</td>
+                          <td class="text-end fw-bold text-success">+{{ t.points_earned }} pts</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="col-lg-5">
+            <div class="card border-0 shadow-sm p-4 h-100 bg-white d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <div>
+                    <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Vouchers Waiting Release</h5>
+                    <div class="text-muted small">Residents ready to claim rewards</div>
+                  </div>
+                  <a href="{{ url_for('staff', tab='claims') }}" class="btn btn-sm btn-outline-success btn-pill">
+                    View All
+                  </a>
+                </div>
+
+                {% if not staff_stats.pending_claims_list %}
+                  <div class="text-center py-4 text-muted small">No pending reward claims. All items released!</div>
+                {% else %}
+                  <div class="d-flex flex-column gap-2 mb-3">
+                    {% for rd in staff_stats.pending_claims_list[:3] %}
+                      <div class="p-3 rounded-3 border bg-light d-flex align-items-center justify-content-between gap-3">
+                        <div class="flex-grow-1" style="min-width: 0;">
+                          <div class="fw-semibold text-dark">{{ rd.resident_name|default('Resident') }}</div>
+                          <div class="small text-muted text-truncate" title="{{ rd.reward_title }}">{{ rd.reward_title }} &bull; <strong class="text-success">{{ "{:,}".format(rd.points_spent) }} pts</strong></div>
+                          <span class="badge bg-white text-dark border font-monospace small mt-1">{{ rd.redemption_code }}</span>
+                        </div>
+                        <form action="{{ url_for('staff', tab='claims') }}" method="POST" class="flex-shrink-0 m-0">
+                          <input type="hidden" name="staff_action" value="release_reward">
+                          <input type="hidden" name="redemption_id" value="{{ rd.id }}">
+                          <button type="submit" class="btn btn-sm btn-success btn-pill d-inline-flex align-items-center justify-content-center text-nowrap" style="width: 104px; height: 38px;">
+                            <i class="bi bi-box-seam me-1"></i>
+                            <span>Release</span>
+                          </button>
+                        </form>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="p-3 rounded-4 mt-3" style="background: rgba(8, 60, 33, 0.05); border: 1px dashed rgba(8, 60, 33, 0.2);">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="eco-brand-badge" style="width: 36px; height: 36px;">
+                      <i class="bi bi-qr-code-scan"></i>
+                    </span>
+                    <div>
+                      <div class="fw-bold small text-dark">Quick QR Collection</div>
+                      <div class="text-muted" style="font-size: 0.75rem;">Scan or enter resident code to award points</div>
+                    </div>
+                  </div>
+                  <a href="{{ url_for('staff', tab='unit') }}" class="btn btn-sm btn-forest btn-pill px-3">
+                    Open Unit
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card border-0 shadow-sm p-4 bg-white">
+          <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+              <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Barangay Residents Quick Directory</h5>
+              <div class="text-muted small">Registered community members in Poblacion</div>
+            </div>
+            <a href="{{ url_for('staff', tab='residents') }}" class="btn btn-sm btn-outline-success btn-pill">
+              View All Residents
+            </a>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Resident</th>
+                  <th>Email</th>
+                  <th>QR Code</th>
+                  <th>Points Balance</th>
+                  <th class="text-end">Station Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for res in residents_list[:5] %}
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="eco-icon-tile tile-blue" style="width: 32px; height: 32px;">
+                          <i class="bi bi-person-fill"></i>
+                        </span>
+                        <div class="fw-semibold text-dark">{{ res.full_name }}</div>
+                      </div>
+                    </td>
+                    <td class="text-muted small">{{ res.email }}</td>
+                    <td>
+                      <span class="badge bg-light text-dark border font-monospace small px-2 py-1">{{ res.qr_code }}</span>
+                    </td>
+                    <td class="fw-bold text-success">{{ "{:,}".format(res.points) }} pts</td>
+                    <td class="text-end">
+                      <a href="{{ url_for('staff', tab='unit', qr=res.qr_code) }}" class="btn btn-sm btn-outline-success btn-pill px-3">
+                        <i class="bi bi-plus-circle me-1"></i>New Deposit
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      {% elif tab == 'unit' %}
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <div>
+            <h3 class="fw-bold mb-1">EcoCoins Smart Collection Unit</h3>
+            <p class="text-muted mb-0">Scan resident QR code, enter recyclables, review, and confirm points awarding.</p>
+          </div>
+          <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+            <i class="bi bi-shield-check me-1"></i>Staff Verification Active
+          </span>
+        </div>
+
+        {% if receipt %}
+          <div class="card border-0 shadow-sm p-4 mb-4 border-start border-4 border-success">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-success rounded-circle p-2">
+                  <i class="bi bi-check-lg fs-5 text-white"></i>
+                </span>
+                <div>
+                  <h5 class="fw-bold mb-0 text-success">Transaction Successfully Recorded!</h5>
+                  <span class="text-muted small">Points have been added to the resident's account balance.</span>
+                </div>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm" onclick="window.print();">
+                  <i class="bi bi-printer me-1"></i>Print Receipt
+                </button>
+                <a href="{{ url_for('staff', tab='unit') }}" class="btn btn-success btn-sm">
+                  <i class="bi bi-plus-circle me-1"></i>New Deposit
+                </a>
+              </div>
+            </div>
+
+            <div class="bg-light p-3 rounded-3 font-monospace small">
+              <div class="row g-2">
+                <div class="col-sm-6"><strong>Receipt No:</strong> {{ receipt.receipt_no }}</div>
+                <div class="col-sm-6"><strong>Date & Time:</strong> {{ receipt.created_at }}</div>
+                <div class="col-sm-6"><strong>Resident:</strong> {{ receipt.resident_name }} ({{ receipt.qr_code }})</div>
+                <div class="col-sm-6"><strong>Recorded By:</strong> {{ current_user.full_name }} (Staff)</div>
+                <div class="col-sm-6"><strong>Material:</strong> {{ receipt.material_name }}</div>
+                <div class="col-sm-6"><strong>Quantity:</strong> {{ receipt.quantity }} {{ receipt.unit }}</div>
+                <div class="col-sm-6 text-success fw-bold"><strong>Points Awarded:</strong> +{{ receipt.points_earned }} EcoPoints</div>
+                <div class="col-sm-6 text-success fw-bold"><strong>New Total Balance:</strong> {{ "{:,}".format(receipt.new_total_points) }} EcoPoints</div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="row g-4">
+          <div class="col-lg-5">
+            <div class="card border-0 shadow-sm p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">1. Resident QR Scan</h5>
+                <span class="badge bg-light text-dark border">Step 1</span>
+              </div>
+
+              <div class="mb-3">
+                <button type="button" class="btn btn-outline-success w-100 py-2 d-flex align-items-center justify-content-center gap-2 mb-2" id="startScannerBtn">
+                  <i class="bi bi-camera"></i>
+                  <span>Scan QR with Camera</span>
+                </button>
+                <div id="qrReader" class="rounded-3 border overflow-hidden mb-3" style="display: none;"></div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label small fw-semibold text-muted">Or Select Resident</label>
+                <select id="residentSelect" class="form-select">
+                  <option value="">-- Choose Resident --</option>
+                  {% for r in residents_list %}
+                    <option value="{{ r.qr_code }}" data-name="{{ r.full_name }}" data-email="{{ r.email }}" data-points="{{ r.points }}">
+                      {{ r.full_name }} · {{ r.qr_code }} ({{ "{:,}".format(r.points) }} pts)
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label small fw-semibold text-muted">Or Type QR Code Number</label>
+                <div class="input-group">
+                  <input type="text" id="manualQrInput" class="form-control font-monospace" placeholder="e.g. ECO-RES-88219" value="{{ prefill_qr|default('') }}">
+                  <button type="button" id="lookupQrBtn" class="btn btn-success">Lookup</button>
+                </div>
+              </div>
+
+              <div id="residentInfoCard" class="bg-success-subtle p-3 rounded-3 border border-success-subtle mt-2" style="display: none;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <h6 class="fw-bold mb-0 text-success" id="infoName">-</h6>
+                    <span class="text-muted small font-monospace" id="infoQr">-</span>
+                  </div>
+                  <span class="badge bg-success text-white py-1 px-2" id="infoPointsBadge">0 pts</span>
+                </div>
+                <div class="small text-muted mb-1"><i class="bi bi-envelope me-1"></i><span id="infoEmail">-</span></div>
+                <div class="small text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>Verified Resident of Barangay Poblacion</div>
+              </div>
+
+              <div id="residentNotFound" class="alert alert-warning py-2 small mt-2" style="display: none;">
+                <i class="bi bi-exclamation-triangle me-1"></i>QR Code not found in resident records.
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-7">
+            <div class="card border-0 shadow-sm p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">2. Record Recyclables</h5>
+                <span class="badge bg-light text-dark border">Step 2</span>
+              </div>
+
+              <form id="depositForm" action="{{ url_for('staff', tab='unit') }}" method="POST">
+                <input type="hidden" name="staff_action" value="record_deposit">
+                <input type="hidden" name="qr_code" id="formQrCode" value="{{ prefill_qr|default('') }}" required>
+
+                <div class="mb-3">
+                  <label class="form-label small fw-semibold">Selected Resident</label>
+                  <input type="text" id="displayResident" class="form-control bg-light" placeholder="Scan or select resident QR above" readonly required>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label small fw-semibold">Type of Recyclable Material</label>
+                  <select name="material_id" id="materialSelect" class="form-select" required>
+                    {% for m in all_materials %}
+                      <option value="{{ m.id }}" data-rate="{{ m.points_per_unit }}" data-name="{{ m.name }}" data-unit="{{ m.unit }}">
+                        {{ m.name }} (+{{ m.points_per_unit }} pts / {{ m.unit }})
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div class="mb-4">
+                  <label class="form-label small fw-semibold">Quantity Submitted</label>
+                  <div class="input-group">
+                    <button type="button" class="btn btn-outline-secondary" onclick="adjustQty(-1);">-</button>
+                    <input type="number" name="quantity" id="quantityInput" class="form-control text-center fw-bold fs-5" value="1" min="1" max="1000" required>
+                    <button type="button" class="btn btn-outline-secondary" onclick="adjustQty(1);">+</button>
+                    <span class="input-group-text bg-light text-muted" id="unitLabel">piece</span>
+                  </div>
+                </div>
+
+                <div class="card bg-light border-0 p-3 mb-4">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted small">Calculated EcoPoints to Award:</span>
+                    <span class="fs-4 fw-bold text-success" id="pointsAwardedPreview">+5 EcoPoints</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center small text-muted">
+                    <span>Projected New Balance:</span>
+                    <span class="fw-bold text-dark" id="projectedBalancePreview">-</span>
+                  </div>
+                </div>
+
+                <button type="button" id="reviewBtn" class="btn btn-success w-100 py-3 fw-bold fs-6 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                  <i class="bi bi-shield-check"></i>
+                  <span>Review & Confirm Transaction</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      {% elif tab == 'history' %}
+        <div class="mb-3">
+          <h3 class="fw-bold mb-1">Recycling Deposit History</h3>
+          <p class="text-muted mb-0">Complete audit log of recyclables recorded at this station.</p>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="input-group input-group-sm" style="max-width: 320px;">
+            <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search deposit history..." data-target="#staffHistoryTable">
+          </div>
+          <span class="badge bg-light text-dark border px-3 py-2">Total Deposits: {{ all_transactions|length }}</span>
+        </div>
+
+        <div class="card border-0 shadow-sm p-4">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="staffHistoryTable" data-paginate="true" data-page-size="15">
+              <thead class="table-light">
+                <tr>
+                  <th>Receipt #</th>
+                  <th>Date & Time</th>
+                  <th>Resident</th>
+                  <th>Material</th>
+                  <th>Quantity</th>
+                  <th class="text-end">Points Awarded</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for t in all_transactions %}
+                  <tr class="table-row-item">
+                    <td class="font-monospace text-muted small">{{ t.receipt_no }}</td>
+                    <td class="text-muted small">{{ t.created_at }}</td>
+                    <td class="fw-semibold">{{ t.resident_name }}</td>
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        {% set mat = t.material_name|lower %}
+                        {% if 'bottle' in mat or 'plastic' in mat %}
+                          <span class="eco-icon-tile tile-blue" style="width: 26px; height: 26px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M10 2h4v3h-4z"/>
+                              <path d="M8 5h8v2a4 4 0 0 1 4 4v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9a4 4 0 0 1 4-4V5z"/>
+                            </svg>
+                          </span>
+                        {% elif 'can' in mat %}
+                          <span class="eco-icon-tile tile-orange" style="width: 26px; height: 26px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <rect x="5" y="4" width="14" height="16" rx="3"/>
+                              <ellipse cx="12" ry="2" rx="5" cy="7"/>
+                            </svg>
+                          </span>
+                        {% else %}
+                          <span class="eco-icon-tile tile-purple" style="width: 26px; height: 26px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            </svg>
+                          </span>
+                        {% endif %}
+                        <span>{{ t.material_name }}</span>
+                      </div>
+                    </td>
+                    <td>{{ t.quantity }}</td>
+                    <td class="text-end fw-bold text-success">+{{ t.points_earned }} pts</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if all_transactions %}
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top pagination-container" data-target="#staffHistoryTable">
+              <div class="text-muted small pagination-info">
+                Showing 1 to {{ 15 if all_transactions|length > 15 else all_transactions|length }} of {{ all_transactions|length }} entries
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-prev" disabled>
+                  <i class="bi bi-arrow-left me-1"></i> Prev
+                </button>
+                <span class="small fw-semibold text-muted px-2 pagination-page-indicator">Page 1 of 1</span>
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-next" {% if all_transactions|length <= 15 %}disabled{% endif %}>
+                  Next <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+      {% elif tab == 'claims' %}
+        <div class="mb-3">
+          <h3 class="fw-bold mb-1">Verify & Release Rewards</h3>
+          <p class="text-muted mb-0">Verify resident claim voucher codes and release physical items.</p>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="input-group input-group-sm" style="max-width: 320px;">
+            <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search vouchers or residents..." data-target="#staffClaimsTable">
+          </div>
+          <span class="badge bg-light text-dark border px-3 py-2">Total Claims: {{ all_redemptions|length }}</span>
+        </div>
+
+        <div class="card border-0 shadow-sm p-4">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="staffClaimsTable" data-paginate="true" data-page-size="15">
+              <thead class="table-light">
+                <tr>
+                  <th>Voucher Code</th>
+                  <th>Resident</th>
+                  <th>Reward Item</th>
+                  <th>Points Spent</th>
+                  <th>Claim Date</th>
+                  <th>Status</th>
+                  <th class="text-end">Staff Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for rd in all_redemptions %}
+                  <tr class="table-row-item">
+                    <td><span class="font-monospace fw-bold bg-light px-2 py-1 rounded border">{{ rd.redemption_code }}</span></td>
+                    <td class="fw-semibold">{{ rd.resident_name|default('Resident') }}</td>
+                    <td>{{ rd.reward_title }}</td>
+                    <td class="text-success fw-bold">{{ "{:,}".format(rd.points_spent) }} pts</td>
+                    <td class="text-muted small">{{ rd.created_at }}</td>
+                    <td>
+                      {% if rd.status == 'released' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Released</span>
+                      {% else %}
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Ready for Handover</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-end">
+                      {% if rd.status != 'released' %}
+                        <form action="{{ url_for('staff', tab='claims') }}" method="POST" class="d-inline">
+                          <input type="hidden" name="staff_action" value="release_reward">
+                          <input type="hidden" name="redemption_id" value="{{ rd.id }}">
+                          <button type="submit" class="btn btn-sm btn-success">
+                            <i class="bi bi-box-seam me-1"></i>Release Item
+                          </button>
+                        </form>
+                      {% else %}
+                        <span class="text-muted small"><i class="bi bi-check2-all text-success me-1"></i>Handed Over</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if all_redemptions %}
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top pagination-container" data-target="#staffClaimsTable">
+              <div class="text-muted small pagination-info">
+                Showing 1 to {{ 15 if all_redemptions|length > 15 else all_redemptions|length }} of {{ all_redemptions|length }} entries
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-prev" disabled>
+                  <i class="bi bi-arrow-left me-1"></i> Prev
+                </button>
+                <span class="small fw-semibold text-muted px-2 pagination-page-indicator">Page 1 of 1</span>
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-next" {% if all_redemptions|length <= 15 %}disabled{% endif %}>
+                  Next <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+      {% elif tab == 'residents' %}
+        <div class="mb-3">
+          <h3 class="fw-bold mb-1">Barangay Residents Directory</h3>
+          <p class="text-muted mb-0">Registered members in Barangay Poblacion eligible for EcoPoints.</p>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="input-group input-group-sm" style="max-width: 320px;">
+            <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search resident name or QR..." data-target="#staffResidentsTable">
+          </div>
+          <span class="badge bg-light text-dark border px-3 py-2">Total Residents: {{ all_residents|length }}</span>
+        </div>
+
+        <div class="card border-0 shadow-sm p-4">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="staffResidentsTable" data-paginate="true" data-page-size="15">
+              <thead class="table-light">
+                <tr>
+                  <th>ID</th>
+                  <th>Full Name</th>
+                  <th>Email</th>
+                  <th>QR Code</th>
+                  <th>Current Balance</th>
+                  <th class="text-end">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for res in residents_list %}
+                  <tr class="table-row-item">
+                    <td class="text-muted small">#{{ res.id }}</td>
+                    <td class="fw-semibold">{{ res.full_name }}</td>
+                    <td class="text-muted small">{{ res.email }}</td>
+                    <td><span class="font-monospace bg-light px-2 py-1 rounded small border">{{ res.qr_code }}</span></td>
+                    <td class="fw-bold text-success">{{ "{:,}".format(res.points) }} pts</td>
+                    <td class="text-end">
+                      <a href="{{ url_for('staff', tab='unit', qr=res.qr_code) }}" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-plus-circle me-1"></i>Deposit
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if residents_list %}
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top pagination-container" data-target="#staffResidentsTable">
+              <div class="text-muted small pagination-info">
+                Showing 1 to {{ 15 if residents_list|length > 15 else residents_list|length }} of {{ residents_list|length }} entries
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-prev" disabled>
+                  <i class="bi bi-arrow-left me-1"></i> Prev
+                </button>
+                <span class="small fw-semibold text-muted px-2 pagination-page-indicator">Page 1 of 1</span>
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-next" {% if residents_list|length <= 15 %}disabled{% endif %}>
+                  Next <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="confirmModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-dark">Confirm Recyclable Deposit</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body py-3">
+        <p class="text-muted small mb-3">Please review the details below before crediting EcoPoints to the resident.</p>
+        <div class="bg-light p-3 rounded-3 mb-3 small">
+          <div class="row g-2">
+            <div class="col-5 text-muted">Resident:</div>
+            <div class="col-7 fw-bold" id="modalResidentName">-</div>
+
+            <div class="col-5 text-muted">QR Code:</div>
+            <div class="col-7 font-monospace fw-semibold" id="modalQrCode">-</div>
+
+            <div class="col-5 text-muted">Material:</div>
+            <div class="col-7 fw-semibold" id="modalMaterial">-</div>
+
+            <div class="col-5 text-muted">Quantity:</div>
+            <div class="col-7 fw-semibold" id="modalQuantity">-</div>
+
+            <div class="col-5 text-muted">Points to Award:</div>
+            <div class="col-7 fw-bold text-success" id="modalPointsAwarded">-</div>
+
+            <div class="col-5 text-muted">New Balance:</div>
+            <div class="col-7 fw-bold text-success" id="modalNewBalance">-</div>
+          </div>
+        </div>
+        <div class="small text-muted">
+          <i class="bi bi-info-circle text-success me-1"></i>Staff signature: <strong>{{ current_user.full_name }}</strong>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel / Edit</button>
+        <button type="button" class="btn btn-success px-4 fw-semibold" id="confirmSubmitBtn">
+          <i class="bi bi-check2-circle me-1"></i>Confirm & Award Points
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+let currentResidentPoints = 0;
+let currentResidentName = '';
+let currentResidentQr = '';
+let html5QrScanner = null;
+
+function updateCalculation() {
+  const matSelect = document.getElementById('materialSelect');
+  if (!matSelect) return;
+  const opt = matSelect.options[matSelect.selectedIndex];
+  const rate = parseInt(opt.getAttribute('data-rate') || '1', 10);
+  const unit = opt.getAttribute('data-unit') || 'piece';
+  const qtyInput = document.getElementById('quantityInput');
+  const qty = Math.max(1, parseInt(qtyInput.value || '1', 10));
+
+  const awarded = rate * qty;
+  const newBal = currentResidentPoints + awarded;
+
+  document.getElementById('unitLabel').textContent = unit;
+  document.getElementById('pointsAwardedPreview').textContent = '+' + awarded.toLocaleString() + ' EcoPoints';
+  document.getElementById('projectedBalancePreview').textContent = newBal.toLocaleString() + ' EcoPoints';
+}
+
+function adjustQty(delta) {
+  const input = document.getElementById('quantityInput');
+  let val = parseInt(input.value || '1', 10) + delta;
+  if (val < 1) val = 1;
+  input.value = val;
+  updateCalculation();
+}
+
+function selectResident(name, qr, email, points) {
+  currentResidentName = name;
+  currentResidentQr = qr;
+  currentResidentPoints = parseInt(points || '0', 10);
+
+  document.getElementById('formQrCode').value = qr;
+  document.getElementById('displayResident').value = name + ' (' + qr + ')';
+  document.getElementById('manualQrInput').value = qr;
+
+  document.getElementById('infoName').textContent = name;
+  document.getElementById('infoQr').textContent = qr;
+  document.getElementById('infoEmail').textContent = email || 'resident@barangay.ph';
+  document.getElementById('infoPointsBadge').textContent = currentResidentPoints.toLocaleString() + ' pts';
+  document.getElementById('residentInfoCard').style.display = 'block';
+  document.getElementById('residentNotFound').style.display = 'none';
+
+  updateCalculation();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const matSelect = document.getElementById('materialSelect');
+  const qtyInput = document.getElementById('quantityInput');
+  if (matSelect) matSelect.addEventListener('change', updateCalculation);
+  if (qtyInput) qtyInput.addEventListener('input', updateCalculation);
+
+  const resSelect = document.getElementById('residentSelect');
+  if (resSelect) {
+    resSelect.addEventListener('change', function() {
+      const opt = this.options[this.selectedIndex];
+      if (opt.value) {
+        selectResident(
+          opt.getAttribute('data-name'),
+          opt.value,
+          opt.getAttribute('data-email'),
+          opt.getAttribute('data-points')
+        );
+      }
+    });
+  }
+
+  const lookupBtn = document.getElementById('lookupQrBtn');
+  if (lookupBtn) {
+    lookupBtn.addEventListener('click', function() {
+      const qr = document.getElementById('manualQrInput').value.trim();
+      if (!qr) return;
+      fetch('{{ url_for("api_resident_lookup") }}?qr=' + encodeURIComponent(qr))
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.resident) {
+            selectResident(data.resident.full_name, data.resident.qr_code, data.resident.email, data.resident.points);
+          } else {
+            document.getElementById('residentInfoCard').style.display = 'none';
+            document.getElementById('residentNotFound').style.display = 'block';
+          }
+        })
+        .catch(() => {
+          document.getElementById('residentInfoCard').style.display = 'none';
+          document.getElementById('residentNotFound').style.display = 'block';
+        });
+    });
+  }
+
+  const reviewBtn = document.getElementById('reviewBtn');
+  if (reviewBtn) {
+    reviewBtn.addEventListener('click', function() {
+      const qr = document.getElementById('formQrCode').value.trim();
+      if (!qr || !currentResidentName) {
+        alert('Please scan or select a resident first before proceeding.');
+        return;
+      }
+
+      const matSelect = document.getElementById('materialSelect');
+      const opt = matSelect.options[matSelect.selectedIndex];
+      const matName = opt.getAttribute('data-name');
+      const rate = parseInt(opt.getAttribute('data-rate') || '1', 10);
+      const unit = opt.getAttribute('data-unit') || 'piece';
+      const qty = parseInt(document.getElementById('quantityInput').value || '1', 10);
+      const awarded = rate * qty;
+      const newBal = currentResidentPoints + awarded;
+
+      document.getElementById('modalResidentName').textContent = currentResidentName;
+      document.getElementById('modalQrCode').textContent = currentResidentQr;
+      document.getElementById('modalMaterial').textContent = matName;
+      document.getElementById('modalQuantity').textContent = qty + ' ' + unit;
+      document.getElementById('modalPointsAwarded').textContent = '+' + awarded.toLocaleString() + ' EcoPoints';
+      document.getElementById('modalNewBalance').textContent = newBal.toLocaleString() + ' EcoPoints';
+
+      const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+      modal.show();
+    });
+  }
+
+  const confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
+  if (confirmSubmitBtn) {
+    confirmSubmitBtn.addEventListener('click', function() {
+      document.getElementById('depositForm').submit();
+    });
+  }
+
+  const scannerBtn = document.getElementById('startScannerBtn');
+  if (scannerBtn) {
+    scannerBtn.addEventListener('click', function() {
+      const readerDiv = document.getElementById('qrReader');
+      if (readerDiv.style.display === 'none') {
+        readerDiv.style.display = 'block';
+        if (!html5QrScanner) {
+          html5QrScanner = new Html5Qrcode("qrReader");
+        }
+        html5QrScanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 220, height: 220 } },
+          (decodedText) => {
+            html5QrScanner.stop().then(() => {
+              readerDiv.style.display = 'none';
+            });
+            document.getElementById('manualQrInput').value = decodedText;
+            document.getElementById('lookupQrBtn').click();
+          },
+          () => {}
+        ).catch(() => {
+          alert('Camera access unavailable. You can use manual QR entry or select resident from the list.');
+          readerDiv.style.display = 'none';
+        });
+      } else {
+        if (html5QrScanner) {
+          html5QrScanner.stop().then(() => {
+            readerDiv.style.display = 'none';
+          });
+        }
+      }
+    });
+  }
+
+  const initialQr = document.getElementById('formQrCode').value;
+  if (initialQr) {
+    document.getElementById('manualQrInput').value = initialQr;
+    document.getElementById('lookupQrBtn').click();
+  }
+});
+</script>
+</body>
+</html>

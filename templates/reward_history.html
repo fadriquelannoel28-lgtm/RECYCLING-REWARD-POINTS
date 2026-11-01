@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main class="py-4">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-3">
+        {% include 'sidebar.html' %}
+      </div>
+
+      <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <div>
+            <h2 class="fw-bold mb-1" style="color: var(--eco-forest);">My Reward Claiming History</h2>
+            <p class="text-muted mb-0">Track all your redeemed rewards, voucher codes, and claim statuses.</p>
+          </div>
+          <a href="{{ url_for('rewards') }}" class="btn btn-accent d-flex align-items-center gap-2 btn-pill">
+            <i class="bi bi-gift"></i>
+            <span>Browse Rewards</span>
+          </a>
+        </div>
+
+        <div class="card border-0 shadow-sm p-4 bg-white">
+          {% if not redemptions %}
+            <div class="text-center py-5">
+              <span class="eco-brand-badge fs-1 mb-3 d-inline-flex" style="width: 72px; height: 72px;">
+                <i class="bi bi-gift"></i>
+              </span>
+              <h5 class="fw-bold mb-2" style="color: var(--eco-forest);">No Reward Claims Yet</h5>
+              <p class="text-muted small mb-4" style="max-width: 420px; margin: 0 auto;">You have not redeemed any items or vouchers yet. Bring recyclables to the Barangay station to earn EcoPoints and claim exciting rewards!</p>
+              <a href="{{ url_for('rewards') }}" class="btn btn-accent px-4 btn-pill">Browse Rewards Catalog</a>
+            </div>
+          {% else %}
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+              <div class="d-flex flex-wrap gap-2 filter-container" data-target="#rewardClaimsTable">
+                <button type="button" class="btn btn-sm btn-success filter-btn active" data-filter="all">All Claims</button>
+                <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="ready">Ready for Handover</button>
+                <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="released">Released</button>
+              </div>
+              <div class="input-group input-group-sm" style="max-width: 280px;">
+                <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
+                  <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search reward or voucher..." data-target="#rewardClaimsTable">
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0" id="rewardClaimsTable" data-paginate="true" data-page-size="15">
+                <thead class="table-light">
+                  <tr>
+                    <th>Voucher Code</th>
+                    <th>Reward Item</th>
+                    <th>Points Spent</th>
+                    <th>Claim Date</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for rd in redemptions %}
+                    {% set cat = 'released' if rd.status == 'released' else 'ready' %}
+                    <tr class="table-row-item filter-item" data-category="{{ cat }}" data-search="{{ rd.redemption_code }} {{ rd.reward_title }} {{ rd.points_spent }} {{ rd.created_at }} {{ cat }}">
+                      <td>
+                        <span class="badge bg-light text-dark border font-monospace fs-6 px-2.5 py-1">
+                          {{ rd.redemption_code }}
+                        </span>
+                      </td>
+                      <td>
+                        <div class="d-flex align-items-center gap-2">
+                          <span class="eco-icon-tile tile-mint" style="width: 32px; height: 32px;">
+                            <i class="bi bi-gift-fill" style="font-size: 0.9rem;"></i>
+                          </span>
+                          <span class="fw-semibold text-dark">{{ rd.reward_title }}</span>
+                        </div>
+                      </td>
+                      <td class="text-success fw-bold">{{ "{:,}".format(rd.points_spent) }} pts</td>
+                      <td class="text-muted small">{{ rd.created_at }}</td>
+                      <td>
+                        {% if rd.status == 'released' %}
+                          <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">
+                            <i class="bi bi-check-circle me-1"></i>Released
+                          </span>
+                        {% else %}
+                          <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-2.5 py-1 rounded-pill">
+                            <i class="bi bi-hourglass-split me-1"></i>Ready for Handover
+                          </span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top pagination-container" data-target="#rewardClaimsTable">
+              <div class="text-muted small pagination-info">
+                Showing 1 to {{ 15 if redemptions|length > 15 else redemptions|length }} of {{ redemptions|length }} entries
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-prev" disabled>
+                  <i class="bi bi-arrow-left me-1"></i> Prev
+                </button>
+                <span class="small fw-semibold text-muted px-2 pagination-page-indicator">Page 1 of 1</span>
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-next" {% if redemptions|length <= 15 %}disabled{% endif %}>
+                  Next <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

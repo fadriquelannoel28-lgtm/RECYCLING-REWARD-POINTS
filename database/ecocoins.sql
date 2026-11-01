@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `full_name` varchar(120) NOT NULL,
   `email` varchar(120) NOT NULL UNIQUE,
   `password` varchar(255) NOT NULL,
-  `role` enum('resident','admin') DEFAULT 'resident',
+  `role` enum('resident','staff','admin') DEFAULT 'resident',
   `qr_code` varchar(64) NOT NULL UNIQUE,
   `points` int(11) DEFAULT 0,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
@@ -64,11 +64,42 @@ CREATE TABLE IF NOT EXISTS `redemptions` (
 
 INSERT INTO `users` (`id`, `full_name`, `email`, `password`, `role`, `qr_code`, `points`, `created_at`) VALUES
 (1, 'Admin Officer', 'admin@ecocoins.ph', '$2y$10$wT8K48m1lYpYI2/iB9K1z.v1N0iN9B6t5K8GfV4P8B5K8GfV4P8B5', 'admin', 'ECO-ADM-0001', 0, '2026-10-01 08:00:00'),
-(2, 'User', 'user@example.com', '$2y$10$wT8K48m1lYpYI2/iB9K1z.v1N0iN9B6t5K8GfV4P8B5K8GfV4P8B5', 'resident', 'ECO-RES-88219', 1250, '2026-10-10 09:30:00'),
+(2, 'Barangay Staff', 'staff@ecocoins.ph', '$2y$10$wT8K48m1lYpYI2/iB9K1z.v1N0iN9B6t5K8GfV4P8B5K8GfV4P8B5', 'staff', 'ECO-STF-0001', 0, '2026-10-02 08:00:00'),
+(3, 'User', 'user@example.com', '$2y$10$wT8K48m1lYpYI2/iB9K1z.v1N0iN9B6t5K8GfV4P8B5K8GfV4P8B5', 'resident', 'ECO-RES-88219', 1250, '2026-10-10 09:30:00'),
 (3, 'Annie Flores', 'annie@example.com', '$2y$10$wT8K48m1lYpYI2/iB9K1z.v1N0iN9B6t5K8GfV4P8B5K8GfV4P8B5', 'resident', 'ECO-RES-10492', 840, '2026-10-12 11:20:00'),
 (4, 'Theresa Ramos', 'theresa@example.com', '$2y$10$wT8K48m1lYpYI2/iB9K1z.v1N0iN9B6t5K8GfV4P8B5K8GfV4P8B5', 'resident', 'ECO-RES-29381', 960, '2026-10-14 14:15:00'),
 (5, 'Cathrine Santos', 'cathrine@example.com', '$2y$10$wT8K48m1lYpYI2/iB9K1z.v1N0iN9B6t5K8GfV4P8B5K8GfV4P8B5', 'resident', 'ECO-RES-50123', 1100, '2026-10-15 16:40:00'),
-(6, 'Noel Batumbakal', 'noel@example.com', '$2y$10$wT8K48m1lYpYI2/iB9K1z.v1N0iN9B6t5K8GfV4P8B5K8GfV4P8B5', 'resident', 'ECO-RES-77401', 620, '2026-10-16 10:10:00');
+(6, 'Noel Batumbakal', 'noel@example.com', '$2y$10$wT8K48m1lYpYI2/iB9K1z.v1N0iN9B6t5K8GfV4P8B5K8GfV4P8B5', 'resident', 'ECO-RES-77401', 620, '2026-10-16 10:10:00'),
+(7, 'Juan Dela Cruz', 'juan.delacruz@example.com', 'user123', 'resident', 'ECO-RES-30101', 350, '2026-10-15 08:30:00'),
+(8, 'Maria Clara De los Santos', 'maria.delossantos@example.com', 'user123', 'resident', 'ECO-RES-30102', 720, '2026-10-15 09:15:00'),
+(9, 'Jose Rizalino Mercado', 'jose.mercado@example.com', 'user123', 'resident', 'ECO-RES-30103', 540, '2026-10-16 10:00:00'),
+(10, 'Angela Mae Garcia', 'angela.garcia@example.com', 'user123', 'resident', 'ECO-RES-30104', 280, '2026-10-16 11:20:00'),
+(11, 'Gabriel Paolo Mendoza', 'gabriel.mendoza@example.com', 'user123', 'resident', 'ECO-RES-30105', 890, '2026-10-17 08:45:00'),
+(12, 'Beatrice Nicole Reyes', 'beatrice.reyes@example.com', 'user123', 'resident', 'ECO-RES-30106', 410, '2026-10-17 13:10:00'),
+(13, 'Christian Dave Bautista', 'christian.bautista@example.com', 'user123', 'resident', 'ECO-RES-30107', 630, '2026-10-18 09:05:00'),
+(14, 'Danica Joy Fernandez', 'danica.fernandez@example.com', 'user123', 'resident', 'ECO-RES-30108', 150, '2026-10-18 14:30:00'),
+(15, 'Emmanuel Luis Cruz', 'emmanuel.cruz@example.com', 'user123', 'resident', 'ECO-RES-30109', 980, '2026-10-19 10:15:00'),
+(16, 'Frances Diana Villanueva', 'frances.villanueva@example.com', 'user123', 'resident', 'ECO-RES-30110', 320, '2026-10-19 15:40:00'),
+(17, 'Gerald Ryan Ramos', 'gerald.ramos@example.com', 'user123', 'resident', 'ECO-RES-30111', 470, '2026-10-20 08:25:00'),
+(18, 'Hannah Patricia Castro', 'hannah.castro@example.com', 'user123', 'resident', 'ECO-RES-30112', 810, '2026-10-20 11:50:00'),
+(19, 'Ian Joseph Aquino', 'ian.aquino@example.com', 'user123', 'resident', 'ECO-RES-30113', 220, '2026-10-21 09:40:00'),
+(20, 'Jasmine Rose Salazar', 'jasmine.salazar@example.com', 'user123', 'resident', 'ECO-RES-30114', 590, '2026-10-21 14:15:00'),
+(21, 'Kevin Mark Navarro', 'kevin.navarro@example.com', 'user123', 'resident', 'ECO-RES-30115', 660, '2026-10-22 10:30:00'),
+(22, 'Kimberly Ann Morales', 'kimberly.morales@example.com', 'user123', 'resident', 'ECO-RES-30116', 390, '2026-10-22 16:05:00'),
+(23, 'Lorenzo Miguel Soriano', 'lorenzo.soriano@example.com', 'user123', 'resident', 'ECO-RES-30117', 740, '2026-10-23 08:50:00'),
+(24, 'Maricar Lopez Pascual', 'maricar.pascual@example.com', 'user123', 'resident', 'ECO-RES-30118', 510, '2026-10-23 13:35:00'),
+(25, 'Nathaniel David Tolentino', 'nathaniel.tolentino@example.com', 'user123', 'resident', 'ECO-RES-30119', 180, '2026-10-24 09:10:00'),
+(26, 'Olivia Grace Domingo', 'olivia.domingo@example.com', 'user123', 'resident', 'ECO-RES-30120', 850, '2026-10-24 15:20:00'),
+(27, 'Patrick James Cortez', 'patrick.cortez@example.com', 'user123', 'resident', 'ECO-RES-30121', 430, '2026-10-25 10:45:00'),
+(28, 'Queenie May Alcantara', 'queenie.alcantara@example.com', 'user123', 'resident', 'ECO-RES-30122', 670, '2026-10-25 14:00:00'),
+(29, 'Rafael Vincent Valdez', 'rafael.valdez@example.com', 'user123', 'resident', 'ECO-RES-30123', 290, '2026-10-26 08:15:00'),
+(30, 'Stephanie Joy Manalo', 'stephanie.manalo@example.com', 'user123', 'resident', 'ECO-RES-30124', 920, '2026-10-26 11:30:00'),
+(31, 'Tristan Angelo Miranda', 'tristan.miranda@example.com', 'user123', 'resident', 'ECO-RES-30125', 360, '2026-10-27 09:25:00'),
+(32, 'Vanessa Marie Pineda', 'vanessa.pineda@example.com', 'user123', 'resident', 'ECO-RES-30126', 580, '2026-10-27 15:10:00'),
+(33, 'William Alexander De Leon', 'william.deleon@example.com', 'user123', 'resident', 'ECO-RES-30127', 770, '2026-10-28 10:05:00'),
+(34, 'Xyriel Faye Guinto', 'xyriel.guinto@example.com', 'user123', 'resident', 'ECO-RES-30128', 240, '2026-10-28 14:40:00'),
+(35, 'Yuri Sebastian Ocampo', 'yuri.ocampo@example.com', 'user123', 'resident', 'ECO-RES-30129', 610, '2026-10-29 08:40:00'),
+(36, 'Zoe Isabelle Roxas', 'zoe.roxas@example.com', 'user123', 'resident', 'ECO-RES-30130', 880, '2026-10-29 13:15:00');
 
 INSERT INTO `materials` (`id`, `name`, `category`, `points_per_unit`, `unit`, `icon`, `status`) VALUES
 (1, 'Plastic Bottle', 'Plastic', 5, 'piece', 'bottle', 'active'),
@@ -88,12 +119,14 @@ INSERT INTO `transactions` (`id`, `user_id`, `material_id`, `material_name`, `qu
 (9, 6, 2, 'Can', 1, 8, 'REC-20261022-09', '2026-10-22 09:30:00');
 
 INSERT INTO `rewards` (`id`, `title`, `category`, `points_required`, `stock`, `partner_name`, `icon`, `status`) VALUES
-(1, '10% Off at SM Lipa', 'Discounts', 500, 50, 'SM City Lipa', 'tag', 'available'),
-(2, 'Eco Tote Bag', 'Merchandise', 1000, 30, 'Barangay Green Store', 'bag', 'available'),
-(3, 'Discount Voucher (₱50) · Robinsons Lipa', 'Discounts', 1800, 40, 'Robinsons Place Lipa', 'ticket', 'available'),
-(4, 'Free Drink · The Coffee Project', 'Partners', 750, 25, 'The Coffee Project Lipa', 'coffee', 'available'),
-(5, 'EcoCoins Keychain', 'Merchandise', 300, 80, 'Barangay Green Store', 'key', 'available'),
-(6, 'Movie Pass (1 Ticket) · SM Cinema Lipa', 'Partners', 1500, 20, 'SM Cinema Lipa', 'film', 'available');
+(1, '1kg Sinandomeng Rice (Bigas)', 'Food Staples', 300, 80, 'Barangay Food Bank', 'bag', 'available'),
+(2, '5kg Dinorado Rice (Bigas)', 'Food Staples', 1400, 40, 'Barangay Food Bank', 'bag', 'available'),
+(3, 'Delata Pack (2 Sardinas + 1 Corned Beef)', 'Canned Goods', 250, 75, 'Barangay Relief Hub', 'cup', 'available'),
+(4, 'EcoCoins Heavy-Duty Payong (Umbrella)', 'Merchandise', 450, 50, 'Barangay Green Store', 'tag', 'available'),
+(5, 'Eco Tote Bag (Reusable)', 'Merchandise', 200, 100, 'Barangay Green Store', 'bag', 'available'),
+(6, 'Noodles & Coffee Bundle (3 Noodles + 3 Coffee)', 'Food Staples', 180, 90, 'Barangay Food Bank', 'coffee', 'available'),
+(7, 'Family Hygiene Kit (Bath Soap, Detergent, Toothpaste)', 'Household', 350, 60, 'Barangay Health Center', 'tag', 'available'),
+(8, 'Stainless Water Tumbler (500ml)', 'Merchandise', 500, 45, 'Barangay Green Store', 'bottle', 'available');
 
 INSERT INTO `redemptions` (`id`, `user_id`, `reward_id`, `reward_title`, `points_spent`, `redemption_code`, `status`, `created_at`) VALUES
 (1, 2, 5, 'EcoCoins Keychain', 300, 'RDM-88219-01', 'claimed', '2026-10-15 14:00:00');

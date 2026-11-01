@@ -10,6 +10,99 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .crud-dropdown-btn {
+      border: 1.5px solid #2e7d32;
+      background: #ffffff;
+      color: #1b5e20;
+      border-radius: 9999px;
+      padding: 4px 14px;
+      font-size: 0.95rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease-in-out;
+    }
+    .crud-dropdown-btn:hover, .crud-dropdown-btn:focus, .crud-dropdown-btn[aria-expanded="true"] {
+      background: #e8f5e9;
+      border-color: #1b5e20;
+      color: #0d462b;
+      box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.18);
+    }
+    .crud-dropdown-btn::after {
+      display: none !important;
+    }
+    .crud-dropdown-menu {
+      min-width: 220px;
+      border-radius: 18px !important;
+      padding: 8px !important;
+      background: #ffffff !important;
+      border: 1px solid #eef2f6 !important;
+      box-shadow: 0 14px 35px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06) !important;
+      z-index: 1060 !important;
+    }
+    .crud-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      width: 100%;
+      background: transparent;
+      border: none;
+      text-align: left;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: #334155;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background-color 0.12s ease;
+    }
+    .crud-menu-item:hover {
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .crud-icon-box {
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      border-radius: 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid;
+      font-size: 0.95rem;
+    }
+    .crud-icon-box.blue {
+      border-color: #38bdf8;
+      background: #f0f9ff;
+      color: #0284c7;
+    }
+    .crud-icon-box.orange {
+      border-color: #fb923c;
+      background: #fff7ed;
+      color: #ea580c;
+    }
+    .crud-icon-box.dark {
+      border-color: #cbd5e1;
+      background: #f8fafc;
+      color: #475569;
+    }
+    .crud-icon-box.green {
+      border-color: #86efac;
+      background: #f0fdf4;
+      color: #16a34a;
+    }
+    .crud-icon-box.red {
+      border-color: #fca5a5;
+      background: #fef2f2;
+      color: #dc2626;
+    }
+    .table-responsive {
+      overflow: visible !important;
+    }
+  </style>
 </head>
 <body class="bg-light">
 
@@ -40,29 +133,43 @@
             <span>Residents</span>
           </a>
 
-          <a href="{{ url_for('admin', tab='monitoring') }}" class="admin-link {% if tab == 'monitoring' %}active{% endif %}">
-            <i class="bi bi-clock-history"></i>
-            <span>Recycling Logs</span>
+          <a href="{{ url_for('admin', tab='staff') }}" class="admin-link {% if tab == 'staff' %}active{% endif %}">
+            <i class="bi bi-person-badge"></i>
+            <span>Staff Accounts</span>
           </a>
 
           <a href="{{ url_for('admin', tab='materials') }}" class="admin-link {% if tab == 'materials' %}active{% endif %}">
             <i class="bi bi-boxes"></i>
-            <span>Materials</span>
+            <span>Materials & Values</span>
           </a>
 
           <a href="{{ url_for('admin', tab='rewards') }}" class="admin-link {% if tab == 'rewards' %}active{% endif %}">
             <i class="bi bi-gift"></i>
-            <span>Rewards</span>
+            <span>Rewards Catalog</span>
+          </a>
+
+          <a href="{{ url_for('admin', tab='monitoring') }}" class="admin-link {% if tab == 'monitoring' %}active{% endif %}">
+            <i class="bi bi-clock-history"></i>
+            <span>Recycling Logs</span>
           </a>
 
           <a href="{{ url_for('admin', tab='reports') }}" class="admin-link {% if tab == 'reports' %}active{% endif %}">
             <i class="bi bi-file-earmark-bar-graph"></i>
             <span>Reports</span>
           </a>
+
+          <a href="{{ url_for('account') }}" class="admin-link">
+            <i class="bi bi-person-gear"></i>
+            <span>Account Settings</span>
+          </a>
         </nav>
       </div>
 
       <div class="pt-3 border-top border-success-subtle">
+        <a href="{{ url_for('staff') }}" class="admin-link text-warning-emphasis mb-2">
+          <i class="bi bi-qr-code-scan"></i>
+          <span>Staff Collection Hub</span>
+        </a>
         <a href="{{ url_for('index') }}" class="admin-link text-white-50">
           <i class="bi bi-house"></i>
           <span>Public Site</span>
@@ -76,16 +183,26 @@
 
     <div class="col-lg-9 col-xl-10 p-4 p-lg-5">
       {% if feedback %}
-        <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
+        <div class="alert alert-{{ feedback_type|default('success') }} alert-dismissible fade show rounded-3 mb-4" role="alert">
           {{ feedback }}
           <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
       {% endif %}
 
       {% if tab == 'dashboard' %}
-        <div class="mb-4">
-          <h3 class="fw-bold mb-1">Barangay Admin Dashboard</h3>
-          <p class="text-muted">Overview of recycling activities and participation.</p>
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <div>
+            <h3 class="fw-bold mb-1">Barangay Admin Dashboard</h3>
+            <p class="text-muted mb-0">City and Barangay administration overview for EcoCoins recycling network.</p>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('staff') }}" class="btn btn-outline-success">
+              <i class="bi bi-qr-code-scan me-1"></i>Open Staff Collection Hub
+            </a>
+            <a href="{{ url_for('admin', tab='reports') }}" class="btn btn-success">
+              <i class="bi bi-file-earmark-bar-graph me-1"></i>View Reports
+            </a>
+          </div>
         </div>
 
         <div class="row g-3 mb-4">
@@ -122,75 +239,84 @@
           </div>
         </div>
 
-        <div class="card border-0 shadow-sm p-4">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold mb-0">Recent Transactions</h5>
-            <a href="{{ url_for('admin', tab='monitoring') }}" class="btn btn-sm btn-outline-success">View All</a>
+        <div class="row g-4">
+          <div class="col-lg-8">
+            <div class="card border-0 shadow-sm p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Recent Recycling Activities</h5>
+                <a href="{{ url_for('admin', tab='monitoring') }}" class="btn btn-sm btn-outline-success">View All</a>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Receipt #</th>
+                      <th>Date & Time</th>
+                      <th>Resident</th>
+                      <th>Material</th>
+                      <th>Quantity</th>
+                      <th class="text-end">Points Earned</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for t in stats.recent_transactions %}
+                      <tr>
+                        <td class="font-monospace text-muted small">{{ t.receipt_no }}</td>
+                        <td class="text-muted small">{{ t.created_at }}</td>
+                        <td class="fw-semibold">{{ t.resident_name }}</td>
+                        <td>{{ t.material_name }}</td>
+                        <td>{{ t.quantity }}</td>
+                        <td class="text-end fw-bold text-success">+{{ t.points_earned }} pts</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
-          <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>Resident</th>
-                  <th>Material</th>
-                  <th>Quantity</th>
-                  <th>Time</th>
-                  <th class="text-end">Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for tx in stats.recent_transactions %}
-                  <tr>
-                    <td class="fw-semibold">{{ tx.resident_name }}</td>
-                    <td>
-                      <div class="d-flex align-items-center gap-2">
-                        {% set m = tx.material_name|lower %}
-                        {% if 'bottle' in m or 'plastic' in m %}
-                          <span class="eco-icon-tile tile-blue" style="width: 26px; height: 26px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <path d="M10 2h4v3h-4z"/>
-                              <path d="M8 5h8v2a4 4 0 0 1 4 4v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9a4 4 0 0 1 4-4V5z"/>
-                            </svg>
-                          </span>
-                        {% elif 'can' in m %}
-                          <span class="eco-icon-tile tile-orange" style="width: 26px; height: 26px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <rect x="5" y="4" width="14" height="16" rx="3"/>
-                              <ellipse cx="12" cy="7" rx="5" ry="2"/>
-                            </svg>
-                          </span>
-                        {% else %}
-                          <span class="eco-icon-tile tile-purple" style="width: 26px; height: 26px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            </svg>
-                          </span>
-                        {% endif %}
-                        <span>{{ tx.material_name }}</span>
-                      </div>
-                    </td>
-                    <td>{{ tx.quantity }}</td>
-                    <td class="text-muted small">{{ tx.created_at }}</td>
-                    <td class="text-end fw-bold text-success">+{{ tx.points_earned }}</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+          <div class="col-lg-4">
+            <div class="card border-0 shadow-sm p-4 h-100">
+              <h5 class="fw-bold mb-3">Material Tonnage Breakdown</h5>
+              <div class="d-flex justify-content-between py-2 border-bottom">
+                <span class="text-muted">Plastic Bottles:</span>
+                <strong class="text-primary">{{ stats.material_counts['Plastic Bottles'] }} pcs</strong>
+              </div>
+              <div class="d-flex justify-content-between py-2 border-bottom">
+                <span class="text-muted">Aluminum Cans:</span>
+                <strong class="text-warning">{{ stats.material_counts['Cans'] }} pcs</strong>
+              </div>
+              <div class="d-flex justify-content-between py-2">
+                <span class="text-muted">Other Recyclables:</span>
+                <strong class="text-purple">{{ stats.material_counts['Others'] }} pcs/kg</strong>
+              </div>
+            </div>
           </div>
         </div>
 
       {% elif tab == 'residents' %}
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <div>
-            <h3 class="fw-bold mb-1">Resident Accounts</h3>
-            <p class="text-muted">Registered residents with their personal QR codes.</p>
+        <div class="mb-3">
+          <h3 class="fw-bold mb-1">Registered Residents Management</h3>
+          <p class="text-muted mb-0">Add new residents, edit details or points, and manage resident accounts.</p>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="input-group input-group-sm" style="max-width: 320px;">
+            <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search residents..." data-target="#adminResidentsTable">
           </div>
+          <button class="btn btn-success d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#addResidentModal">
+            <i class="bi bi-person-plus"></i>
+            <span>Add Resident</span>
+          </button>
         </div>
 
         <div class="card border-0 shadow-sm p-4">
           <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0" id="adminResidentsTable" data-paginate="true" data-page-size="20">
               <thead class="table-light">
                 <tr>
                   <th>ID</th>
@@ -198,40 +324,502 @@
                   <th>Email</th>
                   <th>QR Code</th>
                   <th>Points Balance</th>
-                  <th>Date Registered</th>
+                  <th>Status</th>
+                  <th>Registered Date</th>
+                  <th class="text-end">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {% for res in residents_list %}
-                  <tr>
+                  <tr class="table-row-item">
                     <td class="text-muted small">#{{ res.id }}</td>
                     <td class="fw-semibold">{{ res.full_name }}</td>
-                    <td class="text-muted">{{ res.email }}</td>
-                    <td><span class="badge bg-light text-dark border font-monospace">{{ res.qr_code }}</span></td>
+                    <td class="text-muted small">{{ res.email }}</td>
+                    <td><span class="font-monospace bg-light px-2 py-1 rounded small border">{{ res.qr_code }}</span></td>
                     <td class="fw-bold text-success">{{ "{:,}".format(res.points) }} pts</td>
+                    <td>
+                      {% if res.status == 'inactive' %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Inactive</span>
+                      {% else %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                      {% endif %}
+                    </td>
                     <td class="text-muted small">{{ res.created_at }}</td>
+                    <td class="text-end">
+                      <div class="dropdown">
+                        <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
+                          <i class="bi bi-three-dots"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end crud-dropdown-menu shadow">
+                          <li>
+                            <button type="button" class="crud-menu-item edit-resident-btn" data-id="{{ res.id }}" data-name="{{ res.full_name }}" data-email="{{ res.email }}" data-points="{{ res.points }}" data-bs-toggle="modal" data-bs-target="#editResidentModal">
+                              <span class="crud-icon-box blue"><i class="bi bi-pencil"></i></span>
+                              <span>Edit</span>
+                            </button>
+                          </li>
+                          <li>
+                            <button type="button" class="crud-menu-item reset-res-pw-btn" data-id="{{ res.id }}" data-name="{{ res.full_name }}" data-bs-toggle="modal" data-bs-target="#resetResPasswordModal">
+                              <span class="crud-icon-box orange"><i class="bi bi-key"></i></span>
+                              <span>Set Password</span>
+                            </button>
+                          </li>
+                          <li><hr class="dropdown-divider my-1"></li>
+                          <li>
+                            <form action="{{ url_for('admin', tab='residents') }}" method="POST">
+                              <input type="hidden" name="admin_action" value="toggle_resident_status">
+                              <input type="hidden" name="res_id" value="{{ res.id }}">
+                              <button type="submit" class="crud-menu-item">
+                                {% if res.status == 'inactive' %}
+                                  <span class="crud-icon-box green"><i class="bi bi-play-circle"></i></span>
+                                  <span>Activate</span>
+                                {% else %}
+                                  <span class="crud-icon-box dark"><i class="bi bi-pause-circle"></i></span>
+                                  <span>Deactivate</span>
+                                {% endif %}
+                              </button>
+                            </form>
+                          </li>
+                          <li>
+                            <form action="{{ url_for('admin', tab='residents') }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this resident account?');">
+                              <input type="hidden" name="admin_action" value="delete_resident">
+                              <input type="hidden" name="res_id" value="{{ res.id }}">
+                              <button type="submit" class="crud-menu-item text-danger">
+                                <span class="crud-icon-box red"><i class="bi bi-trash"></i></span>
+                                <span>Remove Account</span>
+                              </button>
+                            </form>
+                          </li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="8" class="text-center py-5">
+                      <div class="py-4">
+                        <span class="eco-icon-tile tile-green mx-auto mb-3" style="width: 58px; height: 58px; border-radius: 50%;">
+                          <i class="bi bi-people fs-2"></i>
+                        </span>
+                        <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">No Registered Residents Yet</h5>
+                        <p class="text-muted small mb-3">No resident accounts have been registered in the system yet.</p>
+                        <button type="button" class="btn btn-sm btn-accent btn-pill px-4" data-bs-toggle="modal" data-bs-target="#addResidentModal">
+                          <i class="bi bi-person-plus me-1"></i>Add Resident
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
+          {% if residents_list %}
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top pagination-container" data-target="#adminResidentsTable">
+              <div class="text-muted small pagination-info">
+                Showing 1 to {{ 20 if residents_list|length > 20 else residents_list|length }} of {{ residents_list|length }} entries
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-prev" disabled>
+                  <i class="bi bi-arrow-left me-1"></i> Prev
+                </button>
+                <span class="small fw-semibold text-muted px-2 pagination-page-indicator">Page 1 of 1</span>
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-next" {% if residents_list|length <= 20 %}disabled{% endif %}>
+                  Next <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+              </div>
+            </div>
+          {% endif %}
         </div>
 
-      {% elif tab == 'monitoring' %}
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <div>
-            <h3 class="fw-bold mb-1">Recycling Monitoring</h3>
-            <p class="text-muted">Real-time log of collection station deposits and walk-ins.</p>
+      {% elif tab == 'staff' %}
+        <div class="mb-3">
+          <h3 class="fw-bold mb-1">Staff Accounts Management</h3>
+          <p class="text-muted mb-0">Create, edit, reset passwords, and manage authorized collection station personnel.</p>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="input-group input-group-sm" style="max-width: 320px;">
+            <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search staff..." data-target="#adminStaffTable">
           </div>
-          <div class="d-flex gap-2">
-            <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#staffDepositModal">Record Walk-in Deposit</button>
-            <a href="{{ url_for('station_simulator') }}" class="btn btn-success">Station Simulator</a>
-          </div>
+          <button class="btn btn-success d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#addStaffModal">
+            <i class="bi bi-person-plus"></i>
+            <span>Add Staff Member</span>
+          </button>
         </div>
 
         <div class="card border-0 shadow-sm p-4">
           <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0" id="adminStaffTable" data-paginate="true" data-page-size="20">
+              <thead class="table-light">
+                <tr>
+                  <th>Staff Name</th>
+                  <th>Username / Email</th>
+                  <th>Station Hub</th>
+                  <th>Staff Code</th>
+                  <th>Status</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for stf in staff_list %}
+                  <tr class="table-row-item">
+                    <td class="fw-semibold">{{ stf.full_name }}</td>
+                    <td class="text-muted small">{{ stf.email }}</td>
+                    <td>Barangay Poblacion Collection Hub</td>
+                    <td><span class="font-monospace bg-light px-2 py-1 rounded small border">{{ stf.qr_code }}</span></td>
+                    <td>
+                      {% if stf.status == 'inactive' %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Inactive</span>
+                      {% else %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Active Operator</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-end">
+                      <div class="dropdown">
+                        <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
+                          <i class="bi bi-three-dots"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end crud-dropdown-menu shadow">
+                          <li>
+                            <button type="button" class="crud-menu-item edit-staff-btn" data-id="{{ stf.id }}" data-name="{{ stf.full_name }}" data-email="{{ stf.email }}" data-bs-toggle="modal" data-bs-target="#editStaffModal">
+                              <span class="crud-icon-box blue"><i class="bi bi-pencil"></i></span>
+                              <span>Edit</span>
+                            </button>
+                          </li>
+                          <li>
+                            <button type="button" class="crud-menu-item reset-pw-btn" data-id="{{ stf.id }}" data-name="{{ stf.full_name }}" data-bs-toggle="modal" data-bs-target="#resetPasswordModal">
+                              <span class="crud-icon-box orange"><i class="bi bi-key"></i></span>
+                              <span>Set Password</span>
+                            </button>
+                          </li>
+                          <li><hr class="dropdown-divider my-1"></li>
+                          <li>
+                            <form action="{{ url_for('admin', tab='staff') }}" method="POST">
+                              <input type="hidden" name="admin_action" value="toggle_staff_status">
+                              <input type="hidden" name="staff_id" value="{{ stf.id }}">
+                              <button type="submit" class="crud-menu-item">
+                                {% if stf.status == 'inactive' %}
+                                  <span class="crud-icon-box green"><i class="bi bi-play-circle"></i></span>
+                                  <span>Activate</span>
+                                {% else %}
+                                  <span class="crud-icon-box dark"><i class="bi bi-pause-circle"></i></span>
+                                  <span>Deactivate</span>
+                                {% endif %}
+                              </button>
+                            </form>
+                          </li>
+                          <li>
+                            <form action="{{ url_for('admin', tab='staff') }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this staff account?');">
+                              <input type="hidden" name="admin_action" value="delete_staff">
+                              <input type="hidden" name="staff_id" value="{{ stf.id }}">
+                              <button type="submit" class="crud-menu-item text-danger">
+                                <span class="crud-icon-box red"><i class="bi bi-trash"></i></span>
+                                <span>Remove Account</span>
+                              </button>
+                            </form>
+                          </li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="6" class="text-center py-5">
+                      <div class="py-4">
+                        <span class="eco-icon-tile tile-blue mx-auto mb-3" style="width: 58px; height: 58px; border-radius: 50%;">
+                          <i class="bi bi-person-badge fs-2"></i>
+                        </span>
+                        <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">No Staff Accounts Yet</h5>
+                        <p class="text-muted small mb-3">No authorized collection personnel have been added yet.</p>
+                        <button type="button" class="btn btn-sm btn-accent btn-pill px-4" data-bs-toggle="modal" data-bs-target="#addStaffModal">
+                          <i class="bi bi-person-plus me-1"></i>Add Staff Member
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if staff_list %}
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top pagination-container" data-target="#adminStaffTable">
+              <div class="text-muted small pagination-info">
+                Showing 1 to {{ 20 if staff_list|length > 20 else staff_list|length }} of {{ staff_list|length }} entries
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-prev" disabled>
+                  <i class="bi bi-arrow-left me-1"></i> Prev
+                </button>
+                <span class="small fw-semibold text-muted px-2 pagination-page-indicator">Page 1 of 1</span>
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-next" {% if staff_list|length <= 20 %}disabled{% endif %}>
+                  Next <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+      {% elif tab == 'materials' %}
+        <div class="mb-3">
+          <h3 class="fw-bold mb-1">Recyclable Materials & Values</h3>
+          <p class="text-muted mb-0">Accepted recyclable categories and point rates credited to residents.</p>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="input-group input-group-sm" style="max-width: 320px;">
+            <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search materials..." data-target="#adminMaterialsTable">
+          </div>
+          <button class="btn btn-success d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#materialModal">
+            <i class="bi bi-plus-circle"></i>
+            <span>Add Material</span>
+          </button>
+        </div>
+
+        <div class="card border-0 shadow-sm p-4">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="adminMaterialsTable" data-paginate="true" data-page-size="20">
+              <thead class="table-light">
+                <tr>
+                  <th>Material Name</th>
+                  <th>Category</th>
+                  <th>Points Value</th>
+                  <th>Unit</th>
+                  <th>Status</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for m in all_materials %}
+                  <tr class="table-row-item">
+                    <td class="fw-semibold">{{ m.name }}</td>
+                    <td>{{ m.category }}</td>
+                    <td class="fw-bold text-success">{{ m.points_per_unit }} pts / {{ m.unit }}</td>
+                    <td>{{ m.unit }}</td>
+                    <td>
+                      {% if m.status == 'inactive' %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Inactive</span>
+                      {% else %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-end">
+                      <div class="dropdown">
+                        <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
+                          <i class="bi bi-three-dots"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end crud-dropdown-menu shadow">
+                          <li>
+                            <button type="button" class="crud-menu-item edit-material-btn" data-id="{{ m.id }}" data-name="{{ m.name }}" data-cat="{{ m.category }}" data-points="{{ m.points_per_unit }}" data-unit="{{ m.unit }}" data-bs-toggle="modal" data-bs-target="#editMaterialModal">
+                              <span class="crud-icon-box blue"><i class="bi bi-pencil"></i></span>
+                              <span>Edit Material</span>
+                            </button>
+                          </li>
+                          <li><hr class="dropdown-divider my-1"></li>
+                          <li>
+                            <form action="{{ url_for('admin', tab='materials') }}" method="POST">
+                              <input type="hidden" name="admin_action" value="toggle_material_status">
+                              <input type="hidden" name="mat_id" value="{{ m.id }}">
+                              <button type="submit" class="crud-menu-item">
+                                {% if m.status == 'inactive' %}
+                                  <span class="crud-icon-box green"><i class="bi bi-play-circle"></i></span>
+                                  <span>Activate</span>
+                                {% else %}
+                                  <span class="crud-icon-box dark"><i class="bi bi-pause-circle"></i></span>
+                                  <span>Deactivate</span>
+                                {% endif %}
+                              </button>
+                            </form>
+                          </li>
+                          <li>
+                            <form action="{{ url_for('admin', tab='materials') }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this material?');">
+                              <input type="hidden" name="admin_action" value="delete_material">
+                              <input type="hidden" name="mat_id" value="{{ m.id }}">
+                              <button type="submit" class="crud-menu-item text-danger">
+                                <span class="crud-icon-box red"><i class="bi bi-trash"></i></span>
+                                <span>Remove Material</span>
+                              </button>
+                            </form>
+                          </li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="6" class="text-center py-5">
+                      <div class="py-4">
+                        <span class="eco-icon-tile tile-purple mx-auto mb-3" style="width: 58px; height: 58px; border-radius: 50%;">
+                          <i class="bi bi-box-seam fs-2"></i>
+                        </span>
+                        <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">No Recyclable Materials Yet</h5>
+                        <p class="text-muted small mb-3">No recyclable materials configured for collection yet.</p>
+                        <button type="button" class="btn btn-sm btn-accent btn-pill px-4" data-bs-toggle="modal" data-bs-target="#materialModal">
+                          <i class="bi bi-plus-circle me-1"></i>Add Material
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if all_materials %}
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top pagination-container" data-target="#adminMaterialsTable">
+              <div class="text-muted small pagination-info">
+                Showing 1 to {{ 20 if all_materials|length > 20 else all_materials|length }} of {{ all_materials|length }} entries
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-prev" disabled>
+                  <i class="bi bi-arrow-left me-1"></i> Prev
+                </button>
+                <span class="small fw-semibold text-muted px-2 pagination-page-indicator">Page 1 of 1</span>
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-next" {% if all_materials|length <= 20 %}disabled{% endif %}>
+                  Next <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+      {% elif tab == 'rewards' %}
+        <div class="mb-3">
+          <h3 class="fw-bold mb-1">Community Rewards Management</h3>
+          <p class="text-muted mb-0">Create, edit, remove, and manage community food staples, goods, and partner rewards.</p>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="input-group input-group-sm" style="max-width: 320px;">
+            <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search rewards..." data-target="#adminRewardsTable">
+          </div>
+          <button class="btn btn-success d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#rewardModal">
+            <i class="bi bi-plus-circle"></i>
+            <span>Add Community Reward</span>
+          </button>
+        </div>
+
+        <div class="card border-0 shadow-sm p-4">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="adminRewardsTable" data-paginate="true" data-page-size="20">
+              <thead class="table-light">
+                <tr>
+                  <th>Reward Title</th>
+                  <th>Category</th>
+                  <th>Points Required</th>
+                  <th>Partner / Provider</th>
+                  <th>Stock Available</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for rw in all_rewards %}
+                  <tr class="table-row-item">
+                    <td class="fw-semibold">{{ rw.title }}</td>
+                    <td><span class="badge bg-light text-success border">{{ rw.category }}</span></td>
+                    <td class="fw-bold text-success">{{ "{:,}".format(rw.points_required) }} pts</td>
+                    <td>{{ rw.partner_name }}</td>
+                    <td>{{ rw.stock }} units</td>
+                    <td class="text-end">
+                      <div class="dropdown">
+                        <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
+                          <i class="bi bi-three-dots"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end crud-dropdown-menu shadow">
+                          <li>
+                            <button type="button" class="crud-menu-item edit-reward-btn" data-id="{{ rw.id }}" data-title="{{ rw.title }}" data-category="{{ rw.category }}" data-points="{{ rw.points_required }}" data-stock="{{ rw.stock }}" data-partner="{{ rw.partner_name }}" data-bs-toggle="modal" data-bs-target="#editRewardModal">
+                              <span class="crud-icon-box blue"><i class="bi bi-pencil"></i></span>
+                              <span>Edit Reward</span>
+                            </button>
+                          </li>
+                          <li>
+                            <form action="{{ url_for('admin', tab='rewards') }}" method="POST">
+                              <input type="hidden" name="admin_action" value="restock_reward">
+                              <input type="hidden" name="reward_id" value="{{ rw.id }}">
+                              <input type="hidden" name="add_qty" value="10">
+                              <button type="submit" class="crud-menu-item">
+                                <span class="crud-icon-box orange"><i class="bi bi-box-seam"></i></span>
+                                <span>Quick Restock (+10)</span>
+                              </button>
+                            </form>
+                          </li>
+                          <li><hr class="dropdown-divider my-1"></li>
+                          <li>
+                            <form action="{{ url_for('admin', tab='rewards') }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this reward?');">
+                              <input type="hidden" name="admin_action" value="delete_reward">
+                              <input type="hidden" name="reward_id" value="{{ rw.id }}">
+                              <button type="submit" class="crud-menu-item text-danger">
+                                <span class="crud-icon-box red"><i class="bi bi-trash"></i></span>
+                                <span>Remove Reward</span>
+                              </button>
+                            </form>
+                          </li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="6" class="text-center py-5">
+                      <div class="py-4">
+                        <span class="eco-icon-tile tile-orange mx-auto mb-3" style="width: 58px; height: 58px; border-radius: 50%;">
+                          <i class="bi bi-gift fs-2"></i>
+                        </span>
+                        <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">No Rewards or Items Yet</h5>
+                        <p class="text-muted small mb-3">No community food staples or items have been added to the catalog yet.</p>
+                        <button type="button" class="btn btn-sm btn-accent btn-pill px-4" data-bs-toggle="modal" data-bs-target="#rewardModal">
+                          <i class="bi bi-plus-circle me-1"></i>Add Community Reward
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if all_rewards %}
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top pagination-container" data-target="#adminRewardsTable">
+              <div class="text-muted small pagination-info">
+                Showing 1 to {{ 20 if all_rewards|length > 20 else all_rewards|length }} of {{ all_rewards|length }} entries
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-prev" disabled>
+                  <i class="bi bi-arrow-left me-1"></i> Prev
+                </button>
+                <span class="small fw-semibold text-muted px-2 pagination-page-indicator">Page 1 of 1</span>
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-next" {% if all_rewards|length <= 20 %}disabled{% endif %}>
+                  Next <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+      {% elif tab == 'monitoring' %}
+        <div class="mb-3">
+          <h3 class="fw-bold mb-1">Recycling Logs Audit</h3>
+          <p class="text-muted mb-0">Audit trail of all recyclables recorded across collection units.</p>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="input-group input-group-sm" style="max-width: 320px;">
+            <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search recycling logs..." data-target="#adminMonitoringTable">
+          </div>
+          <span class="badge bg-light text-dark border px-3 py-2">Total Logs: {{ all_transactions|length }}</span>
+        </div>
+
+        <div class="card border-0 shadow-sm p-4">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="adminMonitoringTable" data-paginate="true" data-page-size="20">
               <thead class="table-light">
                 <tr>
                   <th>Receipt #</th>
@@ -244,37 +832,11 @@
               </thead>
               <tbody>
                 {% for t in all_transactions %}
-                  <tr>
+                  <tr class="table-row-item">
                     <td class="font-monospace text-muted small">{{ t.receipt_no }}</td>
                     <td class="text-muted small">{{ t.created_at }}</td>
                     <td class="fw-semibold">{{ t.resident_name }}</td>
-                    <td>
-                      <div class="d-flex align-items-center gap-2">
-                        {% set mat = t.material_name|lower %}
-                        {% if 'bottle' in mat or 'plastic' in mat %}
-                          <span class="eco-icon-tile tile-blue" style="width: 26px; height: 26px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <path d="M10 2h4v3h-4z"/>
-                              <path d="M8 5h8v2a4 4 0 0 1 4 4v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9a4 4 0 0 1 4-4V5z"/>
-                            </svg>
-                          </span>
-                        {% elif 'can' in mat %}
-                          <span class="eco-icon-tile tile-orange" style="width: 26px; height: 26px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <rect x="5" y="4" width="14" height="16" rx="3"/>
-                              <ellipse cx="12" cy="7" rx="5" ry="2"/>
-                            </svg>
-                          </span>
-                        {% else %}
-                          <span class="eco-icon-tile tile-purple" style="width: 26px; height: 26px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            </svg>
-                          </span>
-                        {% endif %}
-                        <span>{{ t.material_name }}</span>
-                      </div>
-                    </td>
+                    <td>{{ t.material_name }}</td>
                     <td>{{ t.quantity }}</td>
                     <td class="text-end fw-bold text-success">+{{ t.points_earned }} pts</td>
                   </tr>
@@ -282,84 +844,28 @@
               </tbody>
             </table>
           </div>
-        </div>
-
-      {% elif tab == 'materials' %}
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <div>
-            <h3 class="fw-bold mb-1">Recyclable Materials & Values</h3>
-            <p class="text-muted">Accepted recyclable categories and reward point rules.</p>
-          </div>
-          <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#materialModal">Add Material</button>
-        </div>
-
-        <div class="card border-0 shadow-sm p-4">
-          <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>Material Name</th>
-                  <th>Category</th>
-                  <th>Points Value</th>
-                  <th>Unit</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for m in all_materials %}
-                  <tr>
-                    <td class="fw-semibold">{{ m.name }}</td>
-                    <td>{{ m.category }}</td>
-                    <td class="fw-bold text-success">{{ m.points_per_unit }} pts / {{ m.unit }}</td>
-                    <td>{{ m.unit }}</td>
-                    <td><span class="badge bg-success-subtle text-success">Active</span></td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      {% elif tab == 'rewards' %}
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <div>
-            <h3 class="fw-bold mb-1">Rewards Management</h3>
-            <p class="text-muted">Partner incentives and required points.</p>
-          </div>
-          <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#rewardModal">Add Reward</button>
-        </div>
-
-        <div class="card border-0 shadow-sm p-4">
-          <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>Reward Title</th>
-                  <th>Category</th>
-                  <th>Points Required</th>
-                  <th>Partner</th>
-                  <th>Stock Available</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for rw in all_rewards %}
-                  <tr>
-                    <td class="fw-semibold">{{ rw.title }}</td>
-                    <td>{{ rw.category }}</td>
-                    <td class="fw-bold text-success">{{ "{:,}".format(rw.points_required) }} pts</td>
-                    <td>{{ rw.partner_name }}</td>
-                    <td>{{ rw.stock }} units</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
+          {% if all_transactions %}
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top pagination-container" data-target="#adminMonitoringTable">
+              <div class="text-muted small pagination-info">
+                Showing 1 to {{ 20 if all_transactions|length > 20 else all_transactions|length }} of {{ all_transactions|length }} entries
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-prev" disabled>
+                  <i class="bi bi-arrow-left me-1"></i> Prev
+                </button>
+                <span class="small fw-semibold text-muted px-2 pagination-page-indicator">Page 1 of 1</span>
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-next" {% if all_transactions|length <= 20 %}disabled{% endif %}>
+                  Next <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+              </div>
+            </div>
+          {% endif %}
         </div>
 
       {% elif tab == 'reports' %}
         <div class="mb-4">
           <h3 class="fw-bold mb-1">Barangay Recycling Reports</h3>
-          <p class="text-muted">Summary reports for barangay administration.</p>
+          <p class="text-muted mb-0">Official summary report for barangay environmental compliance.</p>
         </div>
 
         <div class="row g-4">
@@ -370,6 +876,10 @@
                 <li class="list-group-item d-flex justify-content-between">
                   <span>Registered Residents:</span>
                   <span class="fw-bold">{{ residents_list|length }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                  <span>Active Collection Staff:</span>
+                  <span class="fw-bold">{{ staff_list|length }}</span>
                 </li>
                 <li class="list-group-item d-flex justify-content-between">
                   <span>Total Deposits Recorded:</span>
@@ -384,7 +894,9 @@
                   <span class="fw-bold">{{ all_redemptions|length }}</span>
                 </li>
               </ul>
-              <button class="btn btn-outline-success w-100" onclick="window.print();">Print Report</button>
+              <button class="btn btn-outline-success w-100" onclick="window.print();">
+                <i class="bi bi-printer me-1"></i>Print Participation Report
+              </button>
             </div>
           </div>
 
@@ -405,7 +917,9 @@
                   <span class="fw-bold">{{ stats.material_counts['Others'] }} pcs/kg</span>
                 </li>
               </ul>
-              <button class="btn btn-outline-success w-100" onclick="window.print();">Print Report</button>
+              <button class="btn btn-outline-success w-100" onclick="window.print();">
+                <i class="bi bi-printer me-1"></i>Print Materials Report
+              </button>
             </div>
           </div>
         </div>
@@ -414,40 +928,196 @@
   </div>
 </div>
 
-<div class="modal fade" id="staffDepositModal" tabindex="-1">
+<div class="modal fade" id="addResidentModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content rounded-4 border-0">
       <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold">Record Walk-in Deposit</h5>
+        <h5 class="modal-title fw-bold">Add Resident Account</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <form action="{{ url_for('admin', tab='monitoring') }}" method="POST">
-        <input type="hidden" name="admin_action" value="staff_deposit">
+      <form action="{{ url_for('admin', tab='residents') }}" method="POST">
+        <input type="hidden" name="admin_action" value="add_resident">
         <div class="modal-body py-3">
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Resident</label>
-            <select name="resident_id" class="form-select" required>
-              {% for r in residents_list %}
-                <option value="{{ r.id }}">{{ r.full_name }} ({{ r.qr_code }})</option>
-              {% endfor %}
-            </select>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">First Name</label>
+              <input type="text" name="res_first_name" class="form-control" placeholder="Maria" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Last Name</label>
+              <input type="text" name="res_last_name" class="form-control" placeholder="Clara" required>
+            </div>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Material</label>
-            <select name="mat_id" class="form-select" required>
-              {% for m in all_materials %}
-                <option value="{{ m.id }}">{{ m.name }} (+{{ m.points_per_unit }} pts/{{ m.unit }})</option>
-              {% endfor %}
-            </select>
+            <label class="form-label small fw-semibold">Email Address</label>
+            <input type="email" name="res_email" class="form-control" placeholder="e.g. maria@example.com" required>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Quantity</label>
-            <input type="number" name="qty" class="form-control" value="1" min="1" max="500" required>
+            <label class="form-label small fw-semibold">Password</label>
+            <input type="password" name="res_password" class="form-control" placeholder="Min 6 characters" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Initial EcoPoints (Optional)</label>
+            <input type="number" name="res_points" class="form-control" value="0" min="0">
           </div>
         </div>
         <div class="modal-footer border-0 pt-0">
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success px-4">Submit</button>
+          <button type="submit" class="btn btn-success px-4">Create Resident</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editResidentModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content rounded-4 border-0">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Edit Resident Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{{ url_for('admin', tab='residents') }}" method="POST">
+        <input type="hidden" name="admin_action" value="edit_resident">
+        <input type="hidden" name="res_id" id="editResId">
+        <div class="modal-body py-3">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Full Name</label>
+            <input type="text" name="res_name" id="editResName" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Email Address</label>
+            <input type="email" name="res_email" id="editResEmail" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Adjust EcoPoints Balance</label>
+            <input type="number" name="res_points" id="editResPoints" class="form-control" min="0" required>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success px-4">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="resetResPasswordModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content rounded-4 border-0">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Set Resident Password</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{{ url_for('admin', tab='residents') }}" method="POST">
+        <input type="hidden" name="admin_action" value="reset_resident_password">
+        <input type="hidden" name="res_id" id="resetResId">
+        <div class="modal-body py-3">
+          <p class="small text-muted mb-3">Set new password for: <strong id="resetResNameText">-</strong></p>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">New Password</label>
+            <input type="password" name="new_password" class="form-control" placeholder="Min 6 characters" required>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning px-4 text-dark fw-semibold">Set Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="addStaffModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content rounded-4 border-0">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Add Staff Account</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{{ url_for('admin', tab='staff') }}" method="POST">
+        <input type="hidden" name="admin_action" value="add_staff">
+        <div class="modal-body py-3">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Staff Full Name</label>
+            <input type="text" name="staff_name" class="form-control" placeholder="e.g. Maria Santos" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Username or Email</label>
+            <input type="email" name="staff_email" class="form-control" placeholder="e.g. maria.staff@ecocoins.ph" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Temporary Password</label>
+            <input type="password" name="staff_password" class="form-control" placeholder="Min 6 characters" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Assigned Station</label>
+            <input type="text" class="form-control bg-light" value="Barangay Poblacion Collection Hub" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Account Role</label>
+            <input type="text" class="form-control bg-light" value="Staff (Collection Station Operator)" readonly>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success px-4">Create Staff Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editStaffModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content rounded-4 border-0">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Edit Staff Account</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{{ url_for('admin', tab='staff') }}" method="POST">
+        <input type="hidden" name="admin_action" value="edit_staff">
+        <input type="hidden" name="staff_id" id="editStaffId">
+        <div class="modal-body py-3">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Staff Full Name</label>
+            <input type="text" name="staff_name" id="editStaffName" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Username or Email</label>
+            <input type="email" name="staff_email" id="editStaffEmail" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success px-4">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="resetPasswordModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content rounded-4 border-0">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Reset Staff Password</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{{ url_for('admin', tab='staff') }}" method="POST">
+        <input type="hidden" name="admin_action" value="reset_staff_password">
+        <input type="hidden" name="staff_id" id="resetStaffId">
+        <div class="modal-body py-3">
+          <p class="small text-muted mb-3">Resetting password for: <strong id="resetStaffNameText">-</strong></p>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">New Temporary Password</label>
+            <input type="password" name="new_password" class="form-control" placeholder="Min 6 characters" required>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning px-4 text-dark fw-semibold">Set New Password</button>
         </div>
       </form>
     </div>
@@ -485,7 +1155,46 @@
         </div>
         <div class="modal-footer border-0 pt-0">
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success px-4">Save</button>
+          <button type="submit" class="btn btn-success px-4">Save Material</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editMaterialModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content rounded-4 border-0">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Edit Recyclable Material</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{{ url_for('admin', tab='materials') }}" method="POST">
+        <input type="hidden" name="admin_action" value="edit_material">
+        <input type="hidden" name="mat_id" id="editMatId">
+        <div class="modal-body py-3">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Material Name</label>
+            <input type="text" name="mat_name" id="editMatName" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Category</label>
+            <input type="text" name="mat_cat" id="editMatCat" class="form-control" required>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Points per Unit</label>
+              <input type="number" name="mat_points" id="editMatPoints" class="form-control" min="1" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Unit</label>
+              <input type="text" name="mat_unit" id="editMatUnit" class="form-control" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success px-4">Update Material</button>
         </div>
       </form>
     </div>
@@ -504,20 +1213,21 @@
         <div class="modal-body py-3">
           <div class="mb-3">
             <label class="form-label small fw-semibold">Reward Title</label>
-            <input type="text" name="rew_title" class="form-control" placeholder="e.g. Free Coffee" required>
+            <input type="text" name="rew_title" class="form-control" placeholder="e.g. 1kg Bigas or Delata Pack" required>
           </div>
           <div class="row g-2 mb-3">
             <div class="col-6">
               <label class="form-label small fw-semibold">Category</label>
               <select name="rew_category" class="form-select">
-                <option value="Discounts">Discounts</option>
+                <option value="Food Staples">Food Staples</option>
+                <option value="Canned Goods">Canned Goods</option>
                 <option value="Merchandise">Merchandise</option>
-                <option value="Partners">Partners</option>
+                <option value="Household">Household</option>
               </select>
             </div>
             <div class="col-6">
               <label class="form-label small fw-semibold">Points Required</label>
-              <input type="number" name="rew_points" class="form-control" value="500" min="10" required>
+              <input type="number" name="rew_points" class="form-control" value="300" min="10" required>
             </div>
           </div>
           <div class="row g-2 mb-3">
@@ -526,14 +1236,64 @@
               <input type="number" name="rew_stock" class="form-control" value="50" min="1" required>
             </div>
             <div class="col-6">
-              <label class="form-label small fw-semibold">Partner Name</label>
-              <input type="text" name="rew_partner" class="form-control" placeholder="e.g. Local Cafe">
+              <label class="form-label small fw-semibold">Partner / Provider</label>
+              <input type="text" name="rew_partner" class="form-control" placeholder="e.g. Barangay Food Bank">
             </div>
           </div>
         </div>
         <div class="modal-footer border-0 pt-0">
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success px-4">Save</button>
+          <button type="submit" class="btn btn-success px-4">Save Reward</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editRewardModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content rounded-4 border-0">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Edit Community Reward</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{{ url_for('admin', tab='rewards') }}" method="POST">
+        <input type="hidden" name="admin_action" value="edit_reward">
+        <input type="hidden" name="reward_id" id="editRewardId">
+        <div class="modal-body py-3">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Reward Title</label>
+            <input type="text" name="rew_title" id="editRewardTitle" class="form-control" required>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Category</label>
+              <select name="rew_category" id="editRewardCategory" class="form-select">
+                <option value="Food Staples">Food Staples</option>
+                <option value="Canned Goods">Canned Goods</option>
+                <option value="Merchandise">Merchandise</option>
+                <option value="Household">Household</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Points Required</label>
+              <input type="number" name="rew_points" id="editRewardPoints" class="form-control" min="10" required>
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Stock Available</label>
+              <input type="number" name="rew_stock" id="editRewardStock" class="form-control" min="0" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Partner / Provider</label>
+              <input type="text" name="rew_partner" id="editRewardPartner" class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success px-4">Update Reward</button>
         </div>
       </form>
     </div>
@@ -541,5 +1301,61 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.edit-staff-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.getElementById('editStaffId').value = this.getAttribute('data-id');
+      document.getElementById('editStaffName').value = this.getAttribute('data-name');
+      document.getElementById('editStaffEmail').value = this.getAttribute('data-email');
+    });
+  });
+
+  document.querySelectorAll('.reset-pw-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.getElementById('resetStaffId').value = this.getAttribute('data-id');
+      document.getElementById('resetStaffNameText').textContent = this.getAttribute('data-name');
+    });
+  });
+
+  document.querySelectorAll('.edit-resident-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.getElementById('editResId').value = this.getAttribute('data-id');
+      document.getElementById('editResName').value = this.getAttribute('data-name');
+      document.getElementById('editResEmail').value = this.getAttribute('data-email');
+      document.getElementById('editResPoints').value = this.getAttribute('data-points');
+    });
+  });
+
+  document.querySelectorAll('.reset-res-pw-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.getElementById('resetResId').value = this.getAttribute('data-id');
+      document.getElementById('resetResNameText').textContent = this.getAttribute('data-name');
+    });
+  });
+
+  document.querySelectorAll('.edit-material-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.getElementById('editMatId').value = this.getAttribute('data-id');
+      document.getElementById('editMatName').value = this.getAttribute('data-name');
+      document.getElementById('editMatCat').value = this.getAttribute('data-cat');
+      document.getElementById('editMatPoints').value = this.getAttribute('data-points');
+      document.getElementById('editMatUnit').value = this.getAttribute('data-unit');
+    });
+  });
+
+  document.querySelectorAll('.edit-reward-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.getElementById('editRewardId').value = this.getAttribute('data-id');
+      document.getElementById('editRewardTitle').value = this.getAttribute('data-title');
+      document.getElementById('editRewardCategory').value = this.getAttribute('data-category');
+      document.getElementById('editRewardPoints').value = this.getAttribute('data-points');
+      document.getElementById('editRewardStock').value = this.getAttribute('data-stock');
+      document.getElementById('editRewardPartner').value = this.getAttribute('data-partner');
+    });
+  });
+});
+</script>
 </body>
 </html>

@@ -73,9 +73,9 @@
             Our smart collection station reads your QR code, detects the materials using sensors, and records the transaction directly to the central system without manual paperwork.
           </p>
           {% if current_user %}
-            <a href="{{ url_for('station_simulator') }}" class="btn btn-success px-4">Test Deposit Station</a>
+            <a href="{{ url_for('rewards') }}" class="btn btn-accent px-4 btn-pill">Browse Community Rewards <i class="bi bi-arrow-right ms-1"></i></a>
           {% else %}
-            <a href="{{ url_for('register') }}" class="btn btn-success px-4">Create Your Free Account</a>
+            <a href="{{ url_for('register') }}" class="btn btn-accent px-4 btn-pill">Create Your Free Account <i class="bi bi-arrow-right ms-1"></i></a>
           {% endif %}
         </div>
       </div>

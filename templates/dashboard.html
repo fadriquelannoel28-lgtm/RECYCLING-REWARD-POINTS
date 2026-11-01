@@ -9,26 +9,27 @@
       </div>
 
       <div class="col-lg-9">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           <div>
-            <h2 class="fw-bold mb-1">Hello, {{ current_user.full_name }}!</h2>
-            <p class="text-muted mb-0">Here is your recycling activity summary.</p>
+            <h2 class="fw-bold mb-1" style="color: var(--eco-forest);">Hello, {{ current_user.full_name }}!</h2>
+            <p class="text-muted mb-0">Here is your recycling activity and rewards summary.</p>
           </div>
-          <a href="{{ url_for('station_simulator') }}" class="btn btn-success d-flex align-items-center gap-2">
-            <i class="bi bi-qr-code-scan"></i> Deposit Items
+          <a href="{{ url_for('rewards') }}" class="btn btn-accent d-flex align-items-center gap-2 btn-pill">
+            <i class="bi bi-gift"></i>
+            <span>Browse Rewards</span>
           </a>
         </div>
 
         <div class="row g-3 mb-4">
           <div class="col-md-5">
-            <div class="card bg-success text-white border-0 shadow-sm p-4 h-100 d-flex flex-column justify-content-between">
+            <div class="card text-white border-0 shadow-sm p-4 h-100 d-flex flex-column justify-content-between" style="background-color: var(--eco-forest);">
               <div>
                 <span class="text-white-50 small text-uppercase fw-semibold">Current Balance</span>
                 <div class="display-5 fw-bold my-2">{{ "{:,}".format(current_user.points) }}</div>
                 <div class="small text-white-50">Total EcoPoints Available</div>
               </div>
               <div class="mt-3">
-                <a href="{{ url_for('rewards') }}" class="btn btn-light btn-sm text-success fw-bold px-3">Browse Rewards</a>
+                <a href="{{ url_for('rewards') }}" class="btn btn-accent btn-sm px-3 btn-pill">Redeem Rewards <i class="bi bi-arrow-right ms-1"></i></a>
               </div>
             </div>
           </div>
@@ -80,17 +81,17 @@
           </div>
         </div>
 
-        <div class="row g-4">
+        <div class="row g-4 mb-4">
           <div class="col-lg-7">
             <div class="card border-0 shadow-sm p-3 h-100">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                  <h6 class="fw-bold mb-0">Recent Recycling</h6>
+                  <h6 class="fw-bold mb-0">Recent Recycling History</h6>
                   <a href="{{ url_for('history') }}" class="text-success small fw-semibold text-decoration-none">View All</a>
                 </div>
 
                 {% if not user_transactions %}
-                  <div class="text-center py-4 text-muted small">No deposits recorded yet.</div>
+                  <div class="text-center py-4 text-muted small">No deposits recorded yet. Bring recyclables to the Barangay Station!</div>
                 {% else %}
                   <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -143,13 +144,92 @@
             <div class="card border-0 shadow-sm p-4 text-center h-100">
               <h6 class="fw-bold mb-3 text-start">My Personal QR Code</h6>
               <div class="p-3 bg-light rounded-3 d-inline-block mx-auto mb-2">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data={{ current_user.qr_code }}" alt="QR Code" class="img-fluid rounded" style="width: 140px; height: 140px;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ current_user.qr_code }}" alt="QR Code" class="img-fluid rounded" style="width: 150px; height: 150px;">
               </div>
-              <div class="fw-bold text-success font-monospace mb-1">{{ current_user.qr_code }}</div>
-              <p class="text-muted small mb-3">Present this code at any EcoCoins station to identify your account.</p>
-              <a href="{{ url_for('station_simulator') }}" class="btn btn-outline-success btn-sm w-100">Open Station Simulator</a>
+              <div class="fw-bold text-success font-monospace fs-5 mb-1">{{ current_user.qr_code }}</div>
+              <p class="text-muted small mb-3">Present this QR code to authorized Barangay Staff at the EcoCoins Collection Station to record recyclables and earn points.</p>
+              <div class="badge bg-success-subtle text-success border border-success-subtle py-2 px-3 rounded-pill">
+                <i class="bi bi-shield-check me-1"></i>Official Barangay Resident ID
+              </div>
             </div>
           </div>
+        </div>
+
+        <div class="card border-0 shadow-sm p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+              <h6 class="fw-bold mb-0" style="color: var(--eco-forest);">My Reward Claiming History</h6>
+              <div class="text-muted small">Showing up to 8 most recent claims</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <a href="{{ url_for('reward_history') }}" class="btn btn-sm btn-outline-success btn-pill">
+                <i class="bi bi-clock-history me-1"></i>View All Claims
+              </a>
+              <a href="{{ url_for('rewards') }}" class="btn btn-sm btn-accent btn-pill">Claim More</a>
+            </div>
+          </div>
+
+          {% if not user_redemptions %}
+            <div class="text-center py-5">
+              <span class="eco-brand-badge fs-2 mb-3 d-inline-flex" style="width: 64px; height: 64px; opacity: 0.85;">
+                <i class="bi bi-gift"></i>
+              </span>
+              <h6 class="fw-bold text-dark mb-1">No Reward Claims Yet</h6>
+              <p class="text-muted small mb-3">You haven't claimed any rewards yet. Visit the Rewards Catalog to redeem goods!</p>
+              <a href="{{ url_for('rewards') }}" class="btn btn-sm btn-accent btn-pill px-4">Browse Rewards</a>
+            </div>
+          {% else %}
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Date Claimed</th>
+                    <th>Reward Item</th>
+                    <th>Points Spent</th>
+                    <th>Voucher Code</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for rd in user_redemptions[:8] %}
+                    <tr>
+                      <td class="text-muted small">{{ rd.created_at }}</td>
+                      <td class="fw-semibold">
+                        <div class="d-flex align-items-center gap-2">
+                          <span class="eco-icon-tile tile-mint" style="width: 30px; height: 30px;">
+                            <i class="bi bi-gift-fill" style="font-size: 0.85rem;"></i>
+                          </span>
+                          <span>{{ rd.reward_title }}</span>
+                        </div>
+                      </td>
+                      <td class="text-success fw-bold">{{ "{:,}".format(rd.points_spent) }} pts</td>
+                      <td>
+                        <span class="badge bg-light text-dark border font-monospace fs-6 px-2 py-1">{{ rd.redemption_code }}</span>
+                      </td>
+                      <td>
+                        {% if rd.status == 'released' %}
+                          <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">
+                            <i class="bi bi-check-circle me-1"></i>Released
+                          </span>
+                        {% else %}
+                          <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-2.5 py-1 rounded-pill">
+                            <i class="bi bi-hourglass-split me-1"></i>Ready for Handover
+                          </span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% if user_redemptions|length > 8 %}
+              <div class="text-center pt-3 border-top mt-3">
+                <a href="{{ url_for('reward_history') }}" class="text-success small fw-bold text-decoration-none">
+                  View all {{ user_redemptions|length }} claims in My Reward Claiming History <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+              </div>
+            {% endif %}
+          {% endif %}
         </div>
       </div>
     </div>

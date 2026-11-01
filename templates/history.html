@@ -9,21 +9,35 @@
       </div>
 
       <div class="col-lg-9">
-        <div class="mb-4">
-          <h2 class="fw-bold mb-1">Recycling History</h2>
-          <p class="text-muted">Complete log of your recycling deposits.</p>
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <div>
+            <h2 class="fw-bold mb-1" style="color: var(--eco-forest);">Recycling History</h2>
+            <p class="text-muted mb-0">Complete log of your recycling deposits.</p>
+          </div>
+          <a href="{{ url_for('rewards') }}" class="btn btn-accent d-flex align-items-center gap-2 btn-pill">
+            <i class="bi bi-gift"></i>
+            <span>Browse Rewards</span>
+          </a>
         </div>
 
-        <div class="card border-0 shadow-sm p-4">
-          <div class="d-flex flex-wrap gap-2 mb-4 filter-container">
-            <button type="button" class="btn btn-sm btn-success filter-btn active" data-filter="all">All</button>
-            <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="plastic">Plastic Bottle</button>
-            <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="can">Can</button>
-            <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="others">Others</button>
+        <div class="card border-0 shadow-sm p-4 bg-white">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div class="d-flex flex-wrap gap-2 filter-container" data-target="#historyTable">
+              <button type="button" class="btn btn-sm btn-success filter-btn active" data-filter="all">All</button>
+              <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="plastic">Plastic Bottle</button>
+              <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="can">Can</button>
+              <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="others">Others</button>
+            </div>
+            <div class="input-group input-group-sm" style="max-width: 280px;">
+              <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
+                <i class="bi bi-search text-muted"></i>
+              </span>
+              <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search receipt, material..." data-target="#historyTable">
+            </div>
           </div>
 
           <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0" id="historyTable" data-paginate="true" data-page-size="15">
               <thead class="table-light">
                 <tr>
                   <th>Receipt #</th>
@@ -48,7 +62,7 @@
                     {% else %}
                       {% set cat = 'others' %}
                     {% endif %}
-                    <tr class="filter-item" data-category="{{ cat }}">
+                    <tr class="table-row-item filter-item" data-category="{{ cat }}" data-search="{{ t.receipt_no }} {{ t.created_at }} {{ t.material_name }} {{ cat }}">
                       <td class="font-monospace text-muted small">{{ t.receipt_no }}</td>
                       <td class="text-muted small">{{ t.created_at }}</td>
                       <td>
@@ -74,7 +88,7 @@
                               </svg>
                             </span>
                           {% endif %}
-                          <span class="fw-semibold">{{ t.material_name }}</span>
+                          <span class="fw-semibold text-dark">{{ t.material_name }}</span>
                         </div>
                       </td>
                       <td class="text-muted">{{ t.quantity }}</td>
@@ -85,6 +99,23 @@
               </tbody>
             </table>
           </div>
+
+          {% if user_transactions %}
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top pagination-container" data-target="#historyTable">
+              <div class="text-muted small pagination-info">
+                Showing 1 to {{ 15 if user_transactions|length > 15 else user_transactions|length }} of {{ user_transactions|length }} entries
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-prev" disabled>
+                  <i class="bi bi-arrow-left me-1"></i> Prev
+                </button>
+                <span class="small fw-semibold text-muted px-2 pagination-page-indicator">Page 1 of 1</span>
+                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-next" {% if user_transactions|length <= 15 %}disabled{% endif %}>
+                  Next <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+              </div>
+            </div>
+          {% endif %}
         </div>
       </div>
     </div>

@@ -8,7 +8,8 @@
       "role": "admin",
       "qr_code": "ECO-ADM-0001",
       "points": 0,
-      "created_at": "2026-10-01 08:00:00"
+      "created_at": "2026-10-01 08:00:00",
+      "status": "active"
     },
     {
       "id": 2,
@@ -17,8 +18,9 @@
       "password": "scrypt:32768:8:1$zRmGvXSAvdd9VSVz$c0eb0732113c4612d74bca0c96430984608329e21a6d188e218f2f03091d0f2e644473f8ba6fa6d23e50d24820866a932773acb7566911f392b6cc5474ae4e7a",
       "role": "resident",
       "qr_code": "ECO-RES-88219",
-      "points": 670,
-      "created_at": "2026-10-10 09:30:00"
+      "points": 4889,
+      "created_at": "2026-10-10 09:30:00",
+      "status": "active"
     },
     {
       "id": 3,
@@ -27,8 +29,9 @@
       "password": "scrypt:32768:8:1$iIXpZ2yBkirDTV2F$cb4e32d6dccc0c36ef0fd63aa85a4e20735d141afa12c013b3e416da53d64395c7eae3f108c0e32171ea28838a4fabf0ff7bf34d0b27fdf5f40e7ebddb74f21c",
       "role": "resident",
       "qr_code": "ECO-RES-10492",
-      "points": 840,
-      "created_at": "2026-10-12 11:20:00"
+      "points": 856,
+      "created_at": "2026-10-12 11:20:00",
+      "status": "active"
     },
     {
       "id": 4,
@@ -38,7 +41,8 @@
       "role": "resident",
       "qr_code": "ECO-RES-29381",
       "points": 960,
-      "created_at": "2026-10-14 14:15:00"
+      "created_at": "2026-10-14 14:15:00",
+      "status": "active"
     },
     {
       "id": 5,
@@ -47,8 +51,9 @@
       "password": "scrypt:32768:8:1$OCLFuCC13gw7wzcG$b45aba2c9c78d6a5b89744f7788562726dff16bc8955c26397b038b2233d6152963acf2bb9ae968c3cc5a6815f21dde53a7f3f638e9130cd673cb54bf49af72b",
       "role": "resident",
       "qr_code": "ECO-RES-50123",
-      "points": 1100,
-      "created_at": "2026-10-15 16:40:00"
+      "points": 1115,
+      "created_at": "2026-10-15 16:40:00",
+      "status": "active"
     },
     {
       "id": 6,
@@ -58,7 +63,349 @@
       "role": "resident",
       "qr_code": "ECO-RES-77401",
       "points": 620,
-      "created_at": "2026-10-16 10:10:00"
+      "created_at": "2026-10-16 10:10:00",
+      "status": "active"
+    },
+    {
+      "id": 7,
+      "full_name": "Barangay Staff",
+      "email": "staff@ecocoins.ph",
+      "password": "scrypt:32768:8:1$T8fLe7U9NaDiK2U8$29af31857abef381104c23f34621758ca1b4e7fd7f2a1fa7cfc40f7bd2d360b05438bf70fff5457304e202f7776aa18c031285d5074c9a82f9f0a161023001b2",
+      "role": "staff",
+      "qr_code": "ECO-STF-0001",
+      "points": 0,
+      "created_at": "2026-10-02 08:00:00",
+      "status": "active"
+    },
+    {
+      "id": 9,
+      "full_name": "Juan Dela Cruz",
+      "email": "juan.delacruz@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30101",
+      "points": 350,
+      "created_at": "2026-10-15 08:30:00",
+      "status": "active"
+    },
+    {
+      "id": 10,
+      "full_name": "Maria Clara De los Santos",
+      "email": "maria.delossantos@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30102",
+      "points": 720,
+      "created_at": "2026-10-15 09:15:00",
+      "status": "active"
+    },
+    {
+      "id": 11,
+      "full_name": "Jose Rizalino Mercado",
+      "email": "jose.mercado@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30103",
+      "points": 540,
+      "created_at": "2026-10-16 10:00:00",
+      "status": "active"
+    },
+    {
+      "id": 12,
+      "full_name": "Angela Mae Garcia",
+      "email": "angela.garcia@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30104",
+      "points": 285,
+      "created_at": "2026-10-16 11:20:00",
+      "status": "active"
+    },
+    {
+      "id": 13,
+      "full_name": "Gabriel Paolo Mendoza",
+      "email": "gabriel.mendoza@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30105",
+      "points": 930,
+      "created_at": "2026-10-17 08:45:00",
+      "status": "active"
+    },
+    {
+      "id": 14,
+      "full_name": "Beatrice Nicole Reyes",
+      "email": "beatrice.reyes@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30106",
+      "points": 418,
+      "created_at": "2026-10-17 13:10:00",
+      "status": "active"
+    },
+    {
+      "id": 15,
+      "full_name": "Christian Dave Bautista",
+      "email": "christian.bautista@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30107",
+      "points": 650,
+      "created_at": "2026-10-18 09:05:00",
+      "status": "active"
+    },
+    {
+      "id": 16,
+      "full_name": "Danica Joy Fernandez",
+      "email": "danica.fernandez@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30108",
+      "points": 165,
+      "created_at": "2026-10-18 14:30:00",
+      "status": "active"
+    },
+    {
+      "id": 17,
+      "full_name": "Emmanuel Luis Cruz",
+      "email": "emmanuel.cruz@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30109",
+      "points": 980,
+      "created_at": "2026-10-19 10:15:00",
+      "status": "active"
+    },
+    {
+      "id": 18,
+      "full_name": "Frances Diana Villanueva",
+      "email": "frances.villanueva@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30110",
+      "points": 320,
+      "created_at": "2026-10-19 15:40:00",
+      "status": "active"
+    },
+    {
+      "id": 19,
+      "full_name": "Gerald Ryan Ramos",
+      "email": "gerald.ramos@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30111",
+      "points": 470,
+      "created_at": "2026-10-20 08:25:00",
+      "status": "active"
+    },
+    {
+      "id": 20,
+      "full_name": "Hannah Patricia Castro",
+      "email": "hannah.castro@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30112",
+      "points": 810,
+      "created_at": "2026-10-20 11:50:00",
+      "status": "active"
+    },
+    {
+      "id": 21,
+      "full_name": "Ian Joseph Aquino",
+      "email": "ian.aquino@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30113",
+      "points": 220,
+      "created_at": "2026-10-21 09:40:00",
+      "status": "active"
+    },
+    {
+      "id": 22,
+      "full_name": "Jasmine Rose Salazar",
+      "email": "jasmine.salazar@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30114",
+      "points": 610,
+      "created_at": "2026-10-21 14:15:00",
+      "status": "active"
+    },
+    {
+      "id": 23,
+      "full_name": "Kevin Mark Navarro",
+      "email": "kevin.navarro@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30115",
+      "points": 660,
+      "created_at": "2026-10-22 10:30:00",
+      "status": "active"
+    },
+    {
+      "id": 24,
+      "full_name": "Kimberly Ann Morales",
+      "email": "kimberly.morales@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30116",
+      "points": 390,
+      "created_at": "2026-10-22 16:05:00",
+      "status": "active"
+    },
+    {
+      "id": 25,
+      "full_name": "Lorenzo Miguel Soriano",
+      "email": "lorenzo.soriano@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30117",
+      "points": 740,
+      "created_at": "2026-10-23 08:50:00",
+      "status": "active"
+    },
+    {
+      "id": 26,
+      "full_name": "Maricar Lopez Pascual",
+      "email": "maricar.pascual@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30118",
+      "points": 510,
+      "created_at": "2026-10-23 13:35:00",
+      "status": "active"
+    },
+    {
+      "id": 27,
+      "full_name": "Nathaniel David Tolentino",
+      "email": "nathaniel.tolentino@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30119",
+      "points": 180,
+      "created_at": "2026-10-24 09:10:00",
+      "status": "active"
+    },
+    {
+      "id": 28,
+      "full_name": "Olivia Grace Domingo",
+      "email": "olivia.domingo@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30120",
+      "points": 850,
+      "created_at": "2026-10-24 15:20:00",
+      "status": "active"
+    },
+    {
+      "id": 29,
+      "full_name": "Patrick James Cortez",
+      "email": "patrick.cortez@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30121",
+      "points": 430,
+      "created_at": "2026-10-25 10:45:00",
+      "status": "active"
+    },
+    {
+      "id": 30,
+      "full_name": "Queenie May Alcantara",
+      "email": "queenie.alcantara@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30122",
+      "points": 670,
+      "created_at": "2026-10-25 14:00:00",
+      "status": "active"
+    },
+    {
+      "id": 31,
+      "full_name": "Rafael Vincent Valdez",
+      "email": "rafael.valdez@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30123",
+      "points": 290,
+      "created_at": "2026-10-26 08:15:00",
+      "status": "active"
+    },
+    {
+      "id": 32,
+      "full_name": "Stephanie Joy Manalo",
+      "email": "stephanie.manalo@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30124",
+      "points": 920,
+      "created_at": "2026-10-26 11:30:00",
+      "status": "active"
+    },
+    {
+      "id": 33,
+      "full_name": "Tristan Angelo Miranda",
+      "email": "tristan.miranda@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30125",
+      "points": 360,
+      "created_at": "2026-10-27 09:25:00",
+      "status": "active"
+    },
+    {
+      "id": 34,
+      "full_name": "Vanessa Marie Pineda",
+      "email": "vanessa.pineda@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30126",
+      "points": 580,
+      "created_at": "2026-10-27 15:10:00",
+      "status": "active"
+    },
+    {
+      "id": 35,
+      "full_name": "William Alexander De Leon",
+      "email": "william.deleon@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30127",
+      "points": 770,
+      "created_at": "2026-10-28 10:05:00",
+      "status": "active"
+    },
+    {
+      "id": 36,
+      "full_name": "Xyriel Faye Guinto",
+      "email": "xyriel.guinto@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30128",
+      "points": 240,
+      "created_at": "2026-10-28 14:40:00",
+      "status": "active"
+    },
+    {
+      "id": 37,
+      "full_name": "Yuri Sebastian Ocampo",
+      "email": "yuri.ocampo@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30129",
+      "points": 610,
+      "created_at": "2026-10-29 08:40:00",
+      "status": "active"
+    },
+    {
+      "id": 38,
+      "full_name": "Zoe Isabelle Roxas",
+      "email": "zoe.roxas@example.com",
+      "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
+      "role": "resident",
+      "qr_code": "ECO-RES-30130",
+      "points": 880,
+      "created_at": "2026-10-29 13:15:00",
+      "status": "active"
     }
   ],
   "materials": [
@@ -195,61 +542,159 @@
       "points_earned": 20,
       "receipt_no": "REC-20261031-4998",
       "created_at": "2026-10-31 08:02:17"
+    },
+    {
+      "id": 11,
+      "user_id": 12,
+      "material_id": 1,
+      "material_name": "Plastic Bottle",
+      "quantity": 1,
+      "points_earned": 5,
+      "receipt_no": "REC-20261101-3090",
+      "created_at": "2026-11-01 07:52:04"
+    },
+    {
+      "id": 12,
+      "user_id": 3,
+      "material_id": 2,
+      "material_name": "Can",
+      "quantity": 2,
+      "points_earned": 16,
+      "receipt_no": "REC-20261101-4748",
+      "created_at": "2026-11-01 07:52:32"
+    },
+    {
+      "id": 13,
+      "user_id": 14,
+      "material_id": 4,
+      "material_name": "Cardboard / Paper",
+      "quantity": 2,
+      "points_earned": 8,
+      "receipt_no": "REC-20261101-6468",
+      "created_at": "2026-11-01 07:52:46"
+    },
+    {
+      "id": 14,
+      "user_id": 22,
+      "material_id": 1,
+      "material_name": "Plastic Bottle",
+      "quantity": 4,
+      "points_earned": 20,
+      "receipt_no": "REC-20261101-5758",
+      "created_at": "2026-11-01 07:53:19"
+    },
+    {
+      "id": 15,
+      "user_id": 13,
+      "material_id": 2,
+      "material_name": "Can",
+      "quantity": 5,
+      "points_earned": 40,
+      "receipt_no": "REC-20261101-6633",
+      "created_at": "2026-11-01 07:53:26"
+    },
+    {
+      "id": 16,
+      "user_id": 16,
+      "material_id": 1,
+      "material_name": "Plastic Bottle",
+      "quantity": 3,
+      "points_earned": 15,
+      "receipt_no": "REC-20261101-1442",
+      "created_at": "2026-11-01 07:53:33"
+    },
+    {
+      "id": 17,
+      "user_id": 15,
+      "material_id": 4,
+      "material_name": "Cardboard / Paper",
+      "quantity": 5,
+      "points_earned": 20,
+      "receipt_no": "REC-20261101-4202",
+      "created_at": "2026-11-01 07:53:41"
+    },
+    {
+      "id": 18,
+      "user_id": 5,
+      "material_id": 1,
+      "material_name": "Plastic Bottle",
+      "quantity": 3,
+      "points_earned": 15,
+      "receipt_no": "REC-20261101-2589",
+      "created_at": "2026-11-01 07:53:46"
     }
   ],
   "rewards": [
     {
-      "id": 1,
-      "title": "10% Off at SM Lipa",
-      "category": "Discounts",
-      "points_required": 500,
-      "stock": 50,
-      "partner_name": "SM City Lipa",
-      "status": "available"
-    },
-    {
-      "id": 2,
-      "title": "Eco Tote Bag",
-      "category": "Merchandise",
-      "points_required": 1000,
-      "stock": 30,
-      "partner_name": "Barangay Green Store",
-      "status": "available"
-    },
-    {
-      "id": 3,
-      "title": "Discount Voucher (\u20b150) \u00b7 Robinsons Lipa",
-      "category": "Discounts",
-      "points_required": 1800,
-      "stock": 40,
-      "partner_name": "Robinsons Place Lipa",
-      "status": "available"
-    },
-    {
-      "id": 4,
-      "title": "Free Drink \u00b7 The Coffee Project",
-      "category": "Partners",
-      "points_required": 750,
-      "stock": 25,
-      "partner_name": "The Coffee Project Lipa",
-      "status": "available"
-    },
-    {
-      "id": 5,
-      "title": "EcoCoins Keychain",
-      "category": "Merchandise",
+      "id": 19,
+      "title": "1kg Sinandomeng Rice (Bigas)",
+      "category": "Food Staples",
       "points_required": 300,
-      "stock": 78,
+      "stock": 80,
+      "partner_name": "Barangay Food Bank",
+      "status": "available"
+    },
+    {
+      "id": 20,
+      "title": "5kg Dinorado Rice (Bigas)",
+      "category": "Food Staples",
+      "points_required": 1400,
+      "stock": 39,
+      "partner_name": "Barangay Food Bank",
+      "status": "available"
+    },
+    {
+      "id": 21,
+      "title": "Delata Pack (2 Sardinas + 1 Corned Beef)",
+      "category": "Canned Goods",
+      "points_required": 250,
+      "stock": 73,
+      "partner_name": "Barangay Relief Hub",
+      "status": "available"
+    },
+    {
+      "id": 22,
+      "title": "EcoCoins Heavy-Duty Payong (Umbrella)",
+      "category": "Merchandise",
+      "points_required": 450,
+      "stock": 50,
       "partner_name": "Barangay Green Store",
       "status": "available"
     },
     {
-      "id": 6,
-      "title": "Movie Pass (1 Ticket) \u00b7 SM Cinema Lipa",
-      "category": "Partners",
-      "points_required": 1500,
-      "stock": 20,
-      "partner_name": "SM Cinema Lipa",
+      "id": 23,
+      "title": "Eco Tote Bag (Reusable)",
+      "category": "Merchandise",
+      "points_required": 200,
+      "stock": 97,
+      "partner_name": "Barangay Green Store",
+      "status": "available"
+    },
+    {
+      "id": 24,
+      "title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
+      "category": "Food Staples",
+      "points_required": 180,
+      "stock": 83,
+      "partner_name": "Barangay Food Bank",
+      "status": "available"
+    },
+    {
+      "id": 25,
+      "title": "Family Hygiene Kit (Bath Soap, Detergent, Toothpaste)",
+      "category": "Household",
+      "points_required": 350,
+      "stock": 59,
+      "partner_name": "Barangay Health Center",
+      "status": "available"
+    },
+    {
+      "id": 26,
+      "title": "Stainless Water Tumbler (500ml)",
+      "category": "Merchandise",
+      "points_required": 500,
+      "stock": 43,
+      "partner_name": "Barangay Green Store",
       "status": "available"
     }
   ],
@@ -261,7 +706,7 @@
       "reward_title": "EcoCoins Keychain",
       "points_spent": 300,
       "redemption_code": "RDM-88219-01",
-      "status": "claimed",
+      "status": "released",
       "created_at": "2026-10-15 14:00:00"
     },
     {
@@ -271,7 +716,7 @@
       "reward_title": "EcoCoins Keychain",
       "points_spent": 300,
       "redemption_code": "RDM-64023",
-      "status": "claimed",
+      "status": "released",
       "created_at": "2026-10-31 08:09:27"
     },
     {
@@ -281,8 +726,178 @@
       "reward_title": "EcoCoins Keychain",
       "points_spent": 300,
       "redemption_code": "RDM-25296",
-      "status": "claimed",
+      "status": "released",
       "created_at": "2026-10-31 08:11:14"
+    },
+    {
+      "id": 4,
+      "user_id": 2,
+      "reward_id": 15,
+      "reward_title": "Free Load",
+      "points_spent": 100,
+      "redemption_code": "RDM-23248",
+      "status": "released",
+      "created_at": "2026-10-31 18:28:07"
+    },
+    {
+      "id": 5,
+      "user_id": 2,
+      "reward_id": 24,
+      "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
+      "points_spent": 180,
+      "redemption_code": "RDM-90646",
+      "status": "released",
+      "created_at": "2026-10-31 23:46:01"
+    },
+    {
+      "id": 6,
+      "user_id": 2,
+      "reward_id": 24,
+      "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
+      "points_spent": 180,
+      "redemption_code": "RDM-58179",
+      "status": "released",
+      "created_at": "2026-10-31 23:46:02"
+    },
+    {
+      "id": 7,
+      "user_id": 2,
+      "reward_id": 24,
+      "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
+      "points_spent": 180,
+      "redemption_code": "RDM-50855",
+      "status": "released",
+      "created_at": "2026-10-31 23:46:04"
+    },
+    {
+      "id": 8,
+      "user_id": 2,
+      "reward_id": 24,
+      "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
+      "points_spent": 180,
+      "redemption_code": "RDM-47496",
+      "status": "released",
+      "created_at": "2026-10-31 23:46:05"
+    },
+    {
+      "id": 9,
+      "user_id": 2,
+      "reward_id": 24,
+      "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
+      "points_spent": 180,
+      "redemption_code": "RDM-95764",
+      "status": "released",
+      "created_at": "2026-10-31 23:46:07"
+    },
+    {
+      "id": 10,
+      "user_id": 2,
+      "reward_id": 24,
+      "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
+      "points_spent": 180,
+      "redemption_code": "RDM-73440",
+      "status": "released",
+      "created_at": "2026-10-31 23:46:08"
+    },
+    {
+      "id": 11,
+      "user_id": 2,
+      "reward_id": 24,
+      "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
+      "points_spent": 180,
+      "redemption_code": "RDM-27373",
+      "status": "released",
+      "created_at": "2026-10-31 23:46:10"
+    },
+    {
+      "id": 12,
+      "user_id": 2,
+      "reward_id": 23,
+      "reward_title": "Eco Tote Bag (Reusable)",
+      "points_spent": 200,
+      "redemption_code": "RDM-59937",
+      "status": "released",
+      "created_at": "2026-11-01 07:34:53"
+    },
+    {
+      "id": 13,
+      "user_id": 2,
+      "reward_id": 21,
+      "reward_title": "Delata Pack (2 Sardinas + 1 Corned Beef)",
+      "points_spent": 250,
+      "redemption_code": "RDM-59306",
+      "status": "released",
+      "created_at": "2026-11-01 07:34:55"
+    },
+    {
+      "id": 14,
+      "user_id": 2,
+      "reward_id": 26,
+      "reward_title": "Stainless Water Tumbler (500ml)",
+      "points_spent": 500,
+      "redemption_code": "RDM-88978",
+      "status": "released",
+      "created_at": "2026-11-01 07:34:57"
+    },
+    {
+      "id": 15,
+      "user_id": 2,
+      "reward_id": 20,
+      "reward_title": "5kg Dinorado Rice (Bigas)",
+      "points_spent": 1400,
+      "redemption_code": "RDM-90630",
+      "status": "released",
+      "created_at": "2026-11-01 07:35:00"
+    },
+    {
+      "id": 16,
+      "user_id": 2,
+      "reward_id": 23,
+      "reward_title": "Eco Tote Bag (Reusable)",
+      "points_spent": 200,
+      "redemption_code": "RDM-59559",
+      "status": "released",
+      "created_at": "2026-11-01 07:35:01"
+    },
+    {
+      "id": 17,
+      "user_id": 2,
+      "reward_id": 23,
+      "reward_title": "Eco Tote Bag (Reusable)",
+      "points_spent": 200,
+      "redemption_code": "RDM-53104",
+      "status": "released",
+      "created_at": "2026-11-01 07:35:02"
+    },
+    {
+      "id": 18,
+      "user_id": 2,
+      "reward_id": 25,
+      "reward_title": "Family Hygiene Kit (Bath Soap, Detergent, Toothpaste)",
+      "points_spent": 350,
+      "redemption_code": "RDM-36726",
+      "status": "released",
+      "created_at": "2026-11-01 07:35:04"
+    },
+    {
+      "id": 19,
+      "user_id": 2,
+      "reward_id": 26,
+      "reward_title": "Stainless Water Tumbler (500ml)",
+      "points_spent": 500,
+      "redemption_code": "RDM-62463",
+      "status": "released",
+      "created_at": "2026-11-01 07:35:06"
+    },
+    {
+      "id": 20,
+      "user_id": 2,
+      "reward_id": 21,
+      "reward_title": "Delata Pack (2 Sardinas + 1 Corned Beef)",
+      "points_spent": 250,
+      "redemption_code": "RDM-77945",
+      "status": "released",
+      "created_at": "2026-11-01 07:35:10"
     }
   ]
 }
