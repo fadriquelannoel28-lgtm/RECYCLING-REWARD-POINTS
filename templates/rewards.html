@@ -15,9 +15,21 @@
     </div>
 
     {% if message %}
-      <div class="alert alert-{{ message_type }} alert-dismissible fade show rounded-3" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      <div class="eco-bubble-alert eco-bubble-{{ 'danger' if message_type == 'danger' else 'resident' }} mb-4" role="alert">
+        <div class="bubble-content">
+          <span class="bubble-icon">
+            {% if message_type == 'danger' %}
+              <i class="bi bi-exclamation-triangle-fill"></i>
+            {% else %}
+              <i class="bi bi-gift-fill"></i>
+            {% endif %}
+          </span>
+          <div>
+            <div class="fw-bold small text-uppercase" style="letter-spacing: 0.5px; opacity: 0.85;">Reward Notification</div>
+            <span>{{ message }}</span>
+          </div>
+        </div>
+        <button type="button" class="bubble-close-btn" aria-label="Close">&times;</button>
       </div>
     {% endif %}
 

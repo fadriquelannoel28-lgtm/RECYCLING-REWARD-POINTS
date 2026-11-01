@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS `users` (
   `role` enum('resident','staff','admin') DEFAULT 'resident',
   `qr_code` varchar(64) NOT NULL UNIQUE,
   `points` int(11) DEFAULT 0,
+  `status` varchar(20) DEFAULT 'active',
+  `station_name` varchar(255) DEFAULT 'Barangay Pinagkawitan, Lipa City',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -130,3 +132,19 @@ INSERT INTO `rewards` (`id`, `title`, `category`, `points_required`, `stock`, `p
 
 INSERT INTO `redemptions` (`id`, `user_id`, `reward_id`, `reward_title`, `points_spent`, `redemption_code`, `status`, `created_at`) VALUES
 (1, 2, 5, 'EcoCoins Keychain', 300, 'RDM-88219-01', 'claimed', '2026-10-15 14:00:00');
+
+CREATE TABLE IF NOT EXISTS `stations` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `station_code` varchar(50) NOT NULL UNIQUE,
+  `station_name` varchar(150) NOT NULL,
+  `location` varchar(255) NOT NULL,
+  `barangay` varchar(100) NOT NULL,
+  `city` varchar(100) NOT NULL,
+  `assigned_staff` varchar(150) DEFAULT '',
+  `status` varchar(20) DEFAULT 'active',
+  `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO `stations` (`id`, `station_code`, `station_name`, `location`, `barangay`, `city`, `assigned_staff`, `status`, `created_at`) VALUES
+(1, 'STN-LP-01', 'Pinagkawitan Collection Hub', 'Barangay Pinagkawitan, Lipa City', 'Pinagkawitan', 'Lipa City', 'Barangay Staff', 'active', '2026-10-02 08:00:00');

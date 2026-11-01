@@ -1,3 +1,7 @@
+if (window.history.replaceState) {
+  window.history.replaceState(null, null, window.location.href);
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   const toggleButtons = document.querySelectorAll('.toggle-password');
   toggleButtons.forEach(function (btn) {
@@ -198,5 +202,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
       });
     });
+  });
+
+  const bubbles = document.querySelectorAll('.eco-bubble-alert');
+  bubbles.forEach(function (bubble) {
+    const textSignature = bubble.innerText.replace(/\s+/g, ' ').trim().slice(0, 60);
+    const storageKey = 'eco_msg_dismissed_' + encodeURIComponent(textSignature);
+    const dismissedUntil = localStorage.getItem(storageKey);
+    const now = Date.now();
+
+    if (dismissedUntil && now < parseInt(dismissedUntil, 10)) {
+      bubble.style.display = 'none';
+      return;
+    }
+
+    function dismiss() {
+      bubble.style.opacity = '0';
+      bubble.style.transform = 'translateY(24px) scale(0.92)';
+      setTimeout(function () {
+        bubble.style.display = 'none';
+      }, 350);
+      localStorage.setItem(storageKey, (Date.now() + 60000).toString());
+    }
+
+    const closeBtn = bubble.querySelector('.bubble-close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', dismiss);
+    }
+
+    setTimeout(dismiss, 60000);
   });
 });

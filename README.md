@@ -2,14 +2,18 @@
 
 A Web-Based Automated Recycling Reward Points System for Barangay Residents built with Python (Flask) and Bootstrap 5.
 
+### Barangay Admin
+- **Email**: `admin@ecocoins.ph`
+- **Password**: `admin123`
+
+### Barangay Staff
+- **Email**: `staff@ecocoins.ph`
+- **Password**: `staff123`
+
 ### Resident
 - **Email**: `user@example.com`
 - **Password**: `user123`
 - **QR Code**: `ECO-RES-88219`
-
-### Barangay Admin
-- **Email**: `admin@ecocoins.ph`
-- **Password**: `admin123`
 
 ## Pages & Routes
 

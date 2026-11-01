@@ -1,8 +1,9 @@
 import random
 from datetime import datetime
-from flask import render_template, request, redirect, url_for, session, jsonify
+from flask import render_template, request, redirect, url_for, session, jsonify, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import get_db, sync_to_json, get_current_user, PaymentRequired
+from pdf_reports import generate_participation_report_pdf, generate_materials_report_pdf
 
 def register_routes(app):
 
@@ -76,6 +77,10 @@ def register_routes(app):
 
             if not first_name or not last_name or not email or not password:
                 error = 'Please fill in all required fields.'
+            elif len(first_name) < 2 or len(last_name) < 2:
+                error = 'Names must be at least 2 characters.'
+            elif any(char.isdigit() for char in (first_name + last_name)):
+                error = 'Names cannot contain numbers.'
             elif password != confirm_password:
                 error = 'Passwords do not match.'
             elif len(password) < 6:
@@ -119,13 +124,13 @@ def register_routes(app):
         if not user:
             return redirect(url_for('login'))
 
-        feedback = None
-        feedback_type = 'success'
-
         if request.method == 'POST':
             action = request.form.get('action')
             conn = get_db()
             cur = conn.cursor()
+
+            feedback = None
+            feedback_type = 'success'
 
             if action == 'update_profile':
                 first_name = request.form.get('first_name', '').strip()
@@ -136,6 +141,12 @@ def register_routes(app):
 
                 if not full_name or not email:
                     feedback = 'First name, last name, and email are required.'
+                    feedback_type = 'danger'
+                elif len(first_name) < 2 or len(last_name) < 2:
+                    feedback = 'Names must be at least 2 characters.'
+                    feedback_type = 'danger'
+                elif any(char.isdigit() for char in full_name):
+                    feedback = 'Names cannot contain numbers.'
                     feedback_type = 'danger'
                 else:
                     existing = cur.execute("SELECT id FROM users WHERE LOWER(email) = LOWER(?) AND id != ?", (email, user['id'])).fetchone()
@@ -148,8 +159,6 @@ def register_routes(app):
                         sync_to_json()
                         feedback = 'Profile details updated successfully.'
                         feedback_type = 'success'
-                        user['full_name'] = full_name
-                        user['email'] = email
 
             elif action == 'change_password':
                 current_pw = request.form.get('current_password', '').strip()
@@ -180,6 +189,12 @@ def register_routes(app):
                     feedback_type = 'success'
 
             conn.close()
+            session['feedback'] = feedback
+            session['feedback_type'] = feedback_type
+            return redirect(url_for('account'))
+
+        feedback = session.pop('feedback', None)
+        feedback_type = session.pop('feedback_type', 'success')
 
         return render_template(
             'account.html',
@@ -315,31 +330,26 @@ def register_routes(app):
         if user and user['role'] == 'admin':
             return redirect(url_for('admin'))
 
-        message = None
-        message_type = 'success'
-
-        conn = get_db()
-        cur = conn.cursor()
-
         if request.method == 'POST':
             if not user:
-                conn.close()
                 return redirect(url_for('login'))
 
+            conn = get_db()
+            cur = conn.cursor()
             reward_id = int(request.form.get('reward_id', 0))
             reward = cur.execute("SELECT * FROM rewards WHERE id = ?", (reward_id,)).fetchone()
 
             if not reward:
-                message = 'Selected reward not found.'
-                message_type = 'danger'
+                session['message'] = 'Selected reward not found.'
+                session['message_type'] = 'danger'
             else:
                 reward = dict(reward)
                 if user['points'] < reward['points_required']:
-                    message = 'Insufficient EcoPoints balance.'
-                    message_type = 'danger'
+                    session['message'] = 'Insufficient EcoPoints balance.'
+                    session['message_type'] = 'danger'
                 elif reward.get('stock', 0) <= 0:
-                    message = 'This reward is out of stock.'
-                    message_type = 'danger'
+                    session['message'] = 'This reward is out of stock.'
+                    session['message_type'] = 'danger'
                 else:
                     code = f'RDM-{random.randint(10000, 99999)}'
                     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -352,11 +362,18 @@ def register_routes(app):
                     cur.execute("UPDATE rewards SET stock = MAX(0, stock - 1) WHERE id = ?", (reward['id'],))
                     conn.commit()
 
-                    user['points'] = max(0, user['points'] - reward['points_required'])
-                    message = f'Reward redeemed successfully! Your claim voucher code is: {code}. You can present this code to Barangay Staff to claim your item.'
-                    message_type = 'success'
+                    session['message'] = f'Reward redeemed successfully! Your claim voucher code is: {code}. You can present this code to Barangay Staff to claim your item.'
+                    session['message_type'] = 'success'
                     sync_to_json()
 
+            conn.close()
+            return redirect(url_for('rewards'))
+
+        message = session.pop('message', None)
+        message_type = session.pop('message_type', 'success')
+
+        conn = get_db()
+        cur = conn.cursor()
         all_rewards = [dict(r) for r in cur.execute("SELECT * FROM rewards ORDER BY points_required ASC").fetchall()]
         user_redemptions = []
         if user:
@@ -381,16 +398,16 @@ def register_routes(app):
         if not user or user['role'] not in ['staff', 'admin']:
             return redirect(url_for('login'))
 
-        tab = request.args.get('tab', 'dashboard')
+        tab = request.form.get('tab') or request.args.get('tab', 'dashboard')
         prefill_qr = request.args.get('qr', '').strip()
-        feedback = None
-        feedback_type = 'success'
-        receipt = None
-
-        conn = get_db()
-        cur = conn.cursor()
 
         if request.method == 'POST':
+            feedback = None
+            feedback_type = 'success'
+            receipt = None
+            conn = get_db()
+            cur = conn.cursor()
+
             action = request.form.get('staff_action')
             if action == 'record_deposit':
                 qr_code = request.form.get('qr_code', '').strip()
@@ -445,6 +462,20 @@ def register_routes(app):
                     feedback = f"Reward voucher {redemp['redemption_code']} verified and released to resident."
                     feedback_type = 'success'
                     sync_to_json()
+
+            conn.close()
+            session['feedback'] = feedback
+            session['feedback_type'] = feedback_type
+            if receipt:
+                session['receipt'] = receipt
+            return redirect(url_for('staff', tab=tab))
+
+        feedback = session.pop('feedback', None)
+        feedback_type = session.pop('feedback_type', 'success')
+        receipt = session.pop('receipt', None)
+
+        conn = get_db()
+        cur = conn.cursor()
 
         all_txs = [dict(r) for r in cur.execute("""
             SELECT t.*, u.full_name AS resident_name, u.qr_code AS resident_qr
@@ -501,13 +532,13 @@ def register_routes(app):
                 return redirect(url_for('staff'))
             return redirect(url_for('login'))
 
-        tab = request.args.get('tab', 'dashboard')
-        feedback = None
-        feedback_type = 'success'
-        conn = get_db()
-        cur = conn.cursor()
+        tab = request.form.get('tab') or request.args.get('tab', 'dashboard')
 
         if request.method == 'POST':
+            feedback = None
+            feedback_type = 'success'
+            conn = get_db()
+            cur = conn.cursor()
             action = request.form.get('admin_action')
             if action == 'save_material':
                 name = request.form.get('mat_name', '').strip()
@@ -613,9 +644,22 @@ def register_routes(app):
                 name = f"{first_name} {last_name}".strip() if first_name else request.form.get('res_name', '').strip()
                 email = request.form.get('res_email', '').strip()
                 password = request.form.get('res_password', '').strip()
+                confirm_password = request.form.get('res_confirm_password', '').strip()
                 pts = max(0, int(request.form.get('res_points', 0)))
                 if not name or not email or not password:
                     feedback = 'Resident name, email, and password are required.'
+                    feedback_type = 'danger'
+                elif len(name) < 2:
+                    feedback = 'Resident name must be at least 2 characters.'
+                    feedback_type = 'danger'
+                elif any(char.isdigit() for char in name):
+                    feedback = 'Resident name cannot contain numbers.'
+                    feedback_type = 'danger'
+                elif len(password) < 6:
+                    feedback = 'Password must be at least 6 characters.'
+                    feedback_type = 'danger'
+                elif confirm_password and password != confirm_password:
+                    feedback = 'Passwords do not match. Please confirm your password.'
                     feedback_type = 'danger'
                 else:
                     existing = cur.execute("SELECT id FROM users WHERE LOWER(email) = LOWER(?)", (email,)).fetchone()
@@ -636,11 +680,19 @@ def register_routes(app):
                         sync_to_json()
             elif action == 'edit_resident':
                 res_id = int(request.form.get('res_id', 0))
-                name = request.form.get('res_name', '').strip()
+                first_name = request.form.get('res_first_name', '').strip()
+                last_name = request.form.get('res_last_name', '').strip()
+                name = f"{first_name} {last_name}".strip() if first_name else request.form.get('res_name', '').strip()
                 email = request.form.get('res_email', '').strip()
                 pts = max(0, int(request.form.get('res_points', 0)))
                 if not name or not email:
                     feedback = 'Resident name and email are required.'
+                    feedback_type = 'danger'
+                elif len(name) < 2:
+                    feedback = 'Resident name must be at least 2 characters.'
+                    feedback_type = 'danger'
+                elif any(char.isdigit() for char in name):
+                    feedback = 'Resident name cannot contain numbers.'
                     feedback_type = 'danger'
                 else:
                     existing = cur.execute("SELECT id FROM users WHERE LOWER(email) = LOWER(?) AND id != ?", (email, res_id)).fetchone()
@@ -684,14 +736,27 @@ def register_routes(app):
                     feedback_type = 'success'
                     sync_to_json()
             elif action == 'add_staff':
-                name = request.form.get('staff_name', '').strip()
+                first_name = request.form.get('staff_first_name', '').strip()
+                last_name = request.form.get('staff_last_name', '').strip()
+                name = f"{first_name} {last_name}".strip() if first_name else request.form.get('staff_name', '').strip()
                 email = request.form.get('staff_email', '').strip()
                 password = request.form.get('staff_password', '').strip()
+                confirm_password = request.form.get('staff_confirm_password', '').strip()
+                assigned_station = request.form.get('assigned_station', '').strip() or 'Barangay Pinagkawitan, Lipa City'
                 if not name or not email or not password:
                     feedback = 'Please provide staff name, email, and password.'
                     feedback_type = 'danger'
+                elif len(name) < 2:
+                    feedback = 'Staff name must be at least 2 characters.'
+                    feedback_type = 'danger'
+                elif any(char.isdigit() for char in name):
+                    feedback = 'Staff name cannot contain numbers.'
+                    feedback_type = 'danger'
                 elif len(password) < 6:
                     feedback = 'Password must be at least 6 characters.'
+                    feedback_type = 'danger'
+                elif confirm_password and password != confirm_password:
+                    feedback = 'Passwords do not match. Please confirm your password.'
                     feedback_type = 'danger'
                 else:
                     existing = cur.execute("SELECT id FROM users WHERE LOWER(email) = LOWER(?)", (email,)).fetchone()
@@ -703,9 +768,10 @@ def register_routes(app):
                         created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                         hashed_pw = generate_password_hash(password)
                         cur.execute(
-                            "INSERT INTO users (full_name, email, password, role, qr_code, points, status, created_at) VALUES (?, ?, ?, 'staff', ?, 0, 'active', ?)",
-                            (name, email, hashed_pw, qr_code, created_at)
+                            "INSERT INTO users (full_name, email, password, role, qr_code, points, status, created_at, station_name) VALUES (?, ?, ?, 'staff', ?, 0, 'active', ?, ?)",
+                            (name, email, hashed_pw, qr_code, created_at, assigned_station)
                         )
+                        cur.execute("UPDATE stations SET assigned_staff = ? WHERE station_name = ? OR ? LIKE '%' || station_name || '%'", (name, assigned_station, assigned_station))
                         conn.commit()
                         feedback = f'Staff account for {name} created successfully! They can now log in.'
                         feedback_type = 'success'
@@ -714,8 +780,15 @@ def register_routes(app):
                 staff_id = int(request.form.get('staff_id', 0))
                 name = request.form.get('staff_name', '').strip()
                 email = request.form.get('staff_email', '').strip()
+                assigned_station = request.form.get('assigned_station', '').strip()
                 if not name or not email:
                     feedback = 'Staff name and email are required.'
+                    feedback_type = 'danger'
+                elif len(name) < 2:
+                    feedback = 'Staff name must be at least 2 characters.'
+                    feedback_type = 'danger'
+                elif any(char.isdigit() for char in name):
+                    feedback = 'Staff name cannot contain numbers.'
                     feedback_type = 'danger'
                 else:
                     existing = cur.execute("SELECT id FROM users WHERE LOWER(email) = LOWER(?) AND id != ?", (email, staff_id)).fetchone()
@@ -723,7 +796,11 @@ def register_routes(app):
                         feedback = 'Email is already used by another account.'
                         feedback_type = 'danger'
                     else:
-                        cur.execute("UPDATE users SET full_name = ?, email = ? WHERE id = ? AND role = 'staff'", (name, email, staff_id))
+                        if assigned_station:
+                            cur.execute("UPDATE users SET full_name = ?, email = ?, station_name = ? WHERE id = ? AND role = 'staff'", (name, email, assigned_station, staff_id))
+                            cur.execute("UPDATE stations SET assigned_staff = ? WHERE station_name = ? OR ? LIKE '%' || station_name || '%'", (name, assigned_station, assigned_station))
+                        else:
+                            cur.execute("UPDATE users SET full_name = ?, email = ? WHERE id = ? AND role = 'staff'", (name, email, staff_id))
                         conn.commit()
                         feedback = 'Staff account updated successfully.'
                         feedback_type = 'success'
@@ -760,6 +837,81 @@ def register_routes(app):
                 feedback = 'Staff account deleted successfully.'
                 feedback_type = 'info'
                 sync_to_json()
+            elif action == 'add_station':
+                stn_name = request.form.get('station_name', '').strip()
+                stn_brgy = request.form.get('barangay', 'Pinagkawitan').strip()
+                stn_city = request.form.get('city', 'Lipa City').strip()
+                stn_code = request.form.get('station_code', '').strip()
+                stn_staff = request.form.get('assigned_staff', '').strip()
+                if not stn_code:
+                    count_stn = cur.execute('SELECT COUNT(*) FROM stations').fetchone()[0]
+                    stn_code = f"STN-LP-{count_stn + 1:02d}"
+                if not stn_name:
+                    stn_name = f"{stn_brgy} Collection Hub"
+                loc = f"Barangay {stn_brgy}, {stn_city}"
+                cur.execute(
+                    "INSERT INTO stations (station_code, station_name, location, barangay, city, assigned_staff, status, created_at) VALUES (?, ?, ?, ?, ?, ?, 'active', ?)",
+                    (stn_code, stn_name, loc, stn_brgy, stn_city, stn_staff, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                )
+                conn.commit()
+                feedback = f"Collection station '{stn_name}' registered successfully."
+                feedback_type = 'success'
+                sync_to_json()
+            elif action == 'edit_station':
+                stn_id = int(request.form.get('station_id', 0))
+                stn_name = request.form.get('station_name', '').strip()
+                stn_code = request.form.get('station_code', '').strip()
+                stn_brgy = request.form.get('barangay', '').strip()
+                stn_city = request.form.get('city', '').strip()
+                stn_status = request.form.get('status', 'active').strip()
+                loc = f"Barangay {stn_brgy}, {stn_city}" if (stn_brgy and stn_city) else ''
+                if not stn_name:
+                    feedback = 'Station Hub Name is required.'
+                    feedback_type = 'danger'
+                else:
+                    if loc:
+                        cur.execute("UPDATE stations SET station_name = ?, station_code = ?, location = ?, barangay = ?, city = ?, status = ? WHERE id = ?", (stn_name, stn_code, loc, stn_brgy, stn_city, stn_status, stn_id))
+                    else:
+                        cur.execute("UPDATE stations SET station_name = ?, station_code = ?, status = ? WHERE id = ?", (stn_name, stn_code, stn_status, stn_id))
+                    conn.commit()
+                    feedback = f"Collection station '{stn_name}' updated successfully."
+                    feedback_type = 'success'
+                    sync_to_json()
+            elif action == 'delete_station':
+                stn_id = int(request.form.get('station_id', 0))
+                stn_row = cur.execute("SELECT * FROM stations WHERE id = ?", (stn_id,)).fetchone()
+                if stn_row:
+                    stn = dict(stn_row)
+                    stn_staff = (stn.get('assigned_staff') or '').strip()
+                    stn_name = (stn.get('station_name') or '').strip()
+                    stn_brgy = (stn.get('barangay') or '').strip()
+
+                    staff_assigned = None
+                    if stn_staff:
+                        staff_assigned = cur.execute("SELECT id, full_name FROM users WHERE role = 'staff' AND full_name = ? AND status = 'active'", (stn_staff,)).fetchone()
+                    if not staff_assigned:
+                        staff_assigned = cur.execute("SELECT id, full_name FROM users WHERE role = 'staff' AND status = 'active' AND (station_name LIKE ? OR station_name LIKE ?)", (f"%{stn_name}%", f"%{stn_brgy}%")).fetchone()
+
+                    if stn_staff or staff_assigned:
+                        staff_name = dict(staff_assigned)['full_name'] if staff_assigned else stn_staff
+                        feedback = f"Cannot delete '{stn_name}': Active staff member ({staff_name}) is currently assigned to this station."
+                        feedback_type = 'danger'
+                    else:
+                        cur.execute("DELETE FROM stations WHERE id = ?", (stn_id,))
+                        conn.commit()
+                        feedback = f"Collection station '{stn_name}' removed successfully."
+                        feedback_type = 'info'
+                        sync_to_json()
+
+            conn.close()
+            session['feedback'] = feedback
+            session['feedback_type'] = feedback_type
+            return redirect(url_for('admin', tab=tab))
+
+        feedback = session.pop('feedback', None)
+        feedback_type = session.pop('feedback_type', 'success')
+        conn = get_db()
+        cur = conn.cursor()
 
         all_txs = [dict(r) for r in cur.execute("""
             SELECT t.*, u.full_name AS resident_name, u.qr_code AS resident_qr
@@ -772,6 +924,20 @@ def register_routes(app):
         staff_list = [dict(r) for r in cur.execute("SELECT * FROM users WHERE role = 'staff' ORDER BY id ASC").fetchall()]
         all_materials = [dict(r) for r in cur.execute("SELECT * FROM materials ORDER BY id ASC").fetchall()]
         all_rewards = [dict(r) for r in cur.execute("SELECT * FROM rewards ORDER BY points_required ASC").fetchall()]
+        all_stations = []
+        try:
+            all_stations = [dict(r) for r in cur.execute("SELECT * FROM stations ORDER BY id ASC").fetchall()]
+            for stn in all_stations:
+                stn_staff = (stn.get('assigned_staff') or '').strip()
+                stn_name = (stn.get('station_name') or '').strip()
+                stn_brgy = (stn.get('barangay') or '').strip()
+                has_active_staff = bool(stn_staff) or any(
+                    (u.get('station_name') and (stn_name in u['station_name'] or stn_brgy in u['station_name'])) or (stn_staff and u.get('full_name') == stn_staff)
+                    for u in staff_list if u.get('role') == 'staff' and u.get('status') == 'active'
+                )
+                stn['in_use'] = has_active_staff
+        except Exception:
+            pass
         all_redemptions = [dict(r) for r in cur.execute("""
             SELECT r.*, u.full_name AS resident_name, u.qr_code AS resident_qr
             FROM redemptions r
@@ -815,6 +981,7 @@ def register_routes(app):
             all_materials=all_materials,
             all_rewards=all_rewards,
             all_redemptions=all_redemptions,
+            all_stations=all_stations,
             stats=stats
         )
 
@@ -873,6 +1040,30 @@ def register_routes(app):
             'points_earned': pts,
             'current_balance': resident['points'] + pts
         })
+
+    @app.route('/admin/report/participation.pdf')
+    def report_participation_pdf():
+        user = get_current_user()
+        if not user or user['role'] != 'admin':
+            return redirect(url_for('login'))
+        pdf_data = generate_participation_report_pdf()
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        disposition = 'attachment' if request.args.get('download') else 'inline'
+        response.headers['Content-Disposition'] = f'{disposition}; filename=Community_Participation_Report.pdf'
+        return response
+
+    @app.route('/admin/report/materials.pdf')
+    def report_materials_pdf():
+        user = get_current_user()
+        if not user or user['role'] != 'admin':
+            return redirect(url_for('login'))
+        pdf_data = generate_materials_report_pdf()
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        disposition = 'attachment' if request.args.get('download') else 'inline'
+        response.headers['Content-Disposition'] = f'{disposition}; filename=Collected_Materials_Summary.pdf'
+        return response
 
     @app.route('/402')
     def trigger_402():

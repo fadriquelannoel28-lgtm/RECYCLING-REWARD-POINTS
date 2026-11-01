@@ -29,7 +29,7 @@
 
     <div class="d-none d-md-flex align-items-center gap-2 text-muted small">
       <i class="bi bi-geo-alt-fill text-success"></i>
-      <span>Barangay Poblacion Collection Unit</span>
+      <span>Barangay Pinagkawitan, Lipa City Collection Unit</span>
     </div>
 
     <div class="d-flex align-items-center gap-3">
@@ -50,9 +50,21 @@
 
 <div class="container-fluid py-4 px-3 px-lg-4">
   {% if feedback %}
-    <div class="alert alert-{{ feedback_type|default('success') }} alert-dismissible fade show rounded-3 mb-4" role="alert">
-      {{ feedback }}
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="eco-bubble-alert eco-bubble-{{ 'danger' if feedback_type == 'danger' else 'staff' }}" role="alert">
+      <div class="bubble-content">
+        <span class="bubble-icon">
+          {% if feedback_type == 'danger' %}
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          {% else %}
+            <i class="bi bi-person-badge-fill"></i>
+          {% endif %}
+        </span>
+        <div>
+          <div class="fw-bold small text-uppercase" style="letter-spacing: 0.5px; opacity: 0.85;">Staff Hub Notice</div>
+          <span>{{ feedback }}</span>
+        </div>
+      </div>
+      <button type="button" class="bubble-close-btn" aria-label="Close">&times;</button>
     </div>
   {% endif %}
 
@@ -157,7 +169,7 @@
               </div>
               <div class="fs-3 fw-bold" style="color: var(--eco-forest);">{{ "{:,}".format(staff_stats.total_residents) }}</div>
               <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
-                <span class="small text-muted">Barangay Poblacion</span>
+                <span class="small text-muted">Barangay Pinagkawitan</span>
                 <a href="{{ url_for('staff', tab='residents') }}" class="small text-success text-decoration-none fw-semibold">Directory &rarr;</a>
               </div>
             </div>
@@ -289,7 +301,7 @@
           <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <div>
               <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Barangay Residents Quick Directory</h5>
-              <div class="text-muted small">Registered community members in Poblacion</div>
+              <div class="text-muted small">Registered community members in Pinagkawitan, Lipa City</div>
             </div>
             <a href="{{ url_for('staff', tab='residents') }}" class="btn btn-sm btn-outline-success btn-pill">
               View All Residents
@@ -428,7 +440,7 @@
                   <span class="badge bg-success text-white py-1 px-2" id="infoPointsBadge">0 pts</span>
                 </div>
                 <div class="small text-muted mb-1"><i class="bi bi-envelope me-1"></i><span id="infoEmail">-</span></div>
-                <div class="small text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>Verified Resident of Barangay Poblacion</div>
+                <div class="small text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>Verified Resident of Barangay Pinagkawitan, Lipa City</div>
               </div>
 
               <div id="residentNotFound" class="alert alert-warning py-2 small mt-2" style="display: none;">
@@ -468,7 +480,7 @@
                   <label class="form-label small fw-semibold">Quantity Submitted</label>
                   <div class="input-group">
                     <button type="button" class="btn btn-outline-secondary" onclick="adjustQty(-1);">-</button>
-                    <input type="number" name="quantity" id="quantityInput" class="form-control text-center fw-bold fs-5" value="1" min="1" max="1000" required>
+                    <input type="number" name="quantity" id="quantityInput" class="form-control text-center fw-bold fs-5" value="1" min="1" max="1000" step="1" title="Quantity must be at least 1." required>
                     <button type="button" class="btn btn-outline-secondary" onclick="adjustQty(1);">+</button>
                     <span class="input-group-text bg-light text-muted" id="unitLabel">piece</span>
                   </div>
@@ -665,7 +677,7 @@
       {% elif tab == 'residents' %}
         <div class="mb-3">
           <h3 class="fw-bold mb-1">Barangay Residents Directory</h3>
-          <p class="text-muted mb-0">Registered members in Barangay Poblacion eligible for EcoPoints.</p>
+          <p class="text-muted mb-0">Registered members in Barangay Pinagkawitan, Lipa City eligible for EcoPoints.</p>
         </div>
 
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">

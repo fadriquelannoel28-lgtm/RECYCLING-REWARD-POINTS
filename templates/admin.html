@@ -102,6 +102,47 @@
     .table-responsive {
       overflow: visible !important;
     }
+    .form-control,
+    .form-select,
+    .input-group-text {
+      padding-top: 0.62rem !important;
+      padding-bottom: 0.62rem !important;
+    }
+    @media (max-width: 991.98px) {
+      .admin-sidebar {
+        min-height: auto;
+        padding: 1rem 1.25rem !important;
+      }
+      .admin-sidebar nav {
+        flex-direction: row !important;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 0.5rem;
+        gap: 0.5rem;
+        -webkit-overflow-scrolling: touch;
+      }
+      .admin-link {
+        white-space: nowrap;
+        margin-bottom: 0;
+        padding: 0.5rem 1rem;
+        font-size: 0.88rem;
+      }
+      .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+    @media (max-width: 575.98px) {
+      .input-group[style*="max-width"] {
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+      .pagination-container {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 0.75rem;
+      }
+    }
   </style>
 </head>
 <body class="bg-light">
@@ -166,7 +207,7 @@
       </div>
 
       <div class="pt-3 border-top border-success-subtle">
-        <a href="{{ url_for('staff') }}" class="admin-link text-warning-emphasis mb-2">
+        <a href="{{ url_for('staff') }}" class="admin-link text-white-emphasis mb-2">
           <i class="bi bi-qr-code-scan"></i>
           <span>Staff Collection Hub</span>
         </a>
@@ -183,9 +224,21 @@
 
     <div class="col-lg-9 col-xl-10 p-4 p-lg-5">
       {% if feedback %}
-        <div class="alert alert-{{ feedback_type|default('success') }} alert-dismissible fade show rounded-3 mb-4" role="alert">
-          {{ feedback }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="eco-bubble-alert eco-bubble-{{ 'danger' if feedback_type == 'danger' else 'admin' }}" role="alert">
+          <div class="bubble-content">
+            <span class="bubble-icon">
+              {% if feedback_type == 'danger' %}
+                <i class="bi bi-exclamation-triangle-fill"></i>
+              {% else %}
+                <i class="bi bi-shield-check"></i>
+              {% endif %}
+            </span>
+            <div>
+              <div class="fw-bold small text-uppercase" style="letter-spacing: 0.5px; opacity: 0.85;">Admin Notice</div>
+              <span>{{ feedback }}</span>
+            </div>
+          </div>
+          <button type="button" class="bubble-close-btn" aria-label="Close">&times;</button>
         </div>
       {% endif %}
 
@@ -302,13 +355,13 @@
         </div>
 
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-          <div class="input-group input-group-sm" style="max-width: 320px;">
+          <div class="input-group" style="max-width: 320px;">
             <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
               <i class="bi bi-search text-muted"></i>
             </span>
             <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search residents..." data-target="#adminResidentsTable">
           </div>
-          <button class="btn btn-success d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#addResidentModal">
+          <button class="btn btn-forest d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#addResidentModal">
             <i class="bi bi-person-plus"></i>
             <span>Add Resident</span>
           </button>
@@ -437,16 +490,22 @@
         </div>
 
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-          <div class="input-group input-group-sm" style="max-width: 320px;">
+          <div class="input-group" style="max-width: 320px;">
             <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
               <i class="bi bi-search text-muted"></i>
             </span>
             <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search staff..." data-target="#adminStaffTable">
           </div>
-          <button class="btn btn-success d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#addStaffModal">
-            <i class="bi bi-person-plus"></i>
-            <span>Add Staff Member</span>
-          </button>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button class="btn btn-forest d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#assignedStationsModal">
+              <i class="bi bi-plus-lg"></i>
+              <span>Assigned Station</span>
+            </button>
+            <button class="btn btn-forest d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#addStaffModal">
+              <i class="bi bi-person-plus"></i>
+              <span>Add Staff Member</span>
+            </button>
+          </div>
         </div>
 
         <div class="card border-0 shadow-sm p-4">
@@ -467,7 +526,7 @@
                   <tr class="table-row-item">
                     <td class="fw-semibold">{{ stf.full_name }}</td>
                     <td class="text-muted small">{{ stf.email }}</td>
-                    <td>Barangay Poblacion Collection Hub</td>
+                    <td><i class="bi bi-geo-alt-fill text-success me-1"></i>{{ stf.station_name|default('Barangay Pinagkawitan, Lipa City', true) }}</td>
                     <td><span class="font-monospace bg-light px-2 py-1 rounded small border">{{ stf.qr_code }}</span></td>
                     <td>
                       {% if stf.status == 'inactive' %}
@@ -483,7 +542,7 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end crud-dropdown-menu shadow">
                           <li>
-                            <button type="button" class="crud-menu-item edit-staff-btn" data-id="{{ stf.id }}" data-name="{{ stf.full_name }}" data-email="{{ stf.email }}" data-bs-toggle="modal" data-bs-target="#editStaffModal">
+                            <button type="button" class="crud-menu-item edit-staff-btn" data-id="{{ stf.id }}" data-name="{{ stf.full_name }}" data-email="{{ stf.email }}" data-station="{{ stf.station_name|default('Pinagkawitan Collection Hub - Barangay Pinagkawitan, Lipa City', true) }}" data-bs-toggle="modal" data-bs-target="#editStaffModal">
                               <span class="crud-icon-box blue"><i class="bi bi-pencil"></i></span>
                               <span>Edit</span>
                             </button>
@@ -568,14 +627,14 @@
         </div>
 
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-          <div class="input-group input-group-sm" style="max-width: 320px;">
+          <div class="input-group" style="max-width: 320px;">
             <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
               <i class="bi bi-search text-muted"></i>
             </span>
             <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search materials..." data-target="#adminMaterialsTable">
           </div>
-          <button class="btn btn-success d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#materialModal">
-            <i class="bi bi-plus-circle"></i>
+          <button class="btn btn-forest d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#materialModal">
+            <i class="bi bi-plus-lg"></i>
             <span>Add Material</span>
           </button>
         </div>
@@ -693,14 +752,14 @@
         </div>
 
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-          <div class="input-group input-group-sm" style="max-width: 320px;">
+          <div class="input-group" style="max-width: 320px;">
             <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
               <i class="bi bi-search text-muted"></i>
             </span>
             <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search rewards..." data-target="#adminRewardsTable">
           </div>
-          <button class="btn btn-success d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#rewardModal">
-            <i class="bi bi-plus-circle"></i>
+          <button class="btn btn-forest d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#rewardModal">
+            <i class="bi bi-plus-lg"></i>
             <span>Add Community Reward</span>
           </button>
         </div>
@@ -808,7 +867,7 @@
         </div>
 
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-          <div class="input-group input-group-sm" style="max-width: 320px;">
+          <div class="input-group" style="max-width: 320px;">
             <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
               <i class="bi bi-search text-muted"></i>
             </span>
@@ -870,56 +929,82 @@
 
         <div class="row g-4">
           <div class="col-md-6">
-            <div class="card border-0 shadow-sm p-4">
-              <h5 class="fw-bold mb-3">Community Participation Report</h5>
-              <ul class="list-group list-group-flush mb-4">
-                <li class="list-group-item d-flex justify-content-between">
-                  <span>Registered Residents:</span>
-                  <span class="fw-bold">{{ residents_list|length }}</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                  <span>Active Collection Staff:</span>
-                  <span class="fw-bold">{{ staff_list|length }}</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                  <span>Total Deposits Recorded:</span>
-                  <span class="fw-bold">{{ all_transactions|length }}</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                  <span>Total Points Issued:</span>
-                  <span class="fw-bold text-success">{{ "{:,}".format(stats.total_points_issued) }} pts</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                  <span>Total Rewards Claimed:</span>
-                  <span class="fw-bold">{{ all_redemptions|length }}</span>
-                </li>
-              </ul>
-              <button class="btn btn-outline-success w-100" onclick="window.print();">
-                <i class="bi bi-printer me-1"></i>Print Participation Report
-              </button>
+            <div class="card rounded-4 border-0 shadow-sm p-4 h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex align-items-center mb-3">
+                  <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+                    <i class="bi bi-people fs-6"></i>
+                  </span>
+                  <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Community Participation Report</h5>
+                </div>
+                <ul class="list-group list-group-flush mb-4">
+                  <li class="list-group-item d-flex justify-content-between px-0">
+                    <span>Registered Residents:</span>
+                    <span class="fw-bold">{{ residents_list|length }}</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between px-0">
+                    <span>Active Collection Staff:</span>
+                    <span class="fw-bold">{{ staff_list|length }}</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between px-0">
+                    <span>Total Deposits Recorded:</span>
+                    <span class="fw-bold">{{ all_transactions|length }}</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between px-0">
+                    <span>Total Points Issued:</span>
+                    <span class="fw-bold text-success">{{ "{:,}".format(stats.total_points_issued) }} pts</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between px-0">
+                    <span>Total Rewards Claimed:</span>
+                    <span class="fw-bold">{{ all_redemptions|length }}</span>
+                  </li>
+                </ul>
+              </div>
+              <div class="d-flex gap-2">
+                <a href="{{ url_for('report_participation_pdf') }}" target="_blank" class="btn btn-forest btn-pill flex-grow-1 d-flex align-items-center justify-content-center gap-2">
+                  <i class="bi bi-file-earmark-pdf"></i>
+                  <span>View PDF Report</span>
+                </a>
+                <a href="{{ url_for('report_participation_pdf', download=1) }}" class="btn btn-outline-secondary btn-pill px-3 d-flex align-items-center" title="Download PDF">
+                  <i class="bi bi-download"></i>
+                </a>
+              </div>
             </div>
           </div>
 
           <div class="col-md-6">
-            <div class="card border-0 shadow-sm p-4">
-              <h5 class="fw-bold mb-3">Collected Materials Summary</h5>
-              <ul class="list-group list-group-flush mb-4">
-                <li class="list-group-item d-flex justify-content-between">
-                  <span>Plastic Bottles:</span>
-                  <span class="fw-bold">{{ stats.material_counts['Plastic Bottles'] }} pcs</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                  <span>Aluminum Cans:</span>
-                  <span class="fw-bold">{{ stats.material_counts['Cans'] }} pcs</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                  <span>Other Recyclables:</span>
-                  <span class="fw-bold">{{ stats.material_counts['Others'] }} pcs/kg</span>
-                </li>
-              </ul>
-              <button class="btn btn-outline-success w-100" onclick="window.print();">
-                <i class="bi bi-printer me-1"></i>Print Materials Report
-              </button>
+            <div class="card rounded-4 border-0 shadow-sm p-4 h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex align-items-center mb-3">
+                  <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+                    <i class="bi bi-recycle fs-6"></i>
+                  </span>
+                  <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Collected Materials Summary</h5>
+                </div>
+                <ul class="list-group list-group-flush mb-4">
+                  <li class="list-group-item d-flex justify-content-between px-0">
+                    <span>Plastic Bottles:</span>
+                    <span class="fw-bold">{{ stats.material_counts['Plastic Bottles'] }} pcs</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between px-0">
+                    <span>Aluminum Cans:</span>
+                    <span class="fw-bold">{{ stats.material_counts['Cans'] }} pcs</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between px-0">
+                    <span>Other Recyclables:</span>
+                    <span class="fw-bold">{{ stats.material_counts['Others'] }} pcs/kg</span>
+                  </li>
+                </ul>
+              </div>
+              <div class="d-flex gap-2">
+                <a href="{{ url_for('report_materials_pdf') }}" target="_blank" class="btn btn-forest btn-pill flex-grow-1 d-flex align-items-center justify-content-center gap-2">
+                  <i class="bi bi-file-earmark-pdf"></i>
+                  <span>View PDF Report</span>
+                </a>
+                <a href="{{ url_for('report_materials_pdf', download=1) }}" class="btn btn-outline-secondary btn-pill px-3 d-flex align-items-center" title="Download PDF">
+                  <i class="bi bi-download"></i>
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -929,41 +1014,78 @@
 </div>
 
 <div class="modal fade" id="addResidentModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content rounded-4 border-0">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold">Add Resident Account</h5>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-2 pt-3 px-4" style="background-color: #f4faf6; border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <div class="d-flex align-items-center">
+          <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </span>
+          <h5 class="modal-title fw-bold mb-0" style="color: var(--eco-forest);">Add Resident Account</h5>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form action="{{ url_for('admin', tab='residents') }}" method="POST">
         <input type="hidden" name="admin_action" value="add_resident">
-        <div class="modal-body py-3">
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label small fw-semibold">First Name</label>
-              <input type="text" name="res_first_name" class="form-control" placeholder="Maria" required>
+        <div class="modal-body py-3 px-4">
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">First Name</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-person"></i></span>
+                <input type="text" name="res_first_name" class="form-control border-start-0 rounded-end-3" placeholder="Enter first name" minlength="2" maxlength="50" pattern="^[A-Za-zÀ-ÿ\s\.\-']{2,}$" title="First name must be at least 2 characters and contain letters only (no numbers)." required>
+              </div>
             </div>
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Last Name</label>
-              <input type="text" name="res_last_name" class="form-control" placeholder="Clara" required>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Last Name</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-person"></i></span>
+                <input type="text" name="res_last_name" class="form-control border-start-0 rounded-end-3" placeholder="Enter last name" minlength="2" maxlength="50" pattern="^[A-Za-zÀ-ÿ\s\.\-']{2,}$" title="Last name must be at least 2 characters and contain letters only (no numbers)." required>
+              </div>
             </div>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Email Address</label>
-            <input type="email" name="res_email" class="form-control" placeholder="e.g. maria@example.com" required>
+            <label class="form-label small fw-semibold text-muted mb-1">Email Address</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-envelope"></i></span>
+              <input type="email" name="res_email" class="form-control border-start-0 rounded-end-3" placeholder="e.g. maria@example.com" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Please enter a valid email address (e.g. name@domain.com)." required>
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Password</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
+                <input type="password" name="res_password" id="resAddPw" class="form-control border-start-0 border-end-0" placeholder="Enter Password" minlength="6" maxlength="64" title="Password must be at least 6 characters long." required>
+                <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="resAddPw"><i class="bi bi-eye"></i></button>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Confirm Password</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
+                <input type="password" name="res_confirm_password" id="resAddConfirmPw" class="form-control border-start-0 border-end-0" placeholder="Confirm Password" minlength="6" maxlength="64" title="Please confirm your password." required>
+                <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="resAddConfirmPw"><i class="bi bi-eye"></i></button>
+              </div>
+            </div>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Password</label>
-            <input type="password" name="res_password" class="form-control" placeholder="Min 6 characters" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Initial EcoPoints (Optional)</label>
-            <input type="number" name="res_points" class="form-control" value="0" min="0">
+            <label class="form-label small fw-semibold text-muted mb-1">Initial EcoPoints (Optional)</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-coin text-warning"></i></span>
+              <input type="number" name="res_points" class="form-control border-start-0 rounded-end-3" value="0" min="0" max="1000000" step="1" title="Initial EcoPoints must be a positive whole number or 0.">
+            </div>
           </div>
         </div>
-        <div class="modal-footer border-0 pt-0">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success px-4">Create Resident</button>
+        <div class="modal-footer border-0 pt-0 px-4 pb-3 d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary btn-pill px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-forest btn-pill px-4 d-flex align-items-center gap-2">
+            <i class="bi bi-person-check"></i>
+            <span>Create Resident</span>
+          </button>
         </div>
       </form>
     </div>
@@ -971,32 +1093,62 @@
 </div>
 
 <div class="modal fade" id="editResidentModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content rounded-4 border-0">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold">Edit Resident Details</h5>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-2 pt-3 px-4" style="background-color: #f4faf6; border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <div class="d-flex align-items-center">
+          <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </span>
+          <h5 class="modal-title fw-bold mb-0" style="color: var(--eco-forest);">Edit Resident Details</h5>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form action="{{ url_for('admin', tab='residents') }}" method="POST">
         <input type="hidden" name="admin_action" value="edit_resident">
         <input type="hidden" name="res_id" id="editResId">
-        <div class="modal-body py-3">
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Full Name</label>
-            <input type="text" name="res_name" id="editResName" class="form-control" required>
+        <input type="hidden" name="res_name" id="editResName">
+        <div class="modal-body py-3 px-4">
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">First Name</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-person"></i></span>
+                <input type="text" name="res_first_name" id="editResFirstName" class="form-control border-start-0 rounded-end-3" placeholder="Enter first name" minlength="2" maxlength="50" pattern="^[A-Za-zÀ-ÿ\s\.\-']{2,}$" title="First name must be at least 2 characters and contain letters only (no numbers)." required>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Last Name</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-person"></i></span>
+                <input type="text" name="res_last_name" id="editResLastName" class="form-control border-start-0 rounded-end-3" placeholder="Enter last name" minlength="2" maxlength="50" pattern="^[A-Za-zÀ-ÿ\s\.\-']{2,}$" title="Last name must be at least 2 characters and contain letters only (no numbers)." required>
+              </div>
+            </div>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Email Address</label>
-            <input type="email" name="res_email" id="editResEmail" class="form-control" required>
+            <label class="form-label small fw-semibold text-muted mb-1">Email Address</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-envelope"></i></span>
+              <input type="email" name="res_email" id="editResEmail" class="form-control border-start-0 rounded-end-3" placeholder="e.g. maria@example.com" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Please enter a valid email address (e.g. name@domain.com)." required>
+            </div>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Adjust EcoPoints Balance</label>
-            <input type="number" name="res_points" id="editResPoints" class="form-control" min="0" required>
+            <label class="form-label small fw-semibold text-muted mb-1">Adjust EcoPoints Balance</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-coin text-warning"></i></span>
+              <input type="number" name="res_points" id="editResPoints" class="form-control border-start-0 rounded-end-3" min="0" max="1000000" step="1" title="EcoPoints must be 0 or a positive whole number." required>
+            </div>
           </div>
         </div>
-        <div class="modal-footer border-0 pt-0">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success px-4">Save Changes</button>
+        <div class="modal-footer border-0 pt-0 px-4 pb-3 d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary btn-pill px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-forest btn-pill px-4 d-flex align-items-center gap-2">
+            <i class="bi bi-check-circle"></i>
+            <span>Save Changes</span>
+          </button>
         </div>
       </form>
     </div>
@@ -1004,25 +1156,281 @@
 </div>
 
 <div class="modal fade" id="resetResPasswordModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content rounded-4 border-0">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold">Set Resident Password</h5>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-2 pt-3 px-4" style="background-color: #f4faf6; border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <div class="d-flex align-items-center">
+          <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </span>
+          <h5 class="modal-title fw-bold mb-0" style="color: var(--eco-forest);">Set Resident Password</h5>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form action="{{ url_for('admin', tab='residents') }}" method="POST">
         <input type="hidden" name="admin_action" value="reset_resident_password">
         <input type="hidden" name="res_id" id="resetResId">
-        <div class="modal-body py-3">
-          <p class="small text-muted mb-3">Set new password for: <strong id="resetResNameText">-</strong></p>
+        <div class="modal-body py-3 px-4">
+          <div class="p-2.5 px-3 rounded-3 mb-3 d-flex align-items-center gap-2" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+            <i class="bi bi-person-circle text-muted fs-5"></i>
+            <div class="small">Setting new password for: <strong id="resetResNameText" class="text-dark">-</strong></div>
+          </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">New Password</label>
-            <input type="password" name="new_password" class="form-control" placeholder="Min 6 characters" required>
+            <label class="form-label small fw-semibold text-muted mb-1">New Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
+              <input type="password" name="new_password" id="resetResPw" class="form-control border-start-0 border-end-0" placeholder="Min 6 characters" minlength="6" maxlength="64" title="Password must be at least 6 characters long." required>
+              <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="resetResPw"><i class="bi bi-eye"></i></button>
+            </div>
           </div>
         </div>
-        <div class="modal-footer border-0 pt-0">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-warning px-4 text-dark fw-semibold">Set Password</button>
+        <div class="modal-footer border-0 pt-0 px-4 pb-3 d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary btn-pill px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-forest btn-pill px-4 d-flex align-items-center gap-2">
+            <i class="bi bi-key"></i>
+            <span>Set Password</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="assignedStationsModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 980px;">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-2 pt-3 px-4" style="background-color: #f4faf6; border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <div class="d-flex align-items-center">
+          <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </span>
+          <h5 class="modal-title fw-bold mb-0" style="color: var(--eco-forest);">Assigned Collection Stations</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-3 px-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="input-group" style="max-width: 280px;">
+            <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search station..." data-target="#assignedStationsTable">
+          </div>
+          <button class="btn btn-sm btn-success btn-pill d-flex align-items-center gap-1 px-3" data-bs-toggle="collapse" data-bs-target="#addStationCollapse">
+            <i class="bi bi-plus-lg"></i>
+            <span>Add Station</span>
+          </button>
+        </div>
+
+        <div class="collapse mb-3" id="addStationCollapse">
+          <div class="card border p-3 bg-light rounded-3">
+            <h6 class="fw-bold mb-2 text-dark">Register New Collection Station</h6>
+            <form action="{{ url_for('admin', tab='staff') }}" method="POST">
+              <input type="hidden" name="admin_action" value="add_station">
+              <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold mb-1">Station Hub Name</label>
+                  <input type="text" name="station_name" class="form-control rounded-3" placeholder="e.g. Pinagkawitan Collection Hub" minlength="2" maxlength="100" title="Station name must be at least 2 characters." required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold mb-1">Station Code</label>
+                  <input type="text" name="station_code" class="form-control rounded-3" placeholder="e.g. STN-LP-02" minlength="3" maxlength="20" pattern="^[A-Za-z0-9\-]+$" title="Station code should be alphanumeric with hyphens (e.g. STN-LP-02).">
+                </div>
+              </div>
+              <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold mb-1">Barangay</label>
+                  <input type="text" name="barangay" class="form-control rounded-3" value="Pinagkawitan" minlength="2" maxlength="100" title="Barangay must be at least 2 characters." required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold mb-1">City</label>
+                  <input type="text" name="city" class="form-control rounded-3" value="Lipa City" minlength="2" maxlength="100" pattern="^[A-Za-z\s\.\-']{2,}$" title="City must be at least 2 characters and contain letters only." required>
+                </div>
+              </div>
+              <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-sm btn-light" data-bs-toggle="collapse" data-bs-target="#addStationCollapse">Cancel</button>
+                <button type="submit" class="btn btn-sm btn-success px-3">Save Station</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" id="assignedStationsTable" data-paginate="true" data-page-size="5">
+            <thead class="table-light">
+              <tr>
+                <th class="text-nowrap" style="min-width: 145px; width: 145px;">Station Code</th>
+                <th style="min-width: 180px;">Station Hub</th>
+                <th style="min-width: 220px;">Location</th>
+                <th class="text-nowrap" style="min-width: 150px;">Assigned Staff</th>
+                <th class="text-nowrap" style="min-width: 125px;">Status</th>
+                <th class="text-end text-nowrap" style="min-width: 100px;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for stn in all_stations %}
+                <tr class="table-row-item">
+                  <td class="text-nowrap" style="white-space: nowrap;"><span class="font-monospace text-nowrap bg-light px-2.5 py-1 rounded small border fw-bold d-inline-block" style="white-space: nowrap; letter-spacing: 0.5px;">{{ stn.station_code }}</span></td>
+                  <td class="fw-semibold">{{ stn.station_name }}</td>
+                  <td class="text-muted small"><i class="bi bi-geo-alt-fill text-success me-1"></i>{{ stn.location }}</td>
+                  <td>
+                    {% if stn.assigned_staff %}
+                      <span class="badge bg-light text-dark border"><i class="bi bi-person-fill text-success me-1"></i>{{ stn.assigned_staff }}</span>
+                    {% else %}
+                      <span class="text-muted small fst-italic">Unassigned</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-nowrap">
+                    {% if stn.status == 'active' %}
+                      <span class="badge bg-success-subtle text-success border border-success-subtle">Active Station</span>
+                    {% else %}
+                      <span class="badge bg-secondary-subtle text-secondary border">Inactive</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <div class="dropdown">
+                      <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu">
+                        <i class="bi bi-three-dots"></i>
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end crud-dropdown-menu shadow">
+                        <li>
+                          <button type="button" class="crud-menu-item edit-station-btn" data-id="{{ stn.id }}" data-name="{{ stn.station_name }}" data-code="{{ stn.station_code }}" data-brgy="{{ stn.barangay }}" data-city="{{ stn.city }}" data-status="{{ stn.status }}" data-bs-toggle="modal" data-bs-target="#editStationModal">
+                            <span class="crud-icon-box blue"><i class="bi bi-pencil"></i></span>
+                            <span>Edit</span>
+                          </button>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        {% if stn.in_use %}
+                          <li>
+                            <button type="button" class="crud-menu-item disabled text-muted" disabled title="Cannot be deleted: active staff assigned" style="cursor: not-allowed; opacity: 0.7;">
+                              <span class="crud-icon-box orange"><i class="bi bi-shield-lock text-warning"></i></span>
+                              <span class="text-secondary fw-semibold">In Use</span>
+                            </button>
+                          </li>
+                        {% else %}
+                          <li>
+                            <form action="{{ url_for('admin', tab='staff') }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this station?');">
+                              <input type="hidden" name="admin_action" value="delete_station">
+                              <input type="hidden" name="station_id" value="{{ stn.id }}">
+                              <button type="submit" class="crud-menu-item text-danger">
+                                <span class="crud-icon-box red"><i class="bi bi-trash"></i></span>
+                                <span>Delete</span>
+                              </button>
+                            </form>
+                          </li>
+                        {% endif %}
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
+              {% else %}
+                <tr class="table-row-item">
+                  <td class="text-nowrap" style="white-space: nowrap;"><span class="font-monospace text-nowrap bg-light px-2.5 py-1 rounded small border fw-bold d-inline-block" style="white-space: nowrap; letter-spacing: 0.5px;">STN-LP-01</span></td>
+                  <td class="fw-semibold">Pinagkawitan Collection Hub</td>
+                  <td class="text-muted small"><i class="bi bi-geo-alt-fill text-success me-1"></i>Barangay Pinagkawitan, Lipa City</td>
+                  <td><span class="badge bg-light text-dark border"><i class="bi bi-person-fill text-success me-1"></i>Barangay Staff</span></td>
+                  <td class="text-nowrap"><span class="badge bg-success-subtle text-success border border-success-subtle">Active Station</span></td>
+                  <td class="text-end">
+                    <div class="dropdown">
+                      <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu">
+                        <i class="bi bi-three-dots"></i>
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end crud-dropdown-menu shadow">
+                        <li>
+                          <button type="button" class="crud-menu-item edit-station-btn" data-id="1" data-name="Pinagkawitan Collection Hub" data-code="STN-LP-01" data-brgy="Pinagkawitan" data-city="Lipa City" data-status="active" data-bs-toggle="modal" data-bs-target="#editStationModal">
+                            <span class="crud-icon-box blue"><i class="bi bi-pencil"></i></span>
+                            <span>Edit</span>
+                          </button>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                          <button type="button" class="crud-menu-item disabled text-muted" disabled title="Cannot be deleted: active staff assigned" style="cursor: not-allowed; opacity: 0.7;">
+                            <span class="crud-icon-box orange"><i class="bi bi-shield-lock text-warning"></i></span>
+                            <span class="text-secondary fw-semibold">In Use</span>
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top pagination-container" data-target="#assignedStationsTable">
+          <div class="text-muted small pagination-info">
+            Showing 1 to {{ all_stations|length if all_stations|length <= 5 else 5 }} of {{ all_stations|length if all_stations else 1 }} entries
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-prev" disabled>
+              <i class="bi bi-arrow-left me-1"></i> Prev
+            </button>
+            <span class="small fw-semibold text-muted px-2 pagination-page-indicator">Page 1 of 1</span>
+            <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-next" {% if (all_stations|length if all_stations else 1) <= 5 %}disabled{% endif %}>
+              Next <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editStationModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-2 pt-3 px-4" style="background-color: #f4faf6; border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <div class="d-flex align-items-center">
+          <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </span>
+          <h5 class="modal-title fw-bold mb-0" style="color: var(--eco-forest);">Edit Collection Station</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{{ url_for('admin', tab='staff') }}" method="POST">
+        <input type="hidden" name="admin_action" value="edit_station">
+        <input type="hidden" name="station_id" id="editStationId">
+        <div class="modal-body py-3 px-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted mb-1">Station Hub Name</label>
+            <input type="text" name="station_name" id="editStationName" class="form-control rounded-3" minlength="2" maxlength="100" title="Station name must be at least 2 characters." required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted mb-1">Station Code</label>
+            <input type="text" name="station_code" id="editStationCode" class="form-control rounded-3" minlength="3" maxlength="20" pattern="^[A-Za-z0-9\-]+$" title="Station code should be alphanumeric with hyphens (e.g. STN-LP-01)." required>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Barangay</label>
+              <input type="text" name="barangay" id="editStationBrgy" class="form-control rounded-3" minlength="2" maxlength="100" title="Barangay must be at least 2 characters." required>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">City</label>
+              <input type="text" name="city" id="editStationCity" class="form-control rounded-3" minlength="2" maxlength="100" pattern="^[A-Za-z\s\.\-']{2,}$" title="City must be at least 2 characters and contain letters only." required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted mb-1">Station Status</label>
+            <select name="status" id="editStationStatus" class="form-select rounded-3">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0 px-4 pb-3 d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary btn-pill px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-forest btn-pill px-4">Update Station</button>
         </div>
       </form>
     </div>
@@ -1030,39 +1438,91 @@
 </div>
 
 <div class="modal fade" id="addStaffModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content rounded-4 border-0">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold">Add Staff Account</h5>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-2 pt-3 px-4" style="background-color: #f4faf6; border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <div class="d-flex align-items-center">
+          <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </span>
+          <h5 class="modal-title fw-bold mb-0" style="color: var(--eco-forest);">Add Staff Member</h5>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form action="{{ url_for('admin', tab='staff') }}" method="POST">
         <input type="hidden" name="admin_action" value="add_staff">
-        <div class="modal-body py-3">
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Staff Full Name</label>
-            <input type="text" name="staff_name" class="form-control" placeholder="e.g. Maria Santos" required>
+        <div class="modal-body py-3 px-4">
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">First Name</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-person"></i></span>
+                <input type="text" name="staff_first_name" class="form-control border-start-0 rounded-end-3" placeholder="Enter first name" minlength="2" maxlength="50" pattern="^[A-Za-zÀ-ÿ\s\.\-']{2,}$" title="First name must be at least 2 characters and contain letters only (no numbers)." required>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Last Name</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-person"></i></span>
+                <input type="text" name="staff_last_name" class="form-control border-start-0 rounded-end-3" placeholder="Enter last name" minlength="2" maxlength="50" pattern="^[A-Za-zÀ-ÿ\s\.\-']{2,}$" title="Last name must be at least 2 characters and contain letters only (no numbers)." required>
+              </div>
+            </div>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Username or Email</label>
-            <input type="email" name="staff_email" class="form-control" placeholder="e.g. maria.staff@ecocoins.ph" required>
+            <label class="form-label small fw-semibold text-muted mb-1">Email Address</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-envelope"></i></span>
+              <input type="email" name="staff_email" class="form-control border-start-0 rounded-end-3" placeholder="e.g. maria.staff@ecocoins.ph" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Please enter a valid email address." required>
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Password</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
+                <input type="password" name="staff_password" id="staffAddPw" class="form-control border-start-0 border-end-0" placeholder="Enter Password" minlength="6" maxlength="64" title="Password must be at least 6 characters long." required>
+                <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="staffAddPw"><i class="bi bi-eye"></i></button>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Confirm Password</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
+                <input type="password" name="staff_confirm_password" id="staffAddConfirmPw" class="form-control border-start-0 border-end-0" placeholder="Confirm Password" minlength="6" maxlength="64" title="Please confirm your password." required>
+                <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="staffAddConfirmPw"><i class="bi bi-eye"></i></button>
+              </div>
+            </div>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Temporary Password</label>
-            <input type="password" name="staff_password" class="form-control" placeholder="Min 6 characters" required>
+            <label class="form-label small fw-semibold text-muted mb-1">Assigned Collection Station</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-geo-alt text-success"></i></span>
+              <select name="assigned_station" class="form-select border-start-0 rounded-end-3" required>
+                {% for stn in all_stations %}
+                  <option value="{{ stn.station_name }} - {{ stn.location }}">{{ stn.station_name }} ({{ stn.location }})</option>
+                {% else %}
+                  <option value="Pinagkawitan Collection Hub - Barangay Pinagkawitan, Lipa City">Pinagkawitan Collection Hub (Barangay Pinagkawitan, Lipa City)</option>
+                {% endfor %}
+              </select>
+            </div>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Assigned Station</label>
-            <input type="text" class="form-control bg-light" value="Barangay Poblacion Collection Hub" readonly>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Account Role</label>
-            <input type="text" class="form-control bg-light" value="Staff (Collection Station Operator)" readonly>
+            <label class="form-label small fw-semibold text-muted mb-1">Account Role</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-person-badge"></i></span>
+              <input type="text" class="form-control bg-light border-start-0 rounded-end-3 text-muted" value="Staff (Collection Station Operator)" readonly>
+            </div>
           </div>
         </div>
-        <div class="modal-footer border-0 pt-0">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success px-4">Create Staff Account</button>
+        <div class="modal-footer border-0 pt-0 px-4 pb-3 d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary btn-pill px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-forest btn-pill px-4 d-flex align-items-center gap-2">
+            <i class="bi bi-person-check"></i>
+            <span>Create Staff Member</span>
+          </button>
         </div>
       </form>
     </div>
@@ -1070,28 +1530,58 @@
 </div>
 
 <div class="modal fade" id="editStaffModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content rounded-4 border-0">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold">Edit Staff Account</h5>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-2 pt-3 px-4" style="background-color: #f4faf6; border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <div class="d-flex align-items-center">
+          <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </span>
+          <h5 class="modal-title fw-bold mb-0" style="color: var(--eco-forest);">Edit Staff Account</h5>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form action="{{ url_for('admin', tab='staff') }}" method="POST">
         <input type="hidden" name="admin_action" value="edit_staff">
         <input type="hidden" name="staff_id" id="editStaffId">
-        <div class="modal-body py-3">
+        <div class="modal-body py-3 px-4">
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Staff Full Name</label>
-            <input type="text" name="staff_name" id="editStaffName" class="form-control" required>
+            <label class="form-label small fw-semibold text-muted mb-1">Staff Full Name</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-person"></i></span>
+              <input type="text" name="staff_name" id="editStaffName" class="form-control border-start-0 rounded-end-3" minlength="2" maxlength="100" pattern="^[A-Za-zÀ-ÿ\s\.\-']{2,}$" title="Full name must be at least 2 characters and contain letters only (no numbers)." required>
+            </div>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Username or Email</label>
-            <input type="email" name="staff_email" id="editStaffEmail" class="form-control" required>
+            <label class="form-label small fw-semibold text-muted mb-1">Username or Email</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-envelope"></i></span>
+              <input type="email" name="staff_email" id="editStaffEmail" class="form-control border-start-0 rounded-end-3" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Please enter a valid email address." required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted mb-1">Assigned Station</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-geo-alt"></i></span>
+              <select name="assigned_station" id="editStaffStation" class="form-select border-start-0 rounded-end-3" required>
+                {% for stn in all_stations %}
+                  <option value="{{ stn.station_name }} - {{ stn.location }}">{{ stn.station_name }} ({{ stn.location }})</option>
+                {% else %}
+                  <option value="Pinagkawitan Collection Hub - Barangay Pinagkawitan, Lipa City">Pinagkawitan Collection Hub (Barangay Pinagkawitan, Lipa City)</option>
+                {% endfor %}
+              </select>
+            </div>
           </div>
         </div>
-        <div class="modal-footer border-0 pt-0">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success px-4">Save Changes</button>
+        <div class="modal-footer border-0 pt-0 px-4 pb-3 d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary btn-pill px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-forest btn-pill px-4 d-flex align-items-center gap-2">
+            <i class="bi bi-check-circle"></i>
+            <span>Save Changes</span>
+          </button>
         </div>
       </form>
     </div>
@@ -1099,25 +1589,43 @@
 </div>
 
 <div class="modal fade" id="resetPasswordModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content rounded-4 border-0">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold">Reset Staff Password</h5>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-2 pt-3 px-4" style="background-color: #f4faf6; border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <div class="d-flex align-items-center">
+          <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </span>
+          <h5 class="modal-title fw-bold mb-0" style="color: var(--eco-forest);">Reset Staff Password</h5>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form action="{{ url_for('admin', tab='staff') }}" method="POST">
         <input type="hidden" name="admin_action" value="reset_staff_password">
         <input type="hidden" name="staff_id" id="resetStaffId">
-        <div class="modal-body py-3">
-          <p class="small text-muted mb-3">Resetting password for: <strong id="resetStaffNameText">-</strong></p>
+        <div class="modal-body py-3 px-4">
+          <div class="p-2.5 px-3 rounded-3 mb-3 d-flex align-items-center gap-2" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+            <i class="bi bi-person-circle text-muted fs-5"></i>
+            <div class="small">Resetting password for: <strong id="resetStaffNameText" class="text-dark">-</strong></div>
+          </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">New Temporary Password</label>
-            <input type="password" name="new_password" class="form-control" placeholder="Min 6 characters" required>
+            <label class="form-label small fw-semibold text-muted mb-1">New Temporary Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
+              <input type="password" name="new_password" id="resetStaffPw" class="form-control border-start-0 border-end-0" placeholder="Min 6 characters" minlength="6" maxlength="64" title="Password must be at least 6 characters long." required>
+              <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="resetStaffPw"><i class="bi bi-eye"></i></button>
+            </div>
           </div>
         </div>
-        <div class="modal-footer border-0 pt-0">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-warning px-4 text-dark fw-semibold">Set New Password</button>
+        <div class="modal-footer border-0 pt-0 px-4 pb-3 d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary btn-pill px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-forest btn-pill px-4 d-flex align-items-center gap-2">
+            <i class="bi bi-key"></i>
+            <span>Set New Password</span>
+          </button>
         </div>
       </form>
     </div>
@@ -1125,37 +1633,73 @@
 </div>
 
 <div class="modal fade" id="materialModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content rounded-4 border-0">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold">Add Recyclable Material</h5>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-2 pt-3 px-4" style="background-color: #f4faf6; border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <div class="d-flex align-items-center">
+          <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </span>
+          <h5 class="modal-title fw-bold mb-0" style="color: var(--eco-forest);">Add Recyclable Material</h5>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form action="{{ url_for('admin', tab='materials') }}" method="POST">
         <input type="hidden" name="admin_action" value="save_material">
-        <div class="modal-body py-3">
+        <div class="modal-body py-3 px-4">
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Material Name</label>
-            <input type="text" name="mat_name" class="form-control" placeholder="e.g. Cardboard" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Category</label>
-            <input type="text" name="mat_cat" class="form-control" placeholder="e.g. Paper" required>
-          </div>
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Points per Unit</label>
-              <input type="number" name="mat_points" class="form-control" value="5" min="1" required>
+            <label class="form-label small fw-semibold text-muted mb-1">Material Name</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-box-seam"></i></span>
+              <input type="text" name="mat_name" class="form-control border-start-0 rounded-end-3" placeholder="e.g. Cardboard Boxes" minlength="2" maxlength="80" pattern="^[A-Za-z0-9\s\.\-\(\)\/]{2,}$" title="Material name must be at least 2 characters." required>
             </div>
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Unit</label>
-              <input type="text" name="mat_unit" class="form-control" value="piece" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted mb-1">Category</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-tag"></i></span>
+              <select name="mat_cat" class="form-select border-start-0 rounded-end-3" required>
+                <option value="Plastic Bottles">Plastic Bottles</option>
+                <option value="Paper & Cardboard">Paper & Cardboard</option>
+                <option value="Metal Cans">Metal Cans</option>
+                <option value="Glass Bottles">Glass Bottles</option>
+                <option value="Electronic Waste">Electronic Waste</option>
+                <option value="Other Recyclables">Other Recyclables</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Points per Unit</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-coin text-warning"></i></span>
+                <input type="number" name="mat_points" class="form-control border-start-0 rounded-end-3" value="5" min="1" max="100000" step="1" title="Points must be at least 1." required>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Unit of Measurement</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-speedometer2"></i></span>
+                <select name="mat_unit" class="form-select border-start-0 rounded-end-3" required>
+                  <option value="piece">piece</option>
+                  <option value="kg">kg</option>
+                  <option value="bottle">bottle</option>
+                  <option value="can">can</option>
+                  <option value="bundle">bundle</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
-        <div class="modal-footer border-0 pt-0">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success px-4">Save Material</button>
+        <div class="modal-footer border-0 pt-0 px-4 pb-3 d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary btn-pill px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-forest btn-pill px-4 d-flex align-items-center gap-2">
+            <i class="bi bi-plus-circle"></i>
+            <span>Save Material</span>
+          </button>
         </div>
       </form>
     </div>
@@ -1163,38 +1707,61 @@
 </div>
 
 <div class="modal fade" id="editMaterialModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content rounded-4 border-0">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold">Edit Recyclable Material</h5>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-2 pt-3 px-4" style="background-color: #f4faf6; border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <div class="d-flex align-items-center">
+          <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </span>
+          <h5 class="modal-title fw-bold mb-0" style="color: var(--eco-forest);">Edit Recyclable Material</h5>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form action="{{ url_for('admin', tab='materials') }}" method="POST">
         <input type="hidden" name="admin_action" value="edit_material">
         <input type="hidden" name="mat_id" id="editMatId">
-        <div class="modal-body py-3">
+        <div class="modal-body py-3 px-4">
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Material Name</label>
-            <input type="text" name="mat_name" id="editMatName" class="form-control" required>
+            <label class="form-label small fw-semibold text-muted mb-1">Material Name</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-recycle"></i></span>
+              <input type="text" name="mat_name" id="editMatName" class="form-control border-start-0 rounded-end-3" minlength="2" maxlength="80" pattern="^[A-Za-z0-9\s\.\-\(\)\/]{2,}$" title="Material name must be at least 2 characters." required>
+            </div>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Category</label>
-            <input type="text" name="mat_cat" id="editMatCat" class="form-control" required>
+            <label class="form-label small fw-semibold text-muted mb-1">Category</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-tag"></i></span>
+              <input type="text" name="mat_cat" id="editMatCat" class="form-control border-start-0 rounded-end-3" minlength="2" maxlength="50" required>
+            </div>
           </div>
           <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Points per Unit</label>
-              <input type="number" name="mat_points" id="editMatPoints" class="form-control" min="1" required>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Points per Unit</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-coin text-warning"></i></span>
+                <input type="number" name="mat_points" id="editMatPoints" class="form-control border-start-0 rounded-end-3" min="1" max="100000" step="1" title="Points must be at least 1." required>
+              </div>
             </div>
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Unit</label>
-              <input type="text" name="mat_unit" id="editMatUnit" class="form-control" required>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Unit</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-box-seam"></i></span>
+                <input type="text" name="mat_unit" id="editMatUnit" class="form-control border-start-0 rounded-end-3" minlength="1" maxlength="20" required>
+              </div>
             </div>
           </div>
         </div>
-        <div class="modal-footer border-0 pt-0">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success px-4">Update Material</button>
+        <div class="modal-footer border-0 pt-0 px-4 pb-3 d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary btn-pill px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-forest btn-pill px-4 d-flex align-items-center gap-2">
+            <i class="bi bi-check-circle"></i>
+            <span>Update Material</span>
+          </button>
         </div>
       </form>
     </div>
@@ -1202,48 +1769,75 @@
 </div>
 
 <div class="modal fade" id="rewardModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content rounded-4 border-0">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold">Add Community Reward</h5>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-2 pt-3 px-4" style="background-color: #f4faf6; border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <div class="d-flex align-items-center">
+          <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </span>
+          <h5 class="modal-title fw-bold mb-0" style="color: var(--eco-forest);">Add Community Reward</h5>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form action="{{ url_for('admin', tab='rewards') }}" method="POST">
         <input type="hidden" name="admin_action" value="save_reward">
-        <div class="modal-body py-3">
+        <div class="modal-body py-3 px-4">
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Reward Title</label>
-            <input type="text" name="rew_title" class="form-control" placeholder="e.g. 1kg Bigas or Delata Pack" required>
-          </div>
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Category</label>
-              <select name="rew_category" class="form-select">
-                <option value="Food Staples">Food Staples</option>
-                <option value="Canned Goods">Canned Goods</option>
-                <option value="Merchandise">Merchandise</option>
-                <option value="Household">Household</option>
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Points Required</label>
-              <input type="number" name="rew_points" class="form-control" value="300" min="10" required>
+            <label class="form-label small fw-semibold text-muted mb-1">Reward Title</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-gift"></i></span>
+              <input type="text" name="rew_title" class="form-control border-start-0 rounded-end-3" placeholder="e.g. 5kg Premium Rice or Grocery Voucher" minlength="3" maxlength="100" title="Reward title must be at least 3 characters." required>
             </div>
           </div>
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Stock Available</label>
-              <input type="number" name="rew_stock" class="form-control" value="50" min="1" required>
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Category</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-tag"></i></span>
+                <select name="rew_category" class="form-select border-start-0 rounded-end-3" required>
+                  <option value="Food Staples">Food Staples</option>
+                  <option value="Canned Goods">Canned Goods</option>
+                  <option value="Merchandise">Merchandise</option>
+                  <option value="Household">Household</option>
+                  <option value="Vouchers">Vouchers</option>
+                </select>
+              </div>
             </div>
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Partner / Provider</label>
-              <input type="text" name="rew_partner" class="form-control" placeholder="e.g. Barangay Food Bank">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Partner / Provider</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-shop"></i></span>
+                <input type="text" name="rew_partner" class="form-control border-start-0 rounded-end-3" placeholder="e.g. Barangay Food Bank" maxlength="100">
+              </div>
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Points Required</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-coin text-warning"></i></span>
+                <input type="number" name="rew_points" class="form-control border-start-0 rounded-end-3" value="300" min="1" max="1000000" step="1" title="Points required must be at least 1." required>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Initial Stock Available</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-box"></i></span>
+                <input type="number" name="rew_stock" class="form-control border-start-0 rounded-end-3" value="50" min="0" max="100000" step="1" title="Stock cannot be negative." required>
+              </div>
             </div>
           </div>
         </div>
-        <div class="modal-footer border-0 pt-0">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success px-4">Save Reward</button>
+        <div class="modal-footer border-0 pt-0 px-4 pb-3 d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary btn-pill px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-forest btn-pill px-4 d-flex align-items-center gap-2">
+            <i class="bi bi-gift"></i>
+            <span>Save Reward</span>
+          </button>
         </div>
       </form>
     </div>
@@ -1251,49 +1845,75 @@
 </div>
 
 <div class="modal fade" id="editRewardModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content rounded-4 border-0">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold">Edit Community Reward</h5>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-2 pt-3 px-4" style="background-color: #f4faf6; border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <div class="d-flex align-items-center">
+          <span class="eco-brand-badge me-2" style="width: 32px; height: 32px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </span>
+          <h5 class="modal-title fw-bold mb-0" style="color: var(--eco-forest);">Edit Community Reward</h5>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form action="{{ url_for('admin', tab='rewards') }}" method="POST">
         <input type="hidden" name="admin_action" value="edit_reward">
         <input type="hidden" name="reward_id" id="editRewardId">
-        <div class="modal-body py-3">
+        <div class="modal-body py-3 px-4">
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Reward Title</label>
-            <input type="text" name="rew_title" id="editRewardTitle" class="form-control" required>
-          </div>
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Category</label>
-              <select name="rew_category" id="editRewardCategory" class="form-select">
-                <option value="Food Staples">Food Staples</option>
-                <option value="Canned Goods">Canned Goods</option>
-                <option value="Merchandise">Merchandise</option>
-                <option value="Household">Household</option>
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Points Required</label>
-              <input type="number" name="rew_points" id="editRewardPoints" class="form-control" min="10" required>
+            <label class="form-label small fw-semibold text-muted mb-1">Reward Title</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-gift"></i></span>
+              <input type="text" name="rew_title" id="editRewardTitle" class="form-control border-start-0 rounded-end-3" minlength="3" maxlength="100" title="Reward title must be at least 3 characters." required>
             </div>
           </div>
           <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Stock Available</label>
-              <input type="number" name="rew_stock" id="editRewardStock" class="form-control" min="0" required>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Category</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-tags"></i></span>
+                <select name="rew_category" id="editRewardCategory" class="form-select border-start-0 rounded-end-3" required>
+                  <option value="Food Staples">Food Staples</option>
+                  <option value="Canned Goods">Canned Goods</option>
+                  <option value="Merchandise">Merchandise</option>
+                  <option value="Household">Household</option>
+                </select>
+              </div>
             </div>
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Partner / Provider</label>
-              <input type="text" name="rew_partner" id="editRewardPartner" class="form-control">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Points Required</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-coin text-warning"></i></span>
+                <input type="number" name="rew_points" id="editRewardPoints" class="form-control border-start-0 rounded-end-3" min="1" max="1000000" step="1" title="Points required must be at least 1." required>
+              </div>
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Stock Available</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-layers"></i></span>
+                <input type="number" name="rew_stock" id="editRewardStock" class="form-control border-start-0 rounded-end-3" min="0" max="100000" step="1" title="Stock cannot be negative." required>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Partner / Provider</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-building"></i></span>
+                <input type="text" name="rew_partner" id="editRewardPartner" class="form-control border-start-0 rounded-end-3" maxlength="100">
+              </div>
             </div>
           </div>
         </div>
-        <div class="modal-footer border-0 pt-0">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success px-4">Update Reward</button>
+        <div class="modal-footer border-0 pt-0 px-4 pb-3 d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary btn-pill px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-forest btn-pill px-4 d-flex align-items-center gap-2">
+            <i class="bi bi-check-circle"></i>
+            <span>Update Reward</span>
+          </button>
         </div>
       </form>
     </div>
@@ -1309,6 +1929,11 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('editStaffId').value = this.getAttribute('data-id');
       document.getElementById('editStaffName').value = this.getAttribute('data-name');
       document.getElementById('editStaffEmail').value = this.getAttribute('data-email');
+      const station = this.getAttribute('data-station');
+      const stnSelect = document.getElementById('editStaffStation');
+      if (stnSelect && station) {
+        stnSelect.value = station;
+      }
     });
   });
 
@@ -1321,10 +1946,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.querySelectorAll('.edit-resident-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-      document.getElementById('editResId').value = this.getAttribute('data-id');
-      document.getElementById('editResName').value = this.getAttribute('data-name');
-      document.getElementById('editResEmail').value = this.getAttribute('data-email');
-      document.getElementById('editResPoints').value = this.getAttribute('data-points');
+      const id = this.getAttribute('data-id');
+      const fullName = (this.getAttribute('data-name') || '').trim();
+      const email = this.getAttribute('data-email');
+      const points = this.getAttribute('data-points');
+
+      const parts = fullName.split(/\s+/);
+      const firstName = parts.length > 1 ? parts.slice(0, -1).join(' ') : fullName;
+      const lastName = parts.length > 1 ? parts[parts.length - 1] : '';
+
+      if (document.getElementById('editResId')) document.getElementById('editResId').value = id;
+      if (document.getElementById('editResFirstName')) document.getElementById('editResFirstName').value = firstName;
+      if (document.getElementById('editResLastName')) document.getElementById('editResLastName').value = lastName;
+      if (document.getElementById('editResName')) document.getElementById('editResName').value = fullName;
+      if (document.getElementById('editResEmail')) document.getElementById('editResEmail').value = email;
+      if (document.getElementById('editResPoints')) document.getElementById('editResPoints').value = points;
     });
   });
 
@@ -1355,6 +1991,68 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('editRewardPartner').value = this.getAttribute('data-partner');
     });
   });
+
+  document.querySelectorAll('.edit-station-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.getElementById('editStationId').value = this.getAttribute('data-id');
+      document.getElementById('editStationName').value = this.getAttribute('data-name');
+      document.getElementById('editStationCode').value = this.getAttribute('data-code');
+      document.getElementById('editStationBrgy').value = this.getAttribute('data-brgy');
+      document.getElementById('editStationCity').value = this.getAttribute('data-city');
+      document.getElementById('editStationStatus').value = this.getAttribute('data-status') || 'active';
+    });
+  });
+
+  document.querySelectorAll('.toggle-password').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const targetId = this.getAttribute('data-target');
+      const input = document.getElementById(targetId);
+      const icon = this.querySelector('i');
+      if (input) {
+        if (input.type === 'password') {
+          input.type = 'text';
+          if (icon) {
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+          }
+        } else {
+          input.type = 'password';
+          if (icon) {
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+          }
+        }
+      }
+    });
+  });
+
+  const resPw = document.getElementById('resAddPw');
+  const resConfirmPw = document.getElementById('resAddConfirmPw');
+  if (resPw && resConfirmPw) {
+    const validateResPw = () => {
+      if (resConfirmPw.value && resPw.value !== resConfirmPw.value) {
+        resConfirmPw.setCustomValidity('Passwords do not match');
+      } else {
+        resConfirmPw.setCustomValidity('');
+      }
+    };
+    resPw.addEventListener('input', validateResPw);
+    resConfirmPw.addEventListener('input', validateResPw);
+  }
+
+  const staffPw = document.getElementById('staffAddPw');
+  const staffConfirmPw = document.getElementById('staffAddConfirmPw');
+  if (staffPw && staffConfirmPw) {
+    const validateStaffPw = () => {
+      if (staffConfirmPw.value && staffPw.value !== staffConfirmPw.value) {
+        staffConfirmPw.setCustomValidity('Passwords do not match');
+      } else {
+        staffConfirmPw.setCustomValidity('');
+      }
+    };
+    staffPw.addEventListener('input', validateStaffPw);
+    staffConfirmPw.addEventListener('input', validateStaffPw);
+  }
 });
 </script>
 </body>

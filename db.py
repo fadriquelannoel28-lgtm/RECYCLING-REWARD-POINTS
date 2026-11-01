@@ -39,6 +39,11 @@ def sync_to_json():
     txs = [dict(r) for r in cur.execute("SELECT * FROM transactions").fetchall()]
     rewards = [dict(r) for r in cur.execute("SELECT * FROM rewards").fetchall()]
     redemptions = [dict(r) for r in cur.execute("SELECT * FROM redemptions").fetchall()]
+    stations = []
+    try:
+        stations = [dict(r) for r in cur.execute("SELECT * FROM stations").fetchall()]
+    except Exception:
+        pass
     conn.close()
 
     payload = {
@@ -46,7 +51,8 @@ def sync_to_json():
         "materials": materials,
         "transactions": txs,
         "rewards": rewards,
-        "redemptions": redemptions
+        "redemptions": redemptions,
+        "stations": stations
     }
     os.makedirs(os.path.dirname(JSON_PATH), exist_ok=True)
     with open(JSON_PATH, 'w', encoding='utf-8') as f:
@@ -71,6 +77,12 @@ def init_db():
 
     try:
         cur.execute("ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'active'")
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
+        cur.execute("ALTER TABLE users ADD COLUMN station_name TEXT DEFAULT 'Barangay Pinagkawitan, Lipa City'")
         conn.commit()
     except Exception:
         pass
@@ -116,7 +128,30 @@ def init_db():
         created_at TEXT
     )''')
 
+    cur.execute('''CREATE TABLE IF NOT EXISTS stations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        station_code TEXT NOT NULL UNIQUE,
+        station_name TEXT NOT NULL,
+        location TEXT NOT NULL,
+        barangay TEXT NOT NULL,
+        city TEXT NOT NULL,
+        assigned_staff TEXT DEFAULT '',
+        status TEXT DEFAULT 'active',
+        created_at TEXT
+    )''')
+
     conn.commit()
+
+    try:
+        stn_count = cur.execute("SELECT COUNT(*) FROM stations").fetchone()[0]
+        if stn_count == 0:
+            cur.execute(
+                "INSERT INTO stations (station_code, station_name, location, barangay, city, assigned_staff, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                ("STN-LP-01", "Pinagkawitan Collection Hub", "Barangay Pinagkawitan, Lipa City", "Pinagkawitan", "Lipa City", "Barangay Staff", "active", "2026-10-02 08:00:00")
+            )
+            conn.commit()
+    except Exception:
+        pass
 
     user_count = cur.execute("SELECT COUNT(*) FROM users").fetchone()[0]
     if user_count == 0:

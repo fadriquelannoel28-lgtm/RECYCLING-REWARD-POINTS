@@ -9,29 +9,32 @@
       "qr_code": "ECO-ADM-0001",
       "points": 0,
       "created_at": "2026-10-01 08:00:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 2,
-      "full_name": "User",
-      "email": "user@example.com",
+      "full_name": "Barangay Staff",
+      "email": "staff@barangay.gov.ph",
       "password": "scrypt:32768:8:1$zRmGvXSAvdd9VSVz$c0eb0732113c4612d74bca0c96430984608329e21a6d188e218f2f03091d0f2e644473f8ba6fa6d23e50d24820866a932773acb7566911f392b6cc5474ae4e7a",
       "role": "resident",
       "qr_code": "ECO-RES-88219",
-      "points": 4889,
+      "points": 300,
       "created_at": "2026-10-10 09:30:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 3,
-      "full_name": "Annie Flores",
-      "email": "annie@example.com",
+      "full_name": "Maria Santos",
+      "email": "maria@example.com",
       "password": "scrypt:32768:8:1$iIXpZ2yBkirDTV2F$cb4e32d6dccc0c36ef0fd63aa85a4e20735d141afa12c013b3e416da53d64395c7eae3f108c0e32171ea28838a4fabf0ff7bf34d0b27fdf5f40e7ebddb74f21c",
       "role": "resident",
       "qr_code": "ECO-RES-10492",
-      "points": 856,
+      "points": 350,
       "created_at": "2026-10-12 11:20:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 4,
@@ -42,7 +45,8 @@
       "qr_code": "ECO-RES-29381",
       "points": 960,
       "created_at": "2026-10-14 14:15:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 5,
@@ -53,7 +57,8 @@
       "qr_code": "ECO-RES-50123",
       "points": 1115,
       "created_at": "2026-10-15 16:40:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 6,
@@ -64,7 +69,8 @@
       "qr_code": "ECO-RES-77401",
       "points": 620,
       "created_at": "2026-10-16 10:10:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 7,
@@ -75,7 +81,8 @@
       "qr_code": "ECO-STF-0001",
       "points": 0,
       "created_at": "2026-10-02 08:00:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 9,
@@ -86,7 +93,8 @@
       "qr_code": "ECO-RES-30101",
       "points": 350,
       "created_at": "2026-10-15 08:30:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 10,
@@ -97,7 +105,8 @@
       "qr_code": "ECO-RES-30102",
       "points": 720,
       "created_at": "2026-10-15 09:15:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 11,
@@ -108,7 +117,8 @@
       "qr_code": "ECO-RES-30103",
       "points": 540,
       "created_at": "2026-10-16 10:00:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 12,
@@ -119,7 +129,8 @@
       "qr_code": "ECO-RES-30104",
       "points": 285,
       "created_at": "2026-10-16 11:20:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 13,
@@ -130,7 +141,8 @@
       "qr_code": "ECO-RES-30105",
       "points": 930,
       "created_at": "2026-10-17 08:45:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 14,
@@ -141,7 +153,8 @@
       "qr_code": "ECO-RES-30106",
       "points": 418,
       "created_at": "2026-10-17 13:10:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 15,
@@ -152,7 +165,8 @@
       "qr_code": "ECO-RES-30107",
       "points": 650,
       "created_at": "2026-10-18 09:05:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 16,
@@ -163,7 +177,8 @@
       "qr_code": "ECO-RES-30108",
       "points": 165,
       "created_at": "2026-10-18 14:30:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 17,
@@ -174,7 +189,8 @@
       "qr_code": "ECO-RES-30109",
       "points": 980,
       "created_at": "2026-10-19 10:15:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 18,
@@ -185,7 +201,8 @@
       "qr_code": "ECO-RES-30110",
       "points": 320,
       "created_at": "2026-10-19 15:40:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 19,
@@ -196,7 +213,8 @@
       "qr_code": "ECO-RES-30111",
       "points": 470,
       "created_at": "2026-10-20 08:25:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 20,
@@ -207,7 +225,8 @@
       "qr_code": "ECO-RES-30112",
       "points": 810,
       "created_at": "2026-10-20 11:50:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 21,
@@ -218,7 +237,8 @@
       "qr_code": "ECO-RES-30113",
       "points": 220,
       "created_at": "2026-10-21 09:40:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 22,
@@ -229,7 +249,8 @@
       "qr_code": "ECO-RES-30114",
       "points": 610,
       "created_at": "2026-10-21 14:15:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 23,
@@ -240,7 +261,8 @@
       "qr_code": "ECO-RES-30115",
       "points": 660,
       "created_at": "2026-10-22 10:30:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 24,
@@ -251,7 +273,8 @@
       "qr_code": "ECO-RES-30116",
       "points": 390,
       "created_at": "2026-10-22 16:05:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 25,
@@ -262,7 +285,8 @@
       "qr_code": "ECO-RES-30117",
       "points": 740,
       "created_at": "2026-10-23 08:50:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 26,
@@ -273,7 +297,8 @@
       "qr_code": "ECO-RES-30118",
       "points": 510,
       "created_at": "2026-10-23 13:35:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 27,
@@ -284,7 +309,8 @@
       "qr_code": "ECO-RES-30119",
       "points": 180,
       "created_at": "2026-10-24 09:10:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 28,
@@ -295,7 +321,8 @@
       "qr_code": "ECO-RES-30120",
       "points": 850,
       "created_at": "2026-10-24 15:20:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 29,
@@ -306,7 +333,8 @@
       "qr_code": "ECO-RES-30121",
       "points": 430,
       "created_at": "2026-10-25 10:45:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 30,
@@ -317,7 +345,8 @@
       "qr_code": "ECO-RES-30122",
       "points": 670,
       "created_at": "2026-10-25 14:00:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 31,
@@ -328,7 +357,8 @@
       "qr_code": "ECO-RES-30123",
       "points": 290,
       "created_at": "2026-10-26 08:15:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 32,
@@ -339,7 +369,8 @@
       "qr_code": "ECO-RES-30124",
       "points": 920,
       "created_at": "2026-10-26 11:30:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 33,
@@ -350,7 +381,8 @@
       "qr_code": "ECO-RES-30125",
       "points": 360,
       "created_at": "2026-10-27 09:25:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 34,
@@ -361,7 +393,8 @@
       "qr_code": "ECO-RES-30126",
       "points": 580,
       "created_at": "2026-10-27 15:10:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 35,
@@ -372,7 +405,8 @@
       "qr_code": "ECO-RES-30127",
       "points": 770,
       "created_at": "2026-10-28 10:05:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 36,
@@ -383,7 +417,8 @@
       "qr_code": "ECO-RES-30128",
       "points": 240,
       "created_at": "2026-10-28 14:40:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 37,
@@ -394,7 +429,8 @@
       "qr_code": "ECO-RES-30129",
       "points": 610,
       "created_at": "2026-10-29 08:40:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     },
     {
       "id": 38,
@@ -405,7 +441,8 @@
       "qr_code": "ECO-RES-30130",
       "points": 880,
       "created_at": "2026-10-29 13:15:00",
-      "status": "active"
+      "status": "active",
+      "station_name": "Barangay Pinagkawitan, Lipa City"
     }
   ],
   "materials": [
@@ -898,6 +935,19 @@
       "redemption_code": "RDM-77945",
       "status": "released",
       "created_at": "2026-11-01 07:35:10"
+    }
+  ],
+  "stations": [
+    {
+      "id": 1,
+      "station_code": "STN-LP-01",
+      "station_name": "Pinagkawitan Collection Hub",
+      "location": "Barangay Pinagkawitan, Lipa City",
+      "barangay": "Pinagkawitan",
+      "city": "Lipa City",
+      "assigned_staff": "Barangay Staff",
+      "status": "active",
+      "created_at": "2026-10-02 08:00:00"
     }
   ]
 }
