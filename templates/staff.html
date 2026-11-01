@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body class="bg-light">
 
@@ -1439,33 +1439,108 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  function showStaffAlert(title, message) {
+    const modalEl = document.getElementById('universalConfirmModal');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const titleEl = document.getElementById('confirmModalTitle');
+      const msgEl = document.getElementById('confirmModalMessage');
+      const cancelBtn = document.getElementById('confirmModalCancelBtn');
+      const proceedBtn = document.getElementById('confirmModalProceedBtn');
+      if (titleEl) titleEl.textContent = title;
+      if (msgEl) msgEl.textContent = message;
+      if (cancelBtn) cancelBtn.style.display = 'none';
+      if (proceedBtn) {
+        proceedBtn.className = 'btn btn-forest rounded-pill px-4';
+        proceedBtn.textContent = 'Understood';
+        proceedBtn.onclick = function() {
+          bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+        };
+      }
+      const bs = bootstrap.Modal.getOrCreateInstance(modalEl);
+      bs.show();
+    } else {
+      alert(title + '\n\n' + message);
+    }
+  }
+
   const scannerBtn = document.getElementById('startScannerBtn');
   if (scannerBtn) {
     scannerBtn.addEventListener('click', function() {
       const readerDiv = document.getElementById('qrReader');
       if (readerDiv.style.display === 'none') {
+        const isSecure = window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        if (!isSecure && !navigator.mediaDevices) {
+          showStaffAlert('Secure Connection Required', 'Mobile and laptop browsers block camera access on plain network IP addresses (like 192.168.x.x). Please open this app via your HTTPS Vercel URL or http://localhost:5000, or use manual QR entry / select resident below.');
+          return;
+        }
+
+        if (typeof Html5Qrcode === 'undefined') {
+          showStaffAlert('Scanner Loading', 'The camera scanner library is still loading. Please wait a moment and try again, or use manual QR entry.');
+          return;
+        }
+
         readerDiv.style.display = 'block';
         if (!html5QrScanner) {
           html5QrScanner = new Html5Qrcode("qrReader");
         }
-        html5QrScanner.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 220, height: 220 } },
-          (decodedText) => {
+
+        const qrConfig = { fps: 10, qrbox: { width: 220, height: 220 } };
+
+        function onScanSuccess(decodedText) {
+          if (html5QrScanner) {
             html5QrScanner.stop().then(() => {
               readerDiv.style.display = 'none';
+            }).catch(() => {
+              readerDiv.style.display = 'none';
             });
-            document.getElementById('manualQrInput').value = decodedText;
-            document.getElementById('lookupQrBtn').click();
-          },
-          () => {}
-        ).catch(() => {
-          alert('Camera access unavailable. You can use manual QR entry or select resident from the list.');
+          }
+          const manualInput = document.getElementById('manualQrInput');
+          const lookupButton = document.getElementById('lookupQrBtn');
+          if (manualInput) manualInput.value = decodedText;
+          if (lookupButton) lookupButton.click();
+        }
+
+        function runScanner() {
+          if (Html5Qrcode.getCameras) {
+            return Html5Qrcode.getCameras().then(devices => {
+              if (devices && devices.length > 0) {
+                let chosenId = devices[0].id;
+                for (let i = 0; i < devices.length; i++) {
+                  const lbl = (devices[i].label || '').toLowerCase();
+                  if (lbl.includes('back') || lbl.includes('rear') || lbl.includes('environment')) {
+                    chosenId = devices[i].id;
+                    break;
+                  }
+                }
+                return html5QrScanner.start(chosenId, qrConfig, onScanSuccess);
+              }
+              return html5QrScanner.start({ facingMode: "environment" }, qrConfig, onScanSuccess)
+                .catch(() => html5QrScanner.start({ facingMode: "user" }, qrConfig, onScanSuccess));
+            }).catch(() => {
+              return html5QrScanner.start({ facingMode: "environment" }, qrConfig, onScanSuccess)
+                .catch(() => html5QrScanner.start({ facingMode: "user" }, qrConfig, onScanSuccess))
+                .catch(() => html5QrScanner.start({}, qrConfig, onScanSuccess));
+            });
+          }
+          return html5QrScanner.start({ facingMode: "environment" }, qrConfig, onScanSuccess)
+            .catch(() => html5QrScanner.start({ facingMode: "user" }, qrConfig, onScanSuccess))
+            .catch(() => html5QrScanner.start({}, qrConfig, onScanSuccess));
+        }
+
+        runScanner().catch(err => {
           readerDiv.style.display = 'none';
+          const errText = (err && (err.message || err.name || String(err))) || '';
+          if (errText.includes('NotAllowed') || errText.includes('Permission')) {
+            showStaffAlert('Camera Permission Needed', 'Camera permission was not granted. Please tap the lock/tune icon in your browser address bar to allow camera access, or enter the QR code manually.');
+          } else {
+            showStaffAlert('Camera Notice', 'Unable to start camera on this device. You can type the QR code number or choose the resident from the list.');
+          }
         });
       } else {
         if (html5QrScanner) {
           html5QrScanner.stop().then(() => {
+            readerDiv.style.display = 'none';
+          }).catch(() => {
             readerDiv.style.display = 'none';
           });
         }

@@ -143,6 +143,35 @@
         align-items: center !important;
         gap: 0.75rem;
       }
+      .crud-dropdown-menu.show {
+        position: fixed !important;
+        top: auto !important;
+        bottom: 16px !important;
+        left: 16px !important;
+        right: 16px !important;
+        width: calc(100% - 32px) !important;
+        max-width: 100% !important;
+        transform: none !important;
+        border-radius: 20px !important;
+        padding: 10px !important;
+        box-shadow: 0 20px 45px -5px rgba(0, 0, 0, 0.35) !important;
+        z-index: 1090 !important;
+        animation: crudMenuUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .crud-dropdown-menu.show .crud-menu-item {
+        padding: 10px 14px;
+        font-size: 0.95rem;
+      }
+    }
+    @keyframes crudMenuUp {
+      from {
+        transform: translateY(30px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
   </style>
 </head>
@@ -491,7 +520,7 @@
                     <td class="text-muted small">{{ res.created_at }}</td>
                     <td class="text-end">
                       <div class="dropdown">
-                        <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
+                        <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="Actions">
                           <i class="bi bi-three-dots"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end crud-dropdown-menu shadow">
@@ -628,7 +657,7 @@
                     </td>
                     <td class="text-end">
                       <div class="dropdown">
-                        <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
+                        <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="Actions">
                           <i class="bi bi-three-dots"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end crud-dropdown-menu shadow">
@@ -759,7 +788,7 @@
                     </td>
                     <td class="text-end">
                       <div class="dropdown">
-                        <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
+                        <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="Actions">
                           <i class="bi bi-three-dots"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end crud-dropdown-menu shadow">
@@ -878,7 +907,7 @@
                     <td>{{ rw.stock }} units</td>
                     <td class="text-end">
                       <div class="dropdown">
-                        <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
+                        <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="Actions">
                           <i class="bi bi-three-dots"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end crud-dropdown-menu shadow">
@@ -1612,7 +1641,7 @@
                   </td>
                   <td class="text-end">
                     <div class="dropdown">
-                      <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu">
+                      <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="Menu">
                         <i class="bi bi-three-dots"></i>
                       </button>
                       <ul class="dropdown-menu dropdown-menu-end crud-dropdown-menu shadow">
@@ -1655,7 +1684,7 @@
                   <td class="text-nowrap"><span class="badge bg-success-subtle text-success border border-success-subtle">Active Station</span></td>
                   <td class="text-end">
                     <div class="dropdown">
-                      <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu">
+                      <button class="btn btn-sm crud-dropdown-btn" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="Menu">
                         <i class="bi bi-three-dots"></i>
                       </button>
                       <ul class="dropdown-menu dropdown-menu-end crud-dropdown-menu shadow">
@@ -2464,8 +2493,20 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+  function closeParentDropdown(el) {
+    const dropdownEl = el.closest('.dropdown');
+    if (dropdownEl) {
+      const toggle = dropdownEl.querySelector('.crud-dropdown-btn');
+      if (toggle && typeof bootstrap !== 'undefined') {
+        const inst = bootstrap.Dropdown.getInstance(toggle);
+        if (inst) inst.hide();
+      }
+    }
+  }
+
   document.querySelectorAll('.edit-staff-btn').forEach(btn => {
     btn.addEventListener('click', function() {
+      closeParentDropdown(this);
       document.getElementById('editStaffId').value = this.getAttribute('data-id');
       document.getElementById('editStaffName').value = this.getAttribute('data-name');
       document.getElementById('editStaffEmail').value = this.getAttribute('data-email');
@@ -2474,18 +2515,28 @@ document.addEventListener('DOMContentLoaded', function() {
       if (stnSelect && station) {
         stnSelect.value = station;
       }
+      const modalEl = document.getElementById('editStaffModal');
+      if (modalEl && typeof bootstrap !== 'undefined') {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
     });
   });
 
   document.querySelectorAll('.reset-pw-btn').forEach(btn => {
     btn.addEventListener('click', function() {
+      closeParentDropdown(this);
       document.getElementById('resetStaffId').value = this.getAttribute('data-id');
       document.getElementById('resetStaffNameText').textContent = this.getAttribute('data-name');
+      const modalEl = document.getElementById('resetPasswordModal');
+      if (modalEl && typeof bootstrap !== 'undefined') {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
     });
   });
 
   document.querySelectorAll('.edit-resident-btn').forEach(btn => {
     btn.addEventListener('click', function() {
+      closeParentDropdown(this);
       const id = this.getAttribute('data-id');
       const fullName = (this.getAttribute('data-name') || '').trim();
       const email = this.getAttribute('data-email');
@@ -2501,45 +2552,70 @@ document.addEventListener('DOMContentLoaded', function() {
       if (document.getElementById('editResName')) document.getElementById('editResName').value = fullName;
       if (document.getElementById('editResEmail')) document.getElementById('editResEmail').value = email;
       if (document.getElementById('editResPoints')) document.getElementById('editResPoints').value = points;
+
+      const modalEl = document.getElementById('editResidentModal');
+      if (modalEl && typeof bootstrap !== 'undefined') {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
     });
   });
 
   document.querySelectorAll('.reset-res-pw-btn').forEach(btn => {
     btn.addEventListener('click', function() {
+      closeParentDropdown(this);
       document.getElementById('resetResId').value = this.getAttribute('data-id');
       document.getElementById('resetResNameText').textContent = this.getAttribute('data-name');
+      const modalEl = document.getElementById('resetResPasswordModal');
+      if (modalEl && typeof bootstrap !== 'undefined') {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
     });
   });
 
   document.querySelectorAll('.edit-material-btn').forEach(btn => {
     btn.addEventListener('click', function() {
+      closeParentDropdown(this);
       document.getElementById('editMatId').value = this.getAttribute('data-id');
       document.getElementById('editMatName').value = this.getAttribute('data-name');
       document.getElementById('editMatCat').value = this.getAttribute('data-cat');
       document.getElementById('editMatPoints').value = this.getAttribute('data-points');
       document.getElementById('editMatUnit').value = this.getAttribute('data-unit');
+      const modalEl = document.getElementById('editMaterialModal');
+      if (modalEl && typeof bootstrap !== 'undefined') {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
     });
   });
 
   document.querySelectorAll('.edit-reward-btn').forEach(btn => {
     btn.addEventListener('click', function() {
+      closeParentDropdown(this);
       document.getElementById('editRewardId').value = this.getAttribute('data-id');
       document.getElementById('editRewardTitle').value = this.getAttribute('data-title');
       document.getElementById('editRewardCategory').value = this.getAttribute('data-category');
       document.getElementById('editRewardPoints').value = this.getAttribute('data-points');
       document.getElementById('editRewardStock').value = this.getAttribute('data-stock');
       document.getElementById('editRewardPartner').value = this.getAttribute('data-partner');
+      const modalEl = document.getElementById('editRewardModal');
+      if (modalEl && typeof bootstrap !== 'undefined') {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
     });
   });
 
   document.querySelectorAll('.edit-station-btn').forEach(btn => {
     btn.addEventListener('click', function() {
+      closeParentDropdown(this);
       document.getElementById('editStationId').value = this.getAttribute('data-id');
       document.getElementById('editStationName').value = this.getAttribute('data-name');
       document.getElementById('editStationCode').value = this.getAttribute('data-code');
       document.getElementById('editStationBrgy').value = this.getAttribute('data-brgy');
       document.getElementById('editStationCity').value = this.getAttribute('data-city');
       document.getElementById('editStationStatus').value = this.getAttribute('data-status') || 'active';
+      const modalEl = document.getElementById('editStationModal');
+      if (modalEl && typeof bootstrap !== 'undefined') {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
     });
   });
 

@@ -868,6 +868,14 @@ document.addEventListener('DOMContentLoaded', function () {
         if (form && !form.dataset.confirmed) {
           e.preventDefault();
           e.stopPropagation();
+          const dropParent = confirmBtn.closest('.dropdown');
+          if (dropParent) {
+            const toggle = dropParent.querySelector('[data-bs-toggle="dropdown"]');
+            if (toggle && typeof bootstrap !== 'undefined') {
+              const inst = bootstrap.Dropdown.getInstance(toggle);
+              if (inst) inst.hide();
+            }
+          }
           const title = confirmBtn.getAttribute('data-confirm-title') || form.getAttribute('data-confirm-title');
           const msg = confirmBtn.getAttribute('data-confirm-message') || form.getAttribute('data-confirm-message');
           const btnText = confirmBtn.getAttribute('data-confirm-btn') || form.getAttribute('data-confirm-btn') || 'Confirm';
