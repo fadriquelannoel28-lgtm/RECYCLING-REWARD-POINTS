@@ -82,7 +82,7 @@
               <div class="form-check">
                 <input class="form-check-input {% if error and error_field == 'terms' %}is-invalid{% endif %}" type="checkbox" name="terms" id="termsCheck">
                 <label class="form-check-label small text-muted" for="termsCheck">
-                  I agree to the <a href="#" class="text-success text-decoration-none">Terms and Conditions</a>
+                  I agree to the <a href="#" class="text-success text-decoration-none fw-semibold" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a>
                 </label>
               </div>
               <div class="messenger-error-msg" id="termsError" {% if not (error and error_field == 'terms') %}style="display: none;"{% endif %}>
@@ -105,4 +105,62 @@
     </div>
   </div>
 </main>
+
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-2 pt-3 px-4" style="background-color: #f4faf6; border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <div class="d-flex align-items-center gap-2">
+          <span class="eco-brand-badge" style="width: 32px; height: 32px;">
+            <i class="bi bi-file-earmark-text-fill"></i>
+          </span>
+          <div>
+            <h5 class="modal-title fw-bold mb-0" id="termsModalLabel" style="color: var(--eco-forest);">EcoCoins Terms and Conditions</h5>
+            <div class="small text-muted">Barangay Automated Recycling Reward Points System</div>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body px-4 py-3 small text-secondary" style="line-height: 1.65;">
+        <p class="mb-3">By creating a resident account on <strong>EcoCoins</strong>, you agree to the following terms governing your participation in our Barangay recycling and reward program:</p>
+
+        <h6 class="fw-bold text-dark mb-1">1. Resident Eligibility &amp; Barangay Assignment</h6>
+        <p class="mb-3">EcoCoins resident accounts are intended for residents of participating barangays. You must select your true Province, City/Municipality, and Barangay during account verification. Deposits and verification confirmations are handled exclusively by your assigned Barangay Collection Hub staff.</p>
+
+        <h6 class="fw-bold text-dark mb-1">2. Identity Verification &amp; Biometric Privacy</h6>
+        <p class="mb-3">To prevent duplicate accounts and ensure fair reward distribution, residents are required to submit accurate personal details, a valid government/barangay ID photo, and a live facial recognition scan. Your facial descriptor and ID image are used strictly for identity verification, duplicate-account prevention, and secure sign-in within EcoCoins.</p>
+
+        <h6 class="fw-bold text-dark mb-1">3. One-Account-Per-Resident Policy</h6>
+        <p class="mb-3">Each resident may maintain only one verified EcoCoins account. Duplicate verification requests matching an already-verified resident's facial biometrics will be automatically rejected.</p>
+
+        <h6 class="fw-bold text-dark mb-1">4. Recyclable Deposits &amp; EcoPoints</h6>
+        <p class="mb-3">EcoPoints are awarded only after Barangay Staff inspect and record eligible recyclable materials at your assigned station using your verified Resident QR Code. Point values and accepted materials are determined by Barangay EcoCoins administration and may be updated as needed.</p>
+
+        <h6 class="fw-bold text-dark mb-1">5. Reward Redemptions &amp; Account Conduct</h6>
+        <p class="mb-0">Redeemed reward vouchers must be claimed in person at your Barangay Collection Hub. Providing false information, attempting to manipulate point balances, or using another resident's identity or QR code may result in account suspension or deactivation.</p>
+      </div>
+      <div class="modal-footer border-0 pt-0 px-4 pb-3 d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary btn-pill px-4" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-sm btn-success btn-pill px-4 fw-semibold" id="agreeTermsBtn" data-bs-dismiss="modal">
+          <i class="bi bi-check2-circle me-1"></i>I Agree
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const agreeBtn = document.getElementById('agreeTermsBtn');
+    const termsCheck = document.getElementById('termsCheck');
+    const termsError = document.getElementById('termsError');
+    if (agreeBtn && termsCheck) {
+      agreeBtn.addEventListener('click', function() {
+        termsCheck.checked = true;
+        termsCheck.classList.remove('is-invalid');
+        if (termsError) termsError.style.display = 'none';
+      });
+    }
+  });
+</script>
 {% endblock %}

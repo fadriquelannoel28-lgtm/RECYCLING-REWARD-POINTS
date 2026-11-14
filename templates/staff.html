@@ -95,6 +95,12 @@
           <a href="{{ url_for('staff', tab='residents') }}" class="nav-link py-2 px-3 {% if tab == 'residents' %}active bg-success text-white{% else %}text-dark{% endif %}">
             <i class="bi bi-people me-2"></i> Residents List
           </a>
+          <a href="{{ url_for('staff', tab='verifications') }}" class="nav-link py-2 px-3 d-flex align-items-center justify-content-between {% if tab == 'verifications' %}active bg-success text-white{% else %}text-dark{% endif %}">
+            <span><i class="bi bi-person-check me-2"></i> Verifications</span>
+            {% if pending_verifications_count > 0 %}
+              <span class="badge rounded-pill {% if tab == 'verifications' %}bg-white text-success{% else %}bg-warning text-dark{% endif %}">{{ pending_verifications_count }}</span>
+            {% endif %}
+          </a>
         </nav>
       </div>
     </div>
@@ -942,6 +948,157 @@
             </div>
           {% endif %}
         </div>
+      {% elif tab == 'verifications' %}
+        <div class="card border-0 shadow-sm p-4 mb-4 bg-white">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+              <h4 class="fw-bold mb-1" style="color: var(--eco-forest);">Resident Verification Approvals</h4>
+              <p class="text-muted small mb-0">
+                Review and confirm resident identity, valid ID, and facial recognition captures assigned to:
+                <strong>Barangay {{ staff_barangays|join(', ') if staff_barangays else 'All Assigned Areas' }}</strong>
+              </p>
+            </div>
+            <span class="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill px-3 py-2 fw-semibold">
+              <i class="bi bi-hourglass-split me-1"></i>{{ pending_verifications|length }} Pending Review
+            </span>
+          </div>
+
+          {% if pending_verifications %}
+            <div class="row g-3">
+              {% for r in pending_verifications %}
+                <div class="col-12">
+                  <div class="card border rounded-4 p-3 p-md-4 bg-light bg-opacity-50">
+                    <div class="row g-3 align-items-center">
+                      <div class="col-md-3">
+                        <div class="d-flex gap-2 justify-content-center">
+                          <div class="text-center">
+                            {% if r.face_image %}
+                              <a href="{{ r.face_image }}" target="_blank" title="Click to enlarge face photo">
+                                <img src="{{ r.face_image }}" alt="Face Photo" class="rounded-3 object-fit-cover border shadow-sm" style="width: 96px; height: 96px;">
+                              </a>
+                            {% else %}
+                              <div class="rounded-3 bg-white border d-flex align-items-center justify-content-center" style="width: 96px; height: 96px;">
+                                <i class="bi bi-person fs-2 text-muted"></i>
+                              </div>
+                            {% endif %}
+                            <div class="small text-muted mt-1" style="font-size: 0.72rem;">Face Scan</div>
+                          </div>
+                          <div class="text-center">
+                            {% if r.id_image %}
+                              <a href="{{ r.id_image }}" target="_blank" title="Click to enlarge ID picture">
+                                <img src="{{ r.id_image }}" alt="Valid ID" class="rounded-3 object-fit-cover border shadow-sm" style="width: 96px; height: 96px;">
+                              </a>
+                            {% else %}
+                              <div class="rounded-3 bg-white border d-flex align-items-center justify-content-center" style="width: 96px; height: 96px;">
+                                <i class="bi bi-card-heading fs-2 text-muted"></i>
+                              </div>
+                            {% endif %}
+                            <div class="small text-muted mt-1" style="font-size: 0.72rem;">{{ r.id_type or 'Valid ID' }}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-md-6">
+                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                          <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">{{ r.full_name }}</h5>
+                          <span class="badge bg-info-subtle text-primary border border-info-subtle rounded-pill px-2.5 py-1 small">Pending</span>
+                          {% if r.duplicate_face_match %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2.5 py-1 small">
+                              <i class="bi bi-exclamation-octagon-fill me-1"></i>Duplicate Face
+                            </span>
+                          {% elif r.has_face_scan %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 small">
+                              <i class="bi bi-person-check-fill me-1"></i>Unique Face Scan
+                            </span>
+                          {% endif %}
+                          <span class="badge bg-white text-dark border font-monospace small">{{ r.qr_code }}</span>
+                        </div>
+                        <div class="text-muted small mb-2">{{ r.email }}</div>
+                        <div class="row g-1 small text-secondary">
+                          <div class="col-sm-6"><i class="bi bi-cake2 me-1"></i><strong>Birthday:</strong> {{ r.birthday or '-' }} ({{ r.gender or '-' }})</div>
+                          <div class="col-sm-6"><i class="bi bi-telephone me-1"></i><strong>Contact:</strong> {{ r.contact_number or '-' }}</div>
+                          <div class="col-12"><i class="bi bi-geo-alt me-1"></i><strong>Address:</strong> {{ r.address or '-' }}, Brgy. {{ r.barangay or '-' }}{% if r.city %}, {{ r.city }}{% endif %}{% if r.province %}, {{ r.province }}{% endif %} {{ r.zip_code or '' }}</div>
+                          <div class="col-12"><i class="bi bi-card-heading me-1"></i><strong>ID Submitted:</strong> {{ r.id_type or '-' }}</div>
+                        </div>
+                        {% if r.duplicate_face_match %}
+                          <div class="alert alert-danger py-1 px-2 small mt-2 mb-0 rounded-3">
+                            <i class="bi bi-shield-exclamation me-1"></i><strong>Duplicate Facial Biometrics Detected:</strong> Matches verified resident <strong>{{ r.duplicate_face_match }}</strong>. Confirming will reject this duplicate request.
+                          </div>
+                        {% endif %}
+                      </div>
+
+                      <div class="col-md-3 d-flex flex-column gap-2">
+                        <form action="{{ url_for('staff') }}" method="POST" class="m-0">
+                          <input type="hidden" name="tab" value="verifications">
+                          <input type="hidden" name="staff_action" value="approve_verification">
+                          <input type="hidden" name="resident_id" value="{{ r.id }}">
+                          <button type="submit" class="btn btn-success btn-pill w-100 fw-semibold shadow-sm">
+                            <i class="bi bi-patch-check-fill me-1"></i>Confirm &amp; Verify
+                          </button>
+                        </form>
+                        <form action="{{ url_for('staff') }}" method="POST" class="m-0">
+                          <input type="hidden" name="tab" value="verifications">
+                          <input type="hidden" name="staff_action" value="reject_verification">
+                          <input type="hidden" name="resident_id" value="{{ r.id }}">
+                          <input type="hidden" name="reject_reason" value="Submitted details or ID picture could not be confirmed. Please resubmit.">
+                          <button type="submit" class="btn btn-outline-danger btn-pill w-100 btn-sm">
+                            <i class="bi bi-x-circle me-1"></i>Return / Reject
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-5 border rounded-4 bg-light bg-opacity-50">
+              <i class="bi bi-shield-check fs-1 text-success mb-2 d-block"></i>
+              <h6 class="fw-bold mb-1">All Caught Up!</h6>
+              <p class="text-muted small mb-0">No pending resident verification requests for your assigned barangay right now.</p>
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="card border-0 shadow-sm p-4 bg-white">
+          <h5 class="fw-bold mb-3" style="color: var(--eco-forest);">Recently Verified Residents ({{ verified_verifications|length }})</h5>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Resident</th>
+                  <th>Barangay &amp; Address</th>
+                  <th>ID Type</th>
+                  <th>Verified At</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for vr in verified_verifications %}
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        {% if vr.face_image %}
+                          <img src="{{ vr.face_image }}" alt="Face" class="rounded-circle object-fit-cover border" style="width: 34px; height: 34px;">
+                        {% endif %}
+                        <div>
+                          <div class="fw-bold">{{ vr.full_name }}</div>
+                          <div class="small text-muted font-monospace">{{ vr.qr_code }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="small">{{ vr.address }}, Brgy. {{ vr.barangay }} {{ vr.zip_code }}</td>
+                    <td class="small">{{ vr.id_type }}</td>
+                    <td class="small text-muted">{{ vr.verified_at }}</td>
+                    <td><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1"><i class="bi bi-patch-check-fill me-1"></i>Verified</span></td>
+                  </tr>
+                {% else %}
+                  <tr><td colspan="5" class="text-center text-muted py-4">No verified residents in this barangay yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
       {% endif %}
     </div>
   </div>
@@ -1400,11 +1557,18 @@ document.addEventListener('DOMContentLoaded', function() {
       fetch('{{ url_for("api_resident_lookup") }}?qr=' + encodeURIComponent(qr))
         .then(res => res.json())
         .then(data => {
+          const notFoundEl = document.getElementById('residentNotFound');
           if (data.success && data.resident) {
+            if (notFoundEl) notFoundEl.style.display = 'none';
             selectResident(data.resident.full_name, data.resident.qr_code, data.resident.email, data.resident.points);
           } else {
             document.getElementById('residentInfoCard').style.display = 'none';
-            document.getElementById('residentNotFound').style.display = 'block';
+            if (notFoundEl) {
+              notFoundEl.innerHTML = data.non_verified
+                ? '<i class="bi bi-exclamation-triangle-fill me-1"></i><strong>Non-Verified Resident Detected:</strong> ' + (data.message || 'Account must be verified by staff before scanning QR.')
+                : '<i class="bi bi-exclamation-circle me-1"></i>' + (data.message || 'Resident not found.');
+              notFoundEl.style.display = 'block';
+            }
           }
         })
         .catch(() => {

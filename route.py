@@ -1,10 +1,113 @@
+import os
+import json
+import base64
 import math
 import random
+import numpy as np
 from datetime import datetime, timedelta
 from flask import render_template, request, redirect, url_for, session, jsonify, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import get_db, sync_to_json, get_current_user, PaymentRequired
 from pdf_reports import generate_participation_report_pdf, generate_materials_report_pdf, generate_deposit_receipt_pdf
+
+def save_image_asset(raw_data, subfolder, filename):
+    if not raw_data:
+        return None
+    if hasattr(raw_data, 'read'):
+        img_bytes = raw_data.read()
+        if not img_bytes:
+            return None
+        if os.environ.get('VERCEL'):
+            encoded = base64.b64encode(img_bytes).decode('ascii')
+            return f"data:image/jpeg;base64,{encoded}"
+        folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads', subfolder)
+        os.makedirs(folder_path, exist_ok=True)
+        filepath = os.path.join(folder_path, filename)
+        with open(filepath, 'wb') as f:
+            f.write(img_bytes)
+        return f"/static/uploads/{subfolder}/{filename}"
+    if isinstance(raw_data, str) and raw_data.startswith('data:image'):
+        try:
+            header, encoded = raw_data.split(',', 1)
+            img_bytes = base64.b64decode(encoded)
+            if not os.environ.get('VERCEL'):
+                folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads', subfolder)
+                os.makedirs(folder_path, exist_ok=True)
+                filepath = os.path.join(folder_path, filename)
+                with open(filepath, 'wb') as f:
+                    f.write(img_bytes)
+                return f"/static/uploads/{subfolder}/{filename}"
+        except Exception:
+            pass
+    return raw_data
+
+def get_staff_barangays(cur, user):
+    if not user or user.get('role') != 'staff':
+        return []
+    all_stations = [dict(r) for r in cur.execute("SELECT * FROM stations WHERE status = 'active'").fetchall()]
+    staff_barangays = []
+    user_name = (user.get('full_name') or '').strip().lower()
+    user_station = (user.get('station_name') or '').strip().lower()
+    for st in all_stations:
+        assigned = (st.get('assigned_staff') or '').strip().lower()
+        st_name = (st.get('station_name') or '').strip().lower()
+        st_brgy = (st.get('barangay') or '').strip()
+        if not st_brgy:
+            continue
+        if (assigned and assigned == user_name) or (st_name and st_name in user_station) or (st_brgy.lower() in user_station):
+            if st_brgy not in staff_barangays:
+                staff_barangays.append(st_brgy)
+    if not staff_barangays and user.get('station_name'):
+        raw_st = user.get('station_name', '').split(',')[0].strip()
+        for prefix in ['Barangay ', 'Brgy. ', 'Brgy ']:
+            if raw_st.lower().startswith(prefix.lower()):
+                raw_st = raw_st[len(prefix):].strip()
+        for suffix in [' Collection Hub', ' Hub', ' Station']:
+            if raw_st.lower().endswith(suffix.lower()):
+                raw_st = raw_st[:-len(suffix)].strip()
+        if raw_st:
+            staff_barangays.append(raw_st)
+    return staff_barangays
+
+def resident_matches_barangays(resident_barangay, staff_barangays):
+    if not staff_barangays:
+        return True
+    r_brgy = (resident_barangay or '').strip().lower()
+    if not r_brgy:
+        return False
+    return r_brgy in [b.strip().lower() for b in staff_barangays]
+
+def find_duplicate_verified_face(cur, descriptor_raw, exclude_user_id, threshold=0.58):
+    if not descriptor_raw:
+        return None
+    try:
+        target_list = json.loads(descriptor_raw)
+        if not isinstance(target_list, list) or not target_list:
+            return None
+        target = np.array(target_list, dtype=float)
+    except Exception:
+        return None
+
+    rows = cur.execute(
+        "SELECT id, full_name, barangay, face_descriptor FROM users WHERE role = 'resident' AND is_verified = 1 AND verification_status = 'verified' AND id != ? AND face_descriptor IS NOT NULL AND face_descriptor != ''",
+        (exclude_user_id,)
+    ).fetchall()
+
+    best_dup = None
+    best_dist = threshold
+    for row in rows:
+        try:
+            stored_list = json.loads(row['face_descriptor'])
+            if not isinstance(stored_list, list) or len(stored_list) != len(target):
+                continue
+            stored = np.array(stored_list, dtype=float)
+            dist = float(np.linalg.norm(target - stored))
+            if dist < best_dist:
+                best_dist = dist
+                best_dup = dict(row)
+        except Exception:
+            continue
+    return best_dup
 
 def register_routes(app):
 
@@ -241,6 +344,40 @@ def register_routes(app):
                     feedback = 'Password changed successfully!'
                     feedback_type = 'success'
 
+            elif action == 'upload_profile_pic':
+                pic_file = request.files.get('profile_picture')
+                if not pic_file or not pic_file.filename:
+                    feedback = 'Please select an image file to upload.'
+                    feedback_type = 'danger'
+                else:
+                    ext = os.path.splitext(pic_file.filename)[1].lower() or '.jpg'
+                    if ext not in ['.jpg', '.jpeg', '.png', '.webp']:
+                        ext = '.jpg'
+                    saved_profile_path = save_image_asset(pic_file, 'profiles', f"profile_{user['id']}_{int(datetime.now().timestamp())}{ext}")
+                    if saved_profile_path:
+                        cur.execute("UPDATE users SET profile_image = ? WHERE id = ?", (saved_profile_path, user['id']))
+                        conn.commit()
+                        sync_to_json()
+                        feedback = 'Profile picture updated successfully!'
+                        feedback_type = 'success'
+                    else:
+                        feedback = 'Could not read the uploaded image.'
+                        feedback_type = 'danger'
+
+            elif action == 'reset_verification' and user['role'] == 'resident':
+                cur.execute(
+                    """UPDATE users
+                       SET is_verified = 0, verification_status = 'unverified',
+                           face_image = NULL, face_descriptor = NULL, id_image = NULL,
+                           verified_at = NULL, verification_notes = ''
+                       WHERE id = ?""",
+                    (user['id'],)
+                )
+                conn.commit()
+                sync_to_json()
+                feedback = 'Account verification has been reset to Non-Verified for testing.'
+                feedback_type = 'success'
+
             conn.close()
             session['feedback'] = feedback
             session['feedback_type'] = feedback_type
@@ -259,6 +396,226 @@ def register_routes(app):
             feedback_type=feedback_type,
             feedback_field=feedback_field
         )
+
+    @app.route('/verify-account', methods=['GET', 'POST'])
+    def verify_account():
+        user = get_current_user()
+        if not user:
+            return redirect(url_for('login'))
+        if user['role'] == 'staff':
+            return redirect(url_for('staff'))
+        if user['role'] == 'admin':
+            return redirect(url_for('admin'))
+
+        conn_st = get_db()
+        stations_rows = [dict(r) for r in conn_st.execute("SELECT DISTINCT barangay, station_name, assigned_staff FROM stations WHERE status = 'active'").fetchall()]
+        conn_st.close()
+        barangays = sorted(list({r['barangay'] for r in stations_rows if r.get('barangay')} | {'Pinagkawitan'}))
+
+        error = None
+        if request.method == 'POST':
+            first_name = request.form.get('first_name', '').strip()
+            middle_name = request.form.get('middle_name', '').strip()
+            last_name = request.form.get('last_name', '').strip()
+            birthday = request.form.get('birthday', '').strip()
+            gender = request.form.get('gender', '').strip()
+            contact_number = request.form.get('contact_number', '').strip()
+            province = request.form.get('province', '').strip()
+            city = request.form.get('city', '').strip()
+            barangay = request.form.get('barangay', '').strip()
+            address = request.form.get('address', '').strip()
+            zip_code = request.form.get('zip_code', '').strip()
+            id_type = request.form.get('id_type', '').strip()
+            id_file = request.files.get('id_picture')
+            id_image_data = request.form.get('id_image_data', '').strip()
+            face_image_data = request.form.get('face_image', '').strip()
+            face_descriptor_raw = request.form.get('face_descriptor', '').strip()
+
+            if not first_name or not last_name:
+                error = 'Please enter your first and last name.'
+            elif not birthday:
+                error = 'Please enter your birthday.'
+            elif not contact_number:
+                error = 'Please enter your contact number.'
+            elif not province:
+                error = 'Please select your Province.'
+            elif not city:
+                error = 'Please select your City / Municipality.'
+            elif not barangay:
+                error = 'Please select your Barangay.'
+            elif not address:
+                error = 'Please enter your residential address.'
+            elif not zip_code:
+                error = 'Please enter your ZIP code.'
+            elif not id_type:
+                error = 'Please select your valid ID type.'
+            elif (not id_file or not id_file.filename) and not id_image_data:
+                error = 'Please upload a photo of your selected valid ID.'
+            elif not face_image_data:
+                error = 'Please capture your face photo to complete verification.'
+            else:
+                name_parts = [p for p in [first_name, middle_name, last_name] if p]
+                full_name = ' '.join(name_parts)
+
+                saved_face_path = save_image_asset(face_image_data, 'faces', f"resident_{user['id']}.jpg")
+                if id_file and id_file.filename:
+                    ext = os.path.splitext(id_file.filename)[1].lower() or '.jpg'
+                    saved_id_path = save_image_asset(id_file, 'ids', f"id_{user['id']}_{int(datetime.now().timestamp())}{ext}")
+                else:
+                    saved_id_path = save_image_asset(id_image_data, 'ids', f"id_{user['id']}.jpg")
+
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute(
+                    """UPDATE users
+                       SET full_name = ?, first_name = ?, middle_name = ?, last_name = ?,
+                           birthday = ?, gender = ?, contact_number = ?, province = ?, city = ?, barangay = ?,
+                           address = ?, zip_code = ?, id_type = ?, id_image = ?,
+                           face_image = ?, face_descriptor = ?,
+                           is_verified = 0, verification_status = 'pending',
+                           verified_at = NULL, verification_notes = ''
+                       WHERE id = ?""",
+                    (
+                        full_name, first_name, middle_name, last_name,
+                        birthday, gender, contact_number, province, city, barangay,
+                        address, zip_code, id_type, saved_id_path,
+                        saved_face_path, face_descriptor_raw, user['id']
+                    )
+                )
+                conn.commit()
+                conn.close()
+                sync_to_json()
+
+                session['feedback'] = f'Verification submitted for Barangay {barangay}! Your status is now Pending Staff Confirmation.'
+                session['feedback_type'] = 'success'
+                return redirect(url_for('dashboard'))
+
+        feedback = session.pop('feedback', None)
+        feedback_type = session.pop('feedback_type', 'info')
+
+        return render_template(
+            'verify_account.html',
+            active_page='verify_account',
+            user=user,
+            barangays=barangays,
+            error=error,
+            feedback=feedback,
+            feedback_type=feedback_type
+        )
+
+    @app.route('/verify-account/edit-request', methods=['POST'])
+    def edit_verification_request():
+        user = get_current_user()
+        if not user:
+            return redirect(url_for('login'))
+        if user['role'] != 'resident':
+            return redirect(url_for('dashboard'))
+
+        if (user.get('verification_status') or '').lower() == 'pending':
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE users SET is_verified = 0, verification_status = 'unverified', verification_notes = ? WHERE id = ?",
+                ('Postponed by resident for double-checking and editing.', user['id'])
+            )
+            conn.commit()
+            conn.close()
+            sync_to_json()
+            session['feedback'] = 'Verification request postponed from Staff Confirmation. Please review and update your details, then resubmit.'
+            session['feedback_type'] = 'info'
+
+        return redirect(url_for('verify_account'))
+
+    @app.route('/api/face-login', methods=['POST'])
+    def api_face_login():
+        data = request.get_json(silent=True) or {}
+        descriptor = data.get('descriptor')
+        if not descriptor or not isinstance(descriptor, list):
+            return jsonify({'status': 'error', 'message': 'Invalid face descriptor.'}), 400
+
+        target = np.array(descriptor, dtype=float)
+        conn = get_db()
+        cur = conn.cursor()
+        rows = cur.execute(
+            "SELECT id, full_name, email, role, status, qr_code, face_descriptor FROM users WHERE role = 'resident' AND is_verified = 1 AND verification_status = 'verified' AND face_descriptor IS NOT NULL AND face_descriptor != ''"
+        ).fetchall()
+        conn.close()
+
+        best_match = None
+        best_dist = 0.58
+        for row in rows:
+            try:
+                stored_list = json.loads(row['face_descriptor'])
+                if not isinstance(stored_list, list) or len(stored_list) != len(target):
+                    continue
+                stored = np.array(stored_list, dtype=float)
+                dist = float(np.linalg.norm(target - stored))
+                if dist < best_dist:
+                    best_dist = dist
+                    best_match = dict(row)
+            except Exception:
+                continue
+
+        if not best_match:
+            return jsonify({'status': 'not_found', 'message': 'Face not recognized or account is not yet verified by staff.'}), 404
+
+        if best_match.get('status') == 'inactive':
+            return jsonify({'status': 'error', 'message': 'Your resident account has been deactivated by the Administrator.'}), 403
+
+        session['user_id'] = best_match['id']
+        session['user_role'] = best_match['role']
+        confidence = round(max(0.0, min(100.0, (1.0 - best_dist) * 100.0)), 1)
+        return jsonify({
+            'status': 'success',
+            'full_name': best_match['full_name'],
+            'confidence': confidence,
+            'redirect': url_for('dashboard')
+        })
+
+    @app.route('/api/identify-face', methods=['POST'])
+    def api_identify_face():
+        data = request.get_json(silent=True) or {}
+        descriptor = data.get('descriptor')
+        if not descriptor or not isinstance(descriptor, list):
+            return jsonify({'status': 'error', 'message': 'Invalid face descriptor.'}), 400
+
+        target = np.array(descriptor, dtype=float)
+        conn = get_db()
+        cur = conn.cursor()
+        rows = cur.execute(
+            "SELECT id, full_name, email, qr_code, points, face_descriptor, face_image FROM users WHERE role = 'resident' AND is_verified = 1 AND face_descriptor IS NOT NULL AND face_descriptor != ''"
+        ).fetchall()
+        conn.close()
+
+        best_match = None
+        best_dist = 0.58
+        for row in rows:
+            try:
+                stored_list = json.loads(row['face_descriptor'])
+                if not isinstance(stored_list, list) or len(stored_list) != len(target):
+                    continue
+                stored = np.array(stored_list, dtype=float)
+                dist = float(np.linalg.norm(target - stored))
+                if dist < best_dist:
+                    best_dist = dist
+                    best_match = dict(row)
+            except Exception:
+                continue
+
+        if best_match:
+            confidence = round(max(0.0, min(100.0, (1.0 - best_dist) * 100.0)), 1)
+            return jsonify({
+                'status': 'success',
+                'resident': {
+                    'id': best_match['id'],
+                    'full_name': best_match['full_name'],
+                    'email': best_match['email'],
+                    'qr_code': best_match['qr_code'],
+                    'points': best_match['points'],
+                    'confidence': confidence
+                }
+            })
+        return jsonify({'status': 'not_found', 'message': 'No matching verified resident found.'}), 404
 
     @app.route('/dashboard')
     def dashboard():
@@ -354,6 +711,9 @@ def register_routes(app):
             'timeline_points': timeline_points
         }
 
+        feedback = session.pop('feedback', None)
+        feedback_type = session.pop('feedback_type', 'success')
+
         return render_template(
             'dashboard.html',
             active_page='dashboard',
@@ -362,7 +722,9 @@ def register_routes(app):
             bottle_count=bottle_count,
             can_count=can_count,
             other_count=other_count,
-            user_stats=user_stats
+            user_stats=user_stats,
+            feedback=feedback,
+            feedback_type=feedback_type
         )
 
     @app.route('/ecopoints')
@@ -551,6 +913,11 @@ def register_routes(app):
             if not user:
                 return redirect(url_for('login'))
 
+            if user.get('role') == 'resident' and not user.get('is_verified'):
+                session['message'] = 'Only Verified Residents can redeem rewards. Please complete Facial Recognition and wait for Staff confirmation.'
+                session['message_type'] = 'danger'
+                return redirect(url_for('rewards'))
+
             if user.get('claim_timeout_until'):
                 try:
                     timeout_dt = datetime.strptime(user['claim_timeout_until'], '%Y-%m-%d %H:%M:%S')
@@ -681,6 +1048,7 @@ def register_routes(app):
             receipt = None
             conn = get_db()
             cur = conn.cursor()
+            staff_barangays = get_staff_barangays(cur, user)
 
             action = request.form.get('staff_action')
             if action == 'record_deposit':
@@ -696,6 +1064,12 @@ def register_routes(app):
                     feedback_type = 'danger'
                 elif resident['role'] != 'resident':
                     feedback = 'EcoPoints can only be awarded to registered resident accounts. Staff and admin accounts cannot receive points.'
+                    feedback_type = 'danger'
+                elif not (int(resident['is_verified'] or 0) == 1 and (resident['verification_status'] or '') == 'verified'):
+                    feedback = f"Non-Verified Resident Detected ({resident['full_name']}). Resident must complete Facial Recognition and Barangay Staff confirmation before scanning QR or earning EcoPoints."
+                    feedback_type = 'danger'
+                elif user['role'] == 'staff' and staff_barangays and not resident_matches_barangays(resident['barangay'], staff_barangays):
+                    feedback = f"Barangay Mismatch: {resident['full_name']} belongs to Barangay {resident['barangay'] or 'Unassigned'}, not your assigned station (Barangay {', '.join(staff_barangays)})."
                     feedback_type = 'danger'
                 elif not material:
                     feedback = 'Invalid material selected.'
@@ -739,6 +1113,54 @@ def register_routes(app):
                     feedback = f"Reward voucher {redemp['redemption_code']} released. Waiting for resident confirmation."
                     feedback_type = 'success'
                     sync_to_json()
+            elif action == 'approve_verification':
+                resident_id = int(request.form.get('resident_id', 0))
+                target_res = cur.execute("SELECT * FROM users WHERE id = ? AND role = 'resident'", (resident_id,)).fetchone()
+                if target_res:
+                    target_res = dict(target_res)
+                    if user['role'] == 'staff' and staff_barangays and not resident_matches_barangays(target_res.get('barangay'), staff_barangays):
+                        feedback = f"Access Denied: {target_res['full_name']} belongs to Barangay {target_res.get('barangay') or 'Unassigned'}, not your assigned station."
+                        feedback_type = 'danger'
+                    else:
+                        dup_face = find_duplicate_verified_face(cur, target_res.get('face_descriptor'), resident_id)
+                        if dup_face:
+                            reject_note = f"Rejected: Duplicate facial biometrics detected (matches verified resident {dup_face['full_name']})."
+                            cur.execute(
+                                "UPDATE users SET is_verified = 0, verification_status = 'unverified', verified_at = NULL, verification_notes = ? WHERE id = ?",
+                                (reject_note, resident_id)
+                            )
+                            conn.commit()
+                            sync_to_json()
+                            feedback = f"Verification Rejected (Duplicate Face): {target_res['full_name']}'s facial scan matches an already-verified resident ({dup_face['full_name']})."
+                            feedback_type = 'danger'
+                        else:
+                            now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                            cur.execute(
+                                "UPDATE users SET is_verified = 1, verification_status = 'verified', verified_at = ?, verification_notes = ? WHERE id = ?",
+                                (now_str, f"Confirmed by {user['full_name']}", resident_id)
+                            )
+                            conn.commit()
+                            sync_to_json()
+                            feedback = f"{target_res['full_name']} ({target_res.get('barangay') or 'Barangay'}) is now a Verified Resident!"
+                            feedback_type = 'success'
+            elif action == 'reject_verification':
+                resident_id = int(request.form.get('resident_id', 0))
+                reason = request.form.get('reject_reason', 'Submitted details or photo did not match. Please resubmit.').strip()
+                target_res = cur.execute("SELECT * FROM users WHERE id = ? AND role = 'resident'", (resident_id,)).fetchone()
+                if target_res:
+                    target_res = dict(target_res)
+                    if user['role'] == 'staff' and staff_barangays and not resident_matches_barangays(target_res.get('barangay'), staff_barangays):
+                        feedback = f"Access Denied: {target_res['full_name']} belongs to Barangay {target_res.get('barangay') or 'Unassigned'}, not your assigned station."
+                        feedback_type = 'danger'
+                    else:
+                        cur.execute(
+                            "UPDATE users SET is_verified = 0, verification_status = 'unverified', verified_at = NULL, verification_notes = ? WHERE id = ?",
+                            (reason, resident_id)
+                        )
+                        conn.commit()
+                        sync_to_json()
+                        feedback = f"Verification request for {target_res['full_name']} was returned for resubmission."
+                        feedback_type = 'danger'
 
             conn.close()
             session['feedback'] = feedback
@@ -755,22 +1177,32 @@ def register_routes(app):
 
         conn = get_db()
         cur = conn.cursor()
+        staff_barangays = get_staff_barangays(cur, user)
 
-        all_txs = [dict(r) for r in cur.execute("""
-            SELECT t.*, u.full_name AS resident_name, u.qr_code AS resident_qr
+        all_txs_raw = [dict(r) for r in cur.execute("""
+            SELECT t.*, u.full_name AS resident_name, u.qr_code AS resident_qr, u.barangay AS resident_barangay
             FROM transactions t
             LEFT JOIN users u ON t.user_id = u.id
             ORDER BY t.created_at DESC
         """).fetchall()]
 
-        residents_list = [dict(r) for r in cur.execute("SELECT * FROM users WHERE role = 'resident' ORDER BY full_name ASC").fetchall()]
+        residents_raw = [dict(r) for r in cur.execute("SELECT * FROM users WHERE role = 'resident' ORDER BY full_name ASC").fetchall()]
         all_materials = [dict(r) for r in cur.execute("SELECT * FROM materials WHERE status = 'active' ORDER BY id ASC").fetchall()]
-        all_redemptions = [dict(r) for r in cur.execute("""
-            SELECT r.*, u.full_name AS resident_name, u.qr_code AS resident_qr
+        all_redemptions_raw = [dict(r) for r in cur.execute("""
+            SELECT r.*, u.full_name AS resident_name, u.qr_code AS resident_qr, u.barangay AS resident_barangay
             FROM redemptions r
             LEFT JOIN users u ON r.user_id = u.id
             ORDER BY r.created_at DESC
         """).fetchall()]
+
+        if user['role'] == 'staff' and staff_barangays:
+            residents_list = [r for r in residents_raw if resident_matches_barangays(r.get('barangay'), staff_barangays)]
+            all_txs = [t for t in all_txs_raw if resident_matches_barangays(t.get('resident_barangay'), staff_barangays)]
+            all_redemptions = [r for r in all_redemptions_raw if resident_matches_barangays(r.get('resident_barangay'), staff_barangays)]
+        else:
+            residents_list = residents_raw
+            all_txs = all_txs_raw
+            all_redemptions = all_redemptions_raw
 
         total_points_distributed = sum(int(t.get('points_earned', 0)) for t in all_txs)
         pending_claims_count = sum(1 for r in all_redemptions if r.get('status') == 'claimed')
@@ -950,6 +1382,18 @@ def register_routes(app):
                     prefill_resident = r
                     break
 
+        pending_verifications = []
+        verified_verifications = []
+        for r in residents_list:
+            v_status = (r.get('verification_status') or 'unverified').lower()
+            if v_status == 'pending':
+                dup_match = find_duplicate_verified_face(cur, r.get('face_descriptor'), r['id'])
+                r['duplicate_face_match'] = dup_match['full_name'] if dup_match else None
+                r['has_face_scan'] = bool((r.get('face_descriptor') or '').strip())
+                pending_verifications.append(r)
+            elif v_status == 'verified' and int(r.get('is_verified') or 0) == 1:
+                verified_verifications.append(r)
+
         conn.close()
 
         return render_template(
@@ -965,7 +1409,11 @@ def register_routes(app):
             all_transactions=all_txs,
             all_redemptions=all_redemptions,
             staff_stats=staff_stats,
-            staff_svg=staff_svg
+            staff_svg=staff_svg,
+            pending_verifications=pending_verifications,
+            verified_verifications=verified_verifications,
+            pending_verifications_count=len(pending_verifications),
+            staff_barangays=staff_barangays
         )
 
     @app.route('/admin', methods=['GET', 'POST'])
@@ -1522,11 +1970,27 @@ def register_routes(app):
 
         conn = get_db()
         cur = conn.cursor()
-        resident = cur.execute("SELECT id, full_name, email, qr_code, points FROM users WHERE qr_code = ?", (qr,)).fetchone()
+        resident = cur.execute("SELECT id, full_name, email, qr_code, points, role, barangay, is_verified, verification_status FROM users WHERE qr_code = ?", (qr,)).fetchone()
+        current_staff = get_current_user()
+        staff_barangays = get_staff_barangays(cur, current_staff) if (current_staff and current_staff.get('role') == 'staff') else []
         conn.close()
 
         if resident:
-            return jsonify({'success': True, 'resident': dict(resident)})
+            res_dict = dict(resident)
+            if res_dict.get('role') == 'resident' and not (int(res_dict.get('is_verified') or 0) == 1 and (res_dict.get('verification_status') or '') == 'verified'):
+                return jsonify({
+                    'success': False,
+                    'non_verified': True,
+                    'verification_status': res_dict.get('verification_status') or 'unverified',
+                    'message': f"Non-Verified Resident Detected ({res_dict['full_name']}). Account must be verified and confirmed by Barangay Staff before scanning QR."
+                }), 403
+            if staff_barangays and res_dict.get('role') == 'resident' and not resident_matches_barangays(res_dict.get('barangay'), staff_barangays):
+                return jsonify({
+                    'success': False,
+                    'wrong_barangay': True,
+                    'message': f"Wrong Barangay Station: {res_dict['full_name']} belongs to Barangay {res_dict.get('barangay') or 'Unassigned'}, not Barangay {', '.join(staff_barangays)}."
+                }), 403
+            return jsonify({'success': True, 'resident': res_dict})
         return jsonify({'success': False, 'message': 'Resident not found'}), 404
 
     @app.route('/api/deposit', methods=['POST'])
@@ -1546,6 +2010,13 @@ def register_routes(app):
             return jsonify({'success': False, 'message': 'Invalid resident QR or material ID'}), 400
 
         resident = dict(resident)
+        if resident.get('role') == 'resident' and not (int(resident.get('is_verified') or 0) == 1 and (resident.get('verification_status') or '') == 'verified'):
+            conn.close()
+            return jsonify({
+                'success': False,
+                'non_verified': True,
+                'message': f"Non-Verified Resident Detected ({resident['full_name']}). Account must be verified before earning EcoPoints."
+            }), 403
         material = dict(material)
         pts = quantity * int(material.get('points_per_unit', 1))
         rcp = f'REC-{datetime.now().strftime("%Y%m%d")}-{random.randint(1000, 9999)}'

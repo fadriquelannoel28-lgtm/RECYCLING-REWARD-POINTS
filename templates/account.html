@@ -66,9 +66,24 @@
         <div class="card border-0 shadow-sm p-4 mb-4 bg-white">
           <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-3">
-              <span class="eco-brand-badge fs-4" style="width: 58px; height: 58px;">
-                <i class="bi bi-person-fill"></i>
-              </span>
+              <div class="position-relative flex-shrink-0">
+                {% if current_user.profile_image %}
+                  <img src="{{ current_user.profile_image }}" alt="Profile Picture" class="rounded-circle object-fit-cover border border-2 border-success shadow-sm" style="width: 64px; height: 64px;">
+                {% elif current_user.role == 'resident' and current_user.is_verified and current_user.face_image %}
+                  <img src="{{ current_user.face_image }}" alt="Verified Face" class="rounded-circle object-fit-cover border border-2 border-success shadow-sm" style="width: 64px; height: 64px;">
+                {% else %}
+                  <span class="eco-brand-badge fs-4" style="width: 64px; height: 64px;">
+                    <i class="bi bi-person-fill"></i>
+                  </span>
+                {% endif %}
+                <form action="{{ url_for('account') }}" method="POST" enctype="multipart/form-data" id="profilePicForm" class="m-0">
+                  <input type="hidden" name="action" value="upload_profile_pic">
+                  <input type="file" name="profile_picture" id="profilePicInput" accept="image/*" class="d-none">
+                  <button type="button" id="btnEditProfilePic" title="Edit Profile Picture" class="btn btn-light btn-sm rounded-circle shadow-sm border position-absolute bottom-0 end-0 d-flex align-items-center justify-content-center p-0" style="width: 24px; height: 24px;">
+                    <i class="bi bi-pencil-fill text-success" style="font-size: 0.7rem;"></i>
+                  </button>
+                </form>
+              </div>
               <div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                   <h4 class="fw-bold mb-0" style="color: var(--eco-forest);">{{ current_user.full_name }}</h4>
@@ -80,9 +95,17 @@
                     <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-2.5 py-1 rounded-pill small fw-semibold">
                       <i class="bi bi-person-badge me-1"></i>Staff Operator
                     </span>
-                  {% else %}
+                  {% elif current_user.verification_status == 'verified' %}
                     <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill small fw-semibold">
-                      <i class="bi bi-check-circle me-1"></i>Verified Resident
+                      <i class="bi bi-patch-check-fill me-1"></i>Verified Resident
+                    </span>
+                  {% elif current_user.verification_status == 'pending' %}
+                    <span class="badge bg-info-subtle text-primary border border-info-subtle px-2.5 py-1 rounded-pill small fw-semibold">
+                      <i class="bi bi-hourglass-split me-1"></i>Pending Verification
+                    </span>
+                  {% else %}
+                    <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-2.5 py-1 rounded-pill small fw-semibold">
+                      <i class="bi bi-exclamation-circle-fill text-warning me-1"></i>Non-Verified Resident
                     </span>
                   {% endif %}
                 </div>
@@ -97,9 +120,15 @@
               <div class="text-sm-end bg-light p-3 rounded-4 border">
                 <div class="text-muted small">Current EcoPoints</div>
                 <div class="fs-4 fw-bold text-accent">{{ "{:,}".format(current_user.points) }} pts</div>
-                <span class="badge bg-white text-dark border px-2 py-1 font-monospace small mt-1">
-                  {{ current_user.qr_code }}
-                </span>
+                {% if current_user.is_verified %}
+                  <span class="badge bg-white text-dark border px-2 py-1 font-monospace small mt-1">
+                    {{ current_user.qr_code }}
+                  </span>
+                {% else %}
+                  <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-2 py-1 small mt-1">
+                    <i class="bi bi-lock-fill me-1"></i>QR Locked
+                  </span>
+                {% endif %}
               </div>
             {% elif current_user.role == 'staff' %}
               <div class="text-sm-end bg-light p-3 rounded-4 border">
@@ -110,6 +139,81 @@
             {% endif %}
           </div>
         </div>
+
+        {% if current_user.role == 'resident' %}
+          <div class="card border-0 shadow-sm p-4 mb-4 {% if current_user.verification_status == 'verified' %}bg-white{% elif current_user.verification_status == 'pending' %}border-start border-4 border-primary bg-white{% else %}border-start border-4 border-warning bg-white{% endif %}">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+              <div class="d-flex align-items-start gap-3">
+                <span class="eco-icon-tile {% if current_user.verification_status == 'verified' %}tile-green{% elif current_user.verification_status == 'pending' %}tile-blue{% else %}tile-orange{% endif %}" style="width: 44px; height: 44px; flex-shrink: 0;">
+                  <i class="bi {% if current_user.verification_status == 'verified' %}bi-person-check-fill{% elif current_user.verification_status == 'pending' %}bi-hourglass-split{% else %}bi-person-bounding-box{% endif %} fs-5"></i>
+                </span>
+                <div>
+                  <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">
+                    {% if current_user.verification_status == 'verified' %}
+                      Identity &amp; Facial Recognition Verified
+                    {% elif current_user.verification_status == 'pending' %}
+                      Verification Pending Staff Confirmation
+                    {% else %}
+                      Account Verification Required
+                    {% endif %}
+                  </h5>
+                  {% if current_user.verification_status == 'verified' %}
+                    <p class="text-muted small mb-2">Your resident identity is verified via Facial Recognition &amp; Barangay Staff ({{ current_user.verified_at }}).</p>
+                    <div class="d-flex flex-column gap-1 small text-secondary">
+                      {% if current_user.birthday %}<div><i class="bi bi-cake2 me-2"></i>{{ current_user.birthday }}</div>{% endif %}
+                      {% if current_user.contact_number %}<div><i class="bi bi-telephone me-2"></i>{{ current_user.contact_number }}</div>{% endif %}
+                      {% if current_user.barangay %}<div><i class="bi bi-geo-alt me-2"></i>Brgy. {{ current_user.barangay }} {{ current_user.zip_code }}</div>{% endif %}
+                      {% if current_user.id_type %}<div><i class="bi bi-card-heading me-2"></i>{{ current_user.id_type }}</div>{% endif %}
+                    </div>
+                  {% elif current_user.verification_status == 'pending' %}
+                    <p class="text-muted small mb-1">Your details, Valid ID ({{ current_user.id_type }}), and face scan are currently awaiting confirmation from <strong>Barangay {{ current_user.barangay or 'Pinagkawitan' }} Staff</strong>.</p>
+                    <span class="badge bg-info-subtle text-primary border border-info-subtle rounded-pill px-2.5 py-1 small">Pending Staff Approval</span>
+                  {% else %}
+                    <p class="text-muted small mb-0">You are currently a <strong>Non-Verified Resident</strong>. Complete your address, valid ID, and facial recognition scan to unlock reward redemptions.</p>
+                    {% if current_user.verification_notes %}
+                      <div class="text-danger small mt-1"><i class="bi bi-info-circle me-1"></i>Note: {{ current_user.verification_notes }}</div>
+                    {% endif %}
+                  {% endif %}
+                </div>
+              </div>
+              <div class="flex-shrink-0 d-flex flex-column gap-2">
+                {% if current_user.verification_status == 'verified' %}
+                  <a href="{{ url_for('verify_account') }}" class="btn btn-outline-success btn-sm btn-pill px-3 w-100">
+                    <i class="bi bi-arrow-repeat me-1"></i>
+                    <span>Update Info</span>
+                  </a>
+                  <form action="{{ url_for('account') }}" method="POST" class="m-0">
+                    <input type="hidden" name="action" value="reset_verification">
+                    <button type="submit" class="btn btn-outline-danger btn-sm btn-pill px-3 w-100" title="Reset to Non-Verified for testing">
+                      <i class="bi bi-arrow-counterclockwise me-1"></i>
+                      <span>Reset Verification (Demo)</span>
+                    </button>
+                  </form>
+                {% elif current_user.verification_status == 'pending' %}
+                  <form action="{{ url_for('edit_verification_request') }}" method="POST" class="m-0">
+                    <button type="submit" class="btn btn-outline-primary btn-sm fw-semibold btn-pill px-3 w-100">
+                      <i class="bi bi-pencil-square me-1"></i>
+                      <span>Edit Request</span>
+                    </button>
+                  </form>
+                  <form action="{{ url_for('account') }}" method="POST" class="m-0">
+                    <input type="hidden" name="action" value="reset_verification">
+                    <button type="submit" class="btn btn-outline-danger btn-sm btn-pill px-3 w-100">
+                      <i class="bi bi-arrow-counterclockwise me-1"></i>
+                      <span>Reset (Demo)</span>
+                    </button>
+                  </form>
+                {% else %}
+                  <a href="{{ url_for('verify_account') }}" class="btn btn-warning fw-semibold btn-pill px-4 text-dark shadow-sm">
+                    <i class="bi bi-shield-check me-1"></i>
+                    <span>Proceed to Verify Account</span>
+                    <i class="bi bi-arrow-right ms-1"></i>
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endif %}
 
         <div class="row g-4">
           <div class="col-md-6">
@@ -160,8 +264,13 @@
                 {% if current_user.role == 'resident' %}
                   <div class="mb-3">
                     <label class="form-label small fw-semibold text-muted">Personal QR Code</label>
-                    <input type="text" class="form-control bg-light font-monospace text-muted" value="{{ current_user.qr_code }}" readonly>
-                    <div class="form-text small">Your unique resident recycling identifier.</div>
+                    {% if current_user.is_verified %}
+                      <input type="text" class="form-control bg-light font-monospace text-muted" value="{{ current_user.qr_code }}" readonly>
+                      <div class="form-text small">Your unique resident recycling identifier.</div>
+                    {% else %}
+                      <input type="text" class="form-control bg-light text-muted" value="Locked — Complete Verification to Unlock QR Code" readonly>
+                      <div class="form-text small text-warning-emphasis"><i class="bi bi-lock-fill me-1"></i>Your QR identifier will appear once verified by Barangay Staff.</div>
+                    {% endif %}
                   </div>
                 {% endif %}
 
@@ -240,4 +349,21 @@
     </div>
   </div>
 </main>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const editBtn = document.getElementById('btnEditProfilePic');
+    const fileInput = document.getElementById('profilePicInput');
+    const picForm = document.getElementById('profilePicForm');
+    if (editBtn && fileInput && picForm) {
+      editBtn.addEventListener('click', function() {
+        fileInput.click();
+      });
+      fileInput.addEventListener('change', function() {
+        if (this.files && this.files.length > 0) {
+          picForm.submit();
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}

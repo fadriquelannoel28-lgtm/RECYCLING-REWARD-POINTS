@@ -20,6 +20,40 @@
       </div>
     </div>
 
+    {% if current_user and current_user.role == 'resident' and not current_user.is_verified %}
+      <div class="card border-0 shadow-sm rounded-4 mb-4 p-4 {% if current_user.verification_status == 'pending' %}border-start border-4 border-primary{% else %}border-start border-4 border-warning{% endif %}" style="background: #ffffff;">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <span class="eco-icon-tile {% if current_user.verification_status == 'pending' %}tile-blue{% else %}tile-orange{% endif %} flex-shrink-0" style="width: 46px; height: 46px; border-radius: 12px;">
+              <i class="bi {% if current_user.verification_status == 'pending' %}bi-hourglass-split{% else %}bi-lock-fill{% endif %} fs-4"></i>
+            </span>
+            <div>
+              <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">
+                {% if current_user.verification_status == 'pending' %}
+                  Verification Pending Staff Confirmation
+                {% else %}
+                  Verification Required to Redeem Rewards
+                {% endif %}
+              </h5>
+              <p class="text-muted mb-0 small">
+                {% if current_user.verification_status == 'pending' %}
+                  Your submitted details, valid ID, and facial recognition scan are awaiting confirmation from Barangay {{ current_user.barangay or 'Pinagkawitan' }} Staff.
+                {% else %}
+                  Non-Verified residents can browse rewards and earn EcoPoints, but must complete Facial Recognition and Barangay Staff confirmation before redeeming.
+                {% endif %}
+              </p>
+            </div>
+          </div>
+          {% if current_user.verification_status != 'pending' %}
+            <a href="{{ url_for('verify_account') }}" class="btn btn-warning fw-semibold btn-pill px-4 text-dark shadow-sm flex-shrink-0">
+              <i class="bi bi-shield-check me-1"></i>
+              <span>Verify Now</span>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
     {% if claim_cooldown_seconds > 0 %}
       <div class="card border-0 shadow-sm rounded-4 mb-4 p-4 position-relative overflow-hidden" style="background: #ffffff; border-left: 6px solid #dc3545 !important;">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
@@ -156,6 +190,11 @@
             <div>
               {% if not current_user %}
                 <a href="{{ url_for('login') }}" class="btn btn-outline-secondary btn-sm w-100 btn-pill">Login to Redeem</a>
+              {% elif current_user.role == 'resident' and not current_user.is_verified %}
+                <button class="btn btn-light btn-sm w-100 text-muted border" disabled>
+                  <i class="bi bi-lock-fill me-1"></i>
+                  {% if current_user.verification_status == 'pending' %}Pending Verification{% else %}Verification Required{% endif %}
+                </button>
               {% elif claim_cooldown_seconds > 0 %}
                 <button class="btn btn-light btn-sm w-100 text-muted" disabled>
                   <i class="bi bi-hourglass-split me-1"></i>On Cooldown

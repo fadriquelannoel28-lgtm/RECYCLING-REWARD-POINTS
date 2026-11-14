@@ -1590,13 +1590,23 @@
                 </div>
               </div>
               <div class="row g-2 mb-3">
-                <div class="col-md-6">
-                  <label class="form-label small fw-semibold mb-1">Barangay</label>
-                  <input type="text" name="barangay" class="form-control rounded-3" value="Pinagkawitan" minlength="2" maxlength="100" title="Barangay must be at least 2 characters." required>
+                <div class="col-md-4">
+                  <label class="form-label small fw-semibold mb-1">Province</label>
+                  <select id="addStationProvince" class="form-select rounded-3" required>
+                    <option value="" disabled selected>Loading provinces...</option>
+                  </select>
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label small fw-semibold mb-1">City</label>
-                  <input type="text" name="city" class="form-control rounded-3" value="Lipa City" minlength="2" maxlength="100" pattern="^[A-Za-z\s\.\-']{2,}$" title="City must be at least 2 characters and contain letters only." required>
+                <div class="col-md-4">
+                  <label class="form-label small fw-semibold mb-1">City / Municipality</label>
+                  <select name="city" id="addStationCity" class="form-select rounded-3" required disabled>
+                    <option value="" disabled selected>Select Province first</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-semibold mb-1">Barangay</label>
+                  <select name="barangay" id="addStationBrgy" class="form-select rounded-3" required disabled>
+                    <option value="" disabled selected>Select City first</option>
+                  </select>
                 </div>
               </div>
               <div class="d-flex justify-content-end gap-2">
@@ -1756,14 +1766,24 @@
             <label class="form-label small fw-semibold text-muted mb-1">Station Code</label>
             <input type="text" name="station_code" id="editStationCode" class="form-control rounded-3" minlength="3" maxlength="20" pattern="^[A-Za-z0-9\-]+$" title="Station code should be alphanumeric with hyphens (e.g. STN-LP-01)." required>
           </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted mb-1">Province</label>
+            <select id="editStationProvince" class="form-select rounded-3" required>
+              <option value="" disabled selected>Loading provinces...</option>
+            </select>
+          </div>
           <div class="row g-2 mb-3">
             <div class="col-12 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">Barangay</label>
-              <input type="text" name="barangay" id="editStationBrgy" class="form-control rounded-3" minlength="2" maxlength="100" title="Barangay must be at least 2 characters." required>
+              <label class="form-label small fw-semibold text-muted mb-1">City / Municipality</label>
+              <select name="city" id="editStationCity" class="form-select rounded-3" required disabled>
+                <option value="" disabled selected>Select Province first</option>
+              </select>
             </div>
             <div class="col-12 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">City</label>
-              <input type="text" name="city" id="editStationCity" class="form-control rounded-3" minlength="2" maxlength="100" pattern="^[A-Za-z\s\.\-']{2,}$" title="City must be at least 2 characters and contain letters only." required>
+              <label class="form-label small fw-semibold text-muted mb-1">Barangay</label>
+              <select name="barangay" id="editStationBrgy" class="form-select rounded-3" required disabled>
+                <option value="" disabled selected>Select City first</option>
+              </select>
             </div>
           </div>
           <div class="mb-3">
@@ -2609,15 +2629,178 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('editStationId').value = this.getAttribute('data-id');
       document.getElementById('editStationName').value = this.getAttribute('data-name');
       document.getElementById('editStationCode').value = this.getAttribute('data-code');
-      document.getElementById('editStationBrgy').value = this.getAttribute('data-brgy');
-      document.getElementById('editStationCity').value = this.getAttribute('data-city');
+      const targetBrgy = this.getAttribute('data-brgy') || '';
+      const targetCity = this.getAttribute('data-city') || 'City of Lipa';
       document.getElementById('editStationStatus').value = this.getAttribute('data-status') || 'active';
+      loadStationPsgc('editStationProvince', 'editStationCity', 'editStationBrgy', 'Batangas', targetCity, targetBrgy);
       const modalEl = document.getElementById('editStationModal');
       if (modalEl && typeof bootstrap !== 'undefined') {
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
       }
     });
   });
+
+  const ADMIN_PSGC_BASE = 'https://psgc.gitlab.io/api';
+  let adminProvincesCache = null;
+
+  function resetStationSelect(el, placeholder, disabled = true) {
+    if (!el) return;
+    el.innerHTML = '';
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = placeholder;
+    opt.disabled = true;
+    opt.selected = true;
+    el.appendChild(opt);
+    el.disabled = disabled;
+  }
+
+  function matchCityOption(options, targetCity) {
+    if (!targetCity) return null;
+    const t = targetCity.trim().toLowerCase();
+    const norm = t.replace(/^city of\s+/i, '').replace(/\s+city$/i, '').trim();
+    return Array.from(options).find(o => {
+      const ov = o.value.trim().toLowerCase();
+      const onorm = ov.replace(/^city of\s+/i, '').replace(/\s+city$/i, '').trim();
+      return ov === t || (norm && onorm === norm);
+    }) || null;
+  }
+
+  function applyStationFallback(provEl, cityEl, brgyEl, defProv, defCity, defBrgy) {
+    resetStationSelect(provEl, 'Select Province', false);
+    const pOpt = document.createElement('option');
+    pOpt.value = defProv || 'Batangas';
+    pOpt.textContent = defProv || 'Batangas';
+    provEl.appendChild(pOpt);
+    provEl.value = pOpt.value;
+
+    resetStationSelect(cityEl, 'Select City / Municipality', false);
+    const cOpt = document.createElement('option');
+    cOpt.value = defCity || 'City of Lipa';
+    cOpt.textContent = defCity || 'City of Lipa';
+    cityEl.appendChild(cOpt);
+    cityEl.value = cOpt.value;
+
+    resetStationSelect(brgyEl, 'Select Barangay', false);
+    const bOpt = document.createElement('option');
+    bOpt.value = defBrgy || 'Pinagkawitan';
+    bOpt.textContent = defBrgy || 'Pinagkawitan';
+    brgyEl.appendChild(bOpt);
+    brgyEl.value = bOpt.value;
+  }
+
+  async function loadStationBarangays(cityEl, brgyEl, preselectBrgy = '') {
+    const selected = cityEl.options[cityEl.selectedIndex];
+    const cityCode = selected ? selected.dataset.code : '';
+    resetStationSelect(brgyEl, 'Loading barangays...', true);
+    if (!cityCode) return;
+    try {
+      const res = await fetch(`${ADMIN_PSGC_BASE}/cities-municipalities/${cityCode}/barangays/`);
+      if (!res.ok) throw new Error('PSGC error');
+      const list = await res.json();
+      list.sort((a, b) => a.name.localeCompare(b.name));
+      resetStationSelect(brgyEl, 'Select Barangay', false);
+      list.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.name;
+        opt.textContent = item.name;
+        brgyEl.appendChild(opt);
+      });
+      if (preselectBrgy) {
+        const match = Array.from(brgyEl.options).find(o => o.value.toLowerCase() === preselectBrgy.trim().toLowerCase());
+        if (match) brgyEl.value = match.value;
+      }
+    } catch (err) {
+      if (preselectBrgy) {
+        resetStationSelect(brgyEl, 'Select Barangay', false);
+        const opt = document.createElement('option');
+        opt.value = preselectBrgy;
+        opt.textContent = preselectBrgy;
+        brgyEl.appendChild(opt);
+        brgyEl.value = preselectBrgy;
+      }
+    }
+  }
+
+  async function loadStationCities(provEl, cityEl, brgyEl, preselectCity = '', preselectBrgy = '') {
+    const selected = provEl.options[provEl.selectedIndex];
+    const provCode = selected ? selected.dataset.code : '';
+    const isRegion = selected ? selected.dataset.region === 'true' : false;
+    resetStationSelect(cityEl, 'Loading cities / municipalities...', true);
+    resetStationSelect(brgyEl, 'Select City first', true);
+    if (!provCode) return;
+    try {
+      const url = isRegion
+        ? `${ADMIN_PSGC_BASE}/regions/${provCode}/cities-municipalities/`
+        : `${ADMIN_PSGC_BASE}/provinces/${provCode}/cities-municipalities/`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('PSGC error');
+      const list = await res.json();
+      list.sort((a, b) => a.name.localeCompare(b.name));
+      resetStationSelect(cityEl, 'Select City / Municipality', false);
+      list.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.name;
+        opt.textContent = item.name;
+        opt.dataset.code = item.code;
+        cityEl.appendChild(opt);
+      });
+      if (preselectCity) {
+        const match = matchCityOption(cityEl.options, preselectCity);
+        if (match) {
+          cityEl.value = match.value;
+          await loadStationBarangays(cityEl, brgyEl, preselectBrgy);
+        }
+      }
+    } catch (err) {
+      applyStationFallback(provEl, cityEl, brgyEl, selected ? selected.value : 'Batangas', preselectCity, preselectBrgy);
+    }
+  }
+
+  async function loadStationPsgc(provId, cityId, brgyId, defProv = 'Batangas', defCity = 'City of Lipa', defBrgy = 'Pinagkawitan') {
+    const provEl = document.getElementById(provId);
+    const cityEl = document.getElementById(cityId);
+    const brgyEl = document.getElementById(brgyId);
+    if (!provEl || !cityEl || !brgyEl) return;
+
+    if (!provEl.dataset.psgcBound) {
+      provEl.dataset.psgcBound = 'true';
+      provEl.addEventListener('change', () => loadStationCities(provEl, cityEl, brgyEl));
+      cityEl.addEventListener('change', () => loadStationBarangays(cityEl, brgyEl));
+    }
+
+    resetStationSelect(provEl, 'Loading provinces...', true);
+    try {
+      if (!adminProvincesCache) {
+        const res = await fetch(`${ADMIN_PSGC_BASE}/provinces/`);
+        if (!res.ok) throw new Error('PSGC error');
+        const list = await res.json();
+        list.push({ code: '130000000', name: 'Metro Manila (NCR)', isRegion: true });
+        list.sort((a, b) => a.name.localeCompare(b.name));
+        adminProvincesCache = list;
+      }
+      resetStationSelect(provEl, 'Select Province', false);
+      adminProvincesCache.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.name;
+        opt.textContent = item.name;
+        opt.dataset.code = item.code;
+        if (item.isRegion) opt.dataset.region = 'true';
+        provEl.appendChild(opt);
+      });
+      if (defProv) {
+        const match = Array.from(provEl.options).find(o => o.value.toLowerCase() === defProv.toLowerCase());
+        if (match) {
+          provEl.value = match.value;
+          await loadStationCities(provEl, cityEl, brgyEl, defCity, defBrgy);
+        }
+      }
+    } catch (err) {
+      applyStationFallback(provEl, cityEl, brgyEl, defProv, defCity, defBrgy);
+    }
+  }
+
+  loadStationPsgc('addStationProvince', 'addStationCity', 'addStationBrgy', 'Batangas', 'City of Lipa', 'Pinagkawitan');
 
   document.querySelectorAll('.toggle-password').forEach(btn => {
     btn.addEventListener('click', function() {

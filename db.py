@@ -99,6 +99,35 @@ def init_db():
     except Exception:
         pass
 
+    verification_columns = [
+        ("is_verified", "INTEGER DEFAULT 0"),
+        ("verification_status", "TEXT DEFAULT 'unverified'"),
+        ("first_name", "TEXT DEFAULT ''"),
+        ("middle_name", "TEXT DEFAULT ''"),
+        ("last_name", "TEXT DEFAULT ''"),
+        ("birthday", "TEXT DEFAULT ''"),
+        ("gender", "TEXT DEFAULT ''"),
+        ("contact_number", "TEXT DEFAULT ''"),
+        ("address", "TEXT DEFAULT ''"),
+        ("province", "TEXT DEFAULT ''"),
+        ("city", "TEXT DEFAULT ''"),
+        ("barangay", "TEXT DEFAULT ''"),
+        ("zip_code", "TEXT DEFAULT ''"),
+        ("id_type", "TEXT DEFAULT ''"),
+        ("id_image", "TEXT DEFAULT NULL"),
+        ("profile_image", "TEXT DEFAULT NULL"),
+        ("face_image", "TEXT DEFAULT NULL"),
+        ("face_descriptor", "TEXT DEFAULT NULL"),
+        ("verified_at", "TEXT DEFAULT NULL"),
+        ("verification_notes", "TEXT DEFAULT ''")
+    ]
+    for col_name, col_def in verification_columns:
+        try:
+            cur.execute(f"ALTER TABLE users ADD COLUMN {col_name} {col_def}")
+            conn.commit()
+        except Exception:
+            pass
+
     cur.execute('''CREATE TABLE IF NOT EXISTS materials (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -239,4 +268,19 @@ def get_current_user():
     cur = conn.cursor()
     row = cur.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     conn.close()
-    return dict(row) if row else None
+    if not row:
+        return None
+    user_dict = dict(row)
+    if user_dict.get('role') == 'resident':
+        has_face = bool(user_dict.get('face_image')) or bool(user_dict.get('face_descriptor'))
+        v_status = (user_dict.get('verification_status') or 'unverified').lower()
+        if v_status == 'verified' and int(user_dict.get('is_verified') or 0) == 1 and has_face:
+            user_dict['is_verified'] = 1
+            user_dict['verification_status'] = 'verified'
+        elif v_status == 'pending' and has_face:
+            user_dict['is_verified'] = 0
+            user_dict['verification_status'] = 'pending'
+        else:
+            user_dict['is_verified'] = 0
+            user_dict['verification_status'] = 'unverified'
+    return user_dict

@@ -70,7 +70,18 @@
             </div>
           </form>
 
-          <hr class="my-4">
+          <div class="my-4 d-flex align-items-center gap-2">
+            <hr class="flex-grow-1 m-0">
+            <span class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">Other ways to login</span>
+            <hr class="flex-grow-1 m-0">
+          </div>
+
+          <button type="button" class="btn btn-outline-success w-100 py-2 fw-semibold btn-pill d-flex align-items-center justify-content-center gap-2 mb-3" data-bs-toggle="modal" data-bs-target="#faceLoginModal">
+            <i class="bi bi-person-bounding-box fs-5"></i>
+            <span>Login with Face Recognition</span>
+          </button>
+
+          <hr class="my-3">
 
           <div class="text-center">
             <span class="text-muted small d-block mb-2">Demo Shortcuts:</span>
@@ -85,4 +96,277 @@
     </div>
   </div>
 </main>
+
+<div class="modal fade" id="faceLoginModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow rounded-4 overflow-hidden">
+      <div class="modal-header border-0 pb-0 px-4 pt-4">
+        <div>
+          <h5 class="modal-title fw-bold" style="color: var(--eco-forest);">
+            <i class="bi bi-person-bounding-box me-2"></i>Face Recognition Login
+          </h5>
+          <p class="text-muted small mb-0">Complete the liveness check (Left, Right, Blink) to sign in.</p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="position-relative mx-auto rounded-4 overflow-hidden bg-dark shadow-sm" style="max-width: 400px; aspect-ratio: 4 / 3;">
+          <video id="faceLoginVideo" autoplay muted playsinline class="w-100 h-100 object-fit-cover" style="transform: scaleX(-1);"></video>
+          <canvas id="faceLoginOverlay" class="position-absolute top-0 start-0 w-100 h-100" style="transform: scaleX(-1); pointer-events: none;"></canvas>
+
+          <div class="position-absolute bottom-0 start-50 translate-middle-x mb-3 w-100 px-3 text-center" style="z-index: 5;">
+            <span id="faceLoginStatus" class="badge bg-dark bg-opacity-75 text-white border border-light border-opacity-25 rounded-pill px-3 py-2 fw-semibold shadow" style="backdrop-filter: blur(6px); font-size: 0.85rem;">
+              <i class="bi bi-hourglass-split me-1 text-warning"></i>Loading Camera...
+            </span>
+          </div>
+
+          <div id="faceLoadingOverlay" class="position-absolute top-0 start-0 w-100 h-100 d-none flex-column align-items-center justify-content-center text-center p-4" style="background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); z-index: 10;">
+            <div id="faceLoadingSpinner" class="spinner-border text-success mb-3" role="status" style="width: 3rem; height: 3rem;">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <div id="faceLoadingIcon" class="d-none rounded-circle bg-success text-white align-items-center justify-content-center mb-3 shadow" style="width: 56px; height: 56px;">
+              <i class="bi bi-patch-check-fill fs-2"></i>
+            </div>
+            <h6 id="faceLoadingTitle" class="fw-bold text-white mb-1">Verifying Identity...</h6>
+            <p id="faceLoadingSubtitle" class="text-white-50 small mb-0">Analyzing facial biometrics</p>
+          </div>
+        </div>
+
+        <div id="faceLoginResult" class="alert d-none mt-3 mb-0 rounded-3 small fw-semibold"></div>
+      </div>
+      <div class="modal-footer border-0 pt-0 px-4 pb-4 justify-content-between">
+        <button type="button" class="btn btn-light btn-pill px-3" id="btnRetryFaceLogin">
+          <i class="bi bi-arrow-clockwise me-1"></i>Restart Check
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-pill px-3" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const modalEl = document.getElementById('faceLoginModal');
+    const video = document.getElementById('faceLoginVideo');
+    const overlay = document.getElementById('faceLoginOverlay');
+    const statusEl = document.getElementById('faceLoginStatus');
+    const resultEl = document.getElementById('faceLoginResult');
+    const loadingOverlay = document.getElementById('faceLoadingOverlay');
+    const loadingSpinner = document.getElementById('faceLoadingSpinner');
+    const loadingIcon = document.getElementById('faceLoadingIcon');
+    const loadingTitle = document.getElementById('faceLoadingTitle');
+    const loadingSubtitle = document.getElementById('faceLoadingSubtitle');
+    const btnRetry = document.getElementById('btnRetryFaceLogin');
+
+    let stream = null;
+    let timer = null;
+    let modelsReady = false;
+    let passedLeft = false;
+    let passedRight = false;
+    let passedBlink = false;
+    let maxEar = 0.30;
+    let isSubmitting = false;
+
+    function setStatus(type, html) {
+      statusEl.className = 'badge rounded-pill px-3 py-2 fw-semibold shadow border ';
+      if (type === 'success') statusEl.className += 'bg-success text-white border-success';
+      else if (type === 'danger') statusEl.className += 'bg-danger text-white border-danger';
+      else statusEl.className += 'bg-dark bg-opacity-75 text-white border-light border-opacity-25';
+      statusEl.innerHTML = html;
+    }
+
+    function dist(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function computeEar(pts, startIdx) {
+      const p1 = pts[startIdx];
+      const p2 = pts[startIdx + 1];
+      const p3 = pts[startIdx + 2];
+      const p4 = pts[startIdx + 3];
+      const p5 = pts[startIdx + 4];
+      const p6 = pts[startIdx + 5];
+      const vert1 = dist(p2, p6);
+      const vert2 = dist(p3, p5);
+      const horiz = dist(p1, p4);
+      return horiz > 0 ? (vert1 + vert2) / (2.0 * horiz) : 0.3;
+    }
+
+    function showLoadingScreen(show) {
+      if (show) {
+        loadingOverlay.classList.remove('d-none');
+        loadingOverlay.classList.add('d-flex');
+        loadingSpinner.classList.remove('d-none');
+        loadingIcon.classList.add('d-none');
+        loadingIcon.classList.remove('d-inline-flex');
+        loadingTitle.textContent = 'Verifying Identity...';
+        loadingSubtitle.textContent = 'Analyzing facial biometrics';
+      } else {
+        loadingOverlay.classList.add('d-none');
+        loadingOverlay.classList.remove('d-flex');
+      }
+    }
+
+    function resetLiveness() {
+      passedLeft = false;
+      passedRight = false;
+      passedBlink = false;
+      maxEar = 0.28;
+      isSubmitting = false;
+      resultEl.classList.add('d-none');
+      showLoadingScreen(false);
+    }
+
+    function stopCamera() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+    }
+
+    async function startFaceLogin() {
+      resetLiveness();
+      try {
+        setStatus('warning', '<i class="bi bi-hourglass-split me-1 text-warning"></i>Loading Camera...');
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+        video.srcObject = stream;
+        await video.play();
+
+        if (!modelsReady && typeof faceapi !== 'undefined') {
+          const modelUrl = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+          await Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl),
+            faceapi.nets.faceLandmark68Net.loadFromUri(modelUrl),
+            faceapi.nets.faceRecognitionNet.loadFromUri(modelUrl)
+          ]);
+          modelsReady = true;
+        }
+
+        if (!modelsReady) {
+          setStatus('danger', '<i class="bi bi-wifi-off me-1"></i>AI liveness models failed to load.');
+          return;
+        }
+
+        timer = setInterval(detectFrame, 220);
+      } catch (err) {
+        setStatus('danger', '<i class="bi bi-camera-video-off me-1"></i>Camera access denied or unavailable.');
+      }
+    }
+
+    async function detectFrame() {
+      if (!stream || video.paused || video.ended || isSubmitting) return;
+      const displaySize = { width: video.clientWidth, height: video.clientHeight };
+      if (!displaySize.width || !displaySize.height) return;
+
+      faceapi.matchDimensions(overlay, displaySize);
+      const detection = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.45 }))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      const ctx = overlay.getContext('2d');
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+      if (!detection) {
+        setStatus('warning', '<i class="bi bi-person-bounding-box me-1"></i>Position your face inside the frame.');
+        return;
+      }
+
+      const resized = faceapi.resizeResults(detection, displaySize);
+      const box = resized.detection.box;
+      ctx.strokeStyle = (passedLeft && passedRight && passedBlink) ? '#198754' : '#f59e0b';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+      const pts = detection.landmarks.positions;
+      const jawLeft = pts[0];
+      const jawRight = pts[16];
+      const nose = pts[30];
+      const dL = Math.abs(nose.x - jawLeft.x);
+      const dR = Math.abs(jawRight.x - nose.x);
+      const yawRatio = (dL + dR) > 0 ? dL / (dL + dR) : 0.5;
+
+      const leftEar = computeEar(pts, 36);
+      const rightEar = computeEar(pts, 42);
+      const avgEar = (leftEar + rightEar) / 2.0;
+      if (avgEar > maxEar && avgEar < 0.45) {
+        maxEar = avgEar;
+      }
+
+      if (!passedLeft) {
+        setStatus('warning', '<i class="bi bi-arrow-left-circle me-1 text-warning"></i>Turn your face to the LEFT');
+        if (yawRatio > 0.60) {
+          passedLeft = true;
+        }
+      } else if (!passedRight) {
+        setStatus('warning', '<i class="bi bi-arrow-right-circle me-1 text-warning"></i>Turn your face to the RIGHT');
+        if (yawRatio < 0.40) {
+          passedRight = true;
+        }
+      } else if (!passedBlink) {
+        setStatus('warning', '<i class="bi bi-eye me-1 text-warning"></i>Look straight and BLINK');
+        if (yawRatio >= 0.40 && yawRatio <= 0.60 && (avgEar < 0.22 || avgEar < maxEar * 0.78)) {
+          passedBlink = true;
+        }
+      } else {
+        setStatus('success', '<i class="bi bi-shield-check me-1"></i>Liveness verified! Look straight...');
+        if (yawRatio >= 0.42 && yawRatio <= 0.58) {
+          isSubmitting = true;
+          submitFaceLogin(Array.from(detection.descriptor));
+        }
+      }
+    }
+
+    async function submitFaceLogin(descriptor) {
+      showLoadingScreen(true);
+      try {
+        await new Promise(r => setTimeout(r, 650));
+        loadingSubtitle.textContent = 'Getting resident information...';
+
+        const res = await fetch('/api/face-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ descriptor: descriptor })
+        });
+        const data = await res.json();
+
+        await new Promise(r => setTimeout(r, 600));
+
+        if (res.ok && data.status === 'success') {
+          loadingSpinner.classList.add('d-none');
+          loadingIcon.classList.remove('d-none');
+          loadingIcon.classList.add('d-inline-flex');
+          loadingTitle.textContent = 'Identified!';
+          loadingSubtitle.textContent = `Welcome back, ${data.full_name} (${data.confidence}% match)`;
+          stopCamera();
+          setTimeout(() => { window.location.href = data.redirect; }, 900);
+        } else {
+          showLoadingScreen(false);
+          resultEl.className = 'alert alert-danger mt-3 mb-0 rounded-3 small fw-semibold';
+          resultEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i>${data.message || 'Face not recognized.'}`;
+          resultEl.classList.remove('d-none');
+          isSubmitting = false;
+        }
+      } catch (err) {
+        showLoadingScreen(false);
+        resultEl.className = 'alert alert-danger mt-3 mb-0 rounded-3 small fw-semibold';
+        resultEl.textContent = 'Connection error while verifying face.';
+        resultEl.classList.remove('d-none');
+        isSubmitting = false;
+      }
+    }
+
+    modalEl.addEventListener('shown.bs.modal', startFaceLogin);
+    modalEl.addEventListener('hidden.bs.modal', stopCamera);
+    btnRetry.addEventListener('click', function() {
+      stopCamera();
+      startFaceLogin();
+    });
+  });
+</script>
 {% endblock %}
