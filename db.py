@@ -115,11 +115,16 @@ def init_db():
         ("zip_code", "TEXT DEFAULT ''"),
         ("id_type", "TEXT DEFAULT ''"),
         ("id_image", "TEXT DEFAULT NULL"),
+        ("id_back_image", "TEXT DEFAULT NULL"),
         ("profile_image", "TEXT DEFAULT NULL"),
         ("face_image", "TEXT DEFAULT NULL"),
         ("face_descriptor", "TEXT DEFAULT NULL"),
         ("verified_at", "TEXT DEFAULT NULL"),
-        ("verification_notes", "TEXT DEFAULT ''")
+        ("verification_notes", "TEXT DEFAULT ''"),
+        ("verify_cooldown_until", "TEXT DEFAULT NULL"),
+        ("failed_login_attempts", "INTEGER DEFAULT 0"),
+        ("lockout_until", "TEXT DEFAULT NULL"),
+        ("last_login_at", "TEXT DEFAULT NULL")
     ]
     for col_name, col_def in verification_columns:
         try:
@@ -127,6 +132,15 @@ def init_db():
             conn.commit()
         except Exception:
             pass
+
+    cur.execute('''CREATE TABLE IF NOT EXISTS login_attempts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL,
+        ip_address TEXT NOT NULL,
+        success INTEGER DEFAULT 0,
+        reason TEXT DEFAULT '',
+        created_at TEXT NOT NULL
+    )''')
 
     cur.execute('''CREATE TABLE IF NOT EXISTS materials (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

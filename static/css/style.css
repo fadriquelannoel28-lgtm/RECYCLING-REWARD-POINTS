@@ -834,3 +834,39 @@ a.btn-lg {
     text-size-adjust: 100% !important;
   }
 }
+
+.table {
+  font-size: 0.86rem;
+}
+
+.table thead th {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.table > :not(caption) > * > * {
+  padding: 0.65rem 0.75rem;
+}
+
+.table .badge {
+  font-size: 0.74rem;
+}
+
+@media (max-width: 768px) {
+  .table {
+    font-size: 0.8rem;
+  }
+
+  .table thead th {
+    font-size: 0.72rem;
+  }
+
+  .table-responsive > .table > :not(caption) > * > * {
+    padding: 0.55rem 0.65rem;
+    white-space: nowrap;
+  }
+}

@@ -203,6 +203,18 @@
                       <span>Reset (Demo)</span>
                     </button>
                   </form>
+                {% elif verify_cooldown_remaining %}
+                  <button type="button" class="btn btn-outline-danger btn-sm fw-semibold btn-pill px-3 w-100" disabled>
+                    <i class="bi bi-lock-fill me-1"></i>
+                    <span>Locked ({{ verify_cooldown_remaining }})</span>
+                  </button>
+                  <form action="{{ url_for('account') }}" method="POST" class="m-0">
+                    <input type="hidden" name="action" value="reset_verification">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm btn-pill px-3 w-100">
+                      <i class="bi bi-arrow-counterclockwise me-1"></i>
+                      <span>Reset (Demo)</span>
+                    </button>
+                  </form>
                 {% else %}
                   <a href="{{ url_for('verify_account') }}" class="btn btn-warning fw-semibold btn-pill px-4 text-dark shadow-sm">
                     <i class="bi bi-shield-check me-1"></i>

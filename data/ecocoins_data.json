@@ -32,7 +32,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 2,
@@ -66,7 +71,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 3,
@@ -90,17 +100,22 @@
       "contact_number": "09123456789",
       "address": "0014 Purok 1",
       "face_image": "/static/uploads/faces/resident_3.jpg",
-      "face_descriptor": "[-0.06331179291009903,0.07149630784988403,0.11856058984994888,-0.029390349984169006,-0.013368154875934124,-0.05586501210927963,-0.006363392807543278,-0.07390407472848892,0.1492675095796585,-0.05590396374464035,0.2886499762535095,-0.007430969271808863,-0.2054077684879303,-0.10281246900558472,-0.010130933485925198,0.11251503229141235,-0.15424981713294983,-0.160170778632164,-0.057718656957149506,0.007858900353312492,0.10030993074178696,-0.0010352771496400237,0.007066945545375347,-0.006994333583861589,-0.10632164776325226,-0.34690412878990173,-0.06572099030017853,-0.052825361490249634,0.07445995509624481,-0.0890994668006897,-0.03526054322719574,0.016947058960795403,-0.2441120147705078,-0.04120548069477081,0.008364040404558182,0.0648924857378006,-0.04402020573616028,-0.07003937661647797,0.1997079849243164,0.026267725974321365,-0.2562626004219055,0.07126329839229584,-0.01631787046790123,0.28446969389915466,0.2569943368434906,0.03813266009092331,0.005385659635066986,-0.12016315758228302,0.11080040782690048,-0.17251183092594147,-0.0008905883878469467,0.1896222084760666,0.093021921813488,0.056799761950969696,-0.013310683891177177,-0.1350676715373993,-0.03134695813059807,0.07096124440431595,-0.1802794486284256,0.03418933227658272,0.005005330312997103,-0.11782307922840118,-0.014741634950041771,-0.12140598148107529,0.20108982920646667,0.006305795628577471,-0.15778116881847382,-0.16868972778320312,0.10969715565443039,-0.1602943390607834,-0.05951874703168869,0.11719722300767899,-0.17504145205020905,-0.19432590901851654,-0.3029446601867676,0.04564265161752701,0.4083801507949829,0.06237960234284401,-0.20996741950511932,0.10933243483304977,-0.05515836924314499,-0.013542331755161285,0.08189788460731506,0.2193576693534851,0.010260771960020065,0.1199200227856636,-0.08111239969730377,0.0031784838065505028,0.22121022641658783,-0.06465180963277817,-0.06714984029531479,0.22284387052059174,-0.0697665587067604,0.08801133930683136,0.017290666699409485,0.005483507644385099,-0.04364736005663872,0.01557895913720131,-0.14746589958667755,-0.07577762007713318,-0.0010020742192864418,-0.023170512169599533,0.008356977254152298,0.09941843897104263,-0.1262974739074707,0.12865883111953735,0.027381690219044685,0.0695936530828476,0.02701672352850437,-0.02931702509522438,-0.03967292606830597,-0.08548514544963837,0.0935838371515274,-0.2878390848636627,0.24084439873695374,0.1980445384979248,0.07778038829565048,0.09870011359453201,0.10552603751420975,0.04548139125108719,-0.002234905958175659,0.034483402967453,-0.17236463725566864,0.009526261128485203,0.04160235449671745,0.01720442622900009,0.13716977834701538,-0.026022715494036674]",
+      "face_descriptor": "[-0.040853578597307205,0.06324001401662827,0.04540480300784111,-0.07264720648527145,-0.010644274763762951,-0.06503824144601822,-0.04475593939423561,-0.06358464807271957,0.1791469007730484,-0.05833827704191208,0.23834684491157532,-0.010497658513486385,-0.18455815315246582,-0.10467421263456345,-0.035887837409973145,0.14291292428970337,-0.19139821827411652,-0.1444663256406784,-0.016964871436357498,0.03133765608072281,0.07009761035442352,-0.012637263163924217,-0.0016110165743157268,0.054303716868162155,-0.09217672049999237,-0.3185054361820221,-0.08198364078998566,-0.08876454830169678,0.02075471729040146,-0.10328084975481033,-0.04337409511208534,0.019301213324069977,-0.18801581859588623,-0.030304376035928726,0.02859189361333847,0.04693783074617386,-0.042148198932409286,-0.08091908693313599,0.21381723880767822,0.05257579684257507,-0.26477617025375366,0.06506892293691635,-0.005929352715611458,0.28232118487358093,0.21559575200080872,0.014078991487622261,0.016380133107304573,-0.13841550052165985,0.17773352563381195,-0.16480231285095215,-0.004551611840724945,0.1804416924715042,0.08120038360357285,0.058682799339294434,-0.025458548218011856,-0.13088466227054596,-0.001202000305056572,0.10076949745416641,-0.16109368205070496,0.03988773375749588,0.028842076659202576,-0.10632039606571198,-0.00505797890946269,-0.09172671288251877,0.2201908528804779,0.02928602136671543,-0.17934367060661316,-0.1678258627653122,0.10413944721221924,-0.14307144284248352,-0.06593925505876541,0.10522237420082092,-0.16513359546661377,-0.20739275217056274,-0.29130831360816956,0.054103754460811615,0.37359100580215454,0.06802176684141159,-0.18877603113651276,0.08687230199575424,-0.06268303841352463,-0.00935375690460205,0.07950598001480103,0.25187164545059204,-0.012518547475337982,0.10138678550720215,-0.06401712447404861,-0.026068907231092453,0.23451341688632965,-0.05576986074447632,-0.04103987663984299,0.20730102062225342,-0.05467977374792099,0.12804318964481354,-0.0031502642668783665,0.010220716707408428,-0.058079060167074203,0.021751146763563156,-0.12855495512485504,-0.02257297933101654,-0.0076851192861795425,-0.023102091625332832,-0.0015187135431915522,0.11106079071760178,-0.12753021717071533,0.11662168055772781,0.03574225679039955,0.03727859631180763,0.009938161820173264,0.011598555371165276,-0.03839053586125374,-0.1002875566482544,0.0824180394411087,-0.2592078447341919,0.23848730325698853,0.1744297444820404,0.14063633978366852,0.09421397745609283,0.1026582419872284,0.04587848484516144,-0.015253941528499126,0.001957985572516918,-0.1635376214981079,0.030078567564487457,0.07110900431871414,0.024235323071479797,0.1093665361404419,-0.05296917259693146]",
       "verified_at": null,
       "verification_status": "unverified",
       "barangay": "Pinagkawitan",
       "zip_code": "4217",
       "id_type": "National ID",
-      "id_image": "/static/uploads/ids/id_3_1794645632.jpg",
+      "id_image": "/static/uploads/ids/id_3_1795048814.jpg",
       "profile_image": null,
-      "verification_notes": "Rejected: Duplicate facial biometrics detected (matches verified resident Noel Andrei Lureno Fadriquelan).",
+      "verification_notes": "Submitted details or ID picture could not be confirmed. Please resubmit.",
       "province": "Batangas",
-      "city": "City of Lipa"
+      "city": "City of Lipa",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 5,
+      "lockout_until": "2026-11-19 11:07:20",
+      "last_login_at": "2026-11-19 11:01:49"
     },
     {
       "id": 4,
@@ -134,7 +149,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": "2026-11-19 10:55:11"
     },
     {
       "id": 5,
@@ -168,7 +188,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 6,
@@ -177,7 +202,7 @@
       "password": "scrypt:32768:8:1$h6n762EkY4SMlHGX$e21cbedf47e68add6cdfd9613c14d9ee8c5f9cda6ddbeb79dddb1f8d6324280dbbab41013e08066b338ec26b0d201e755d453904625a09dac13a45fc09014459",
       "role": "resident",
       "qr_code": "ECO-RES-77401",
-      "points": 620,
+      "points": 48,
       "created_at": "2026-10-16 10:10:00",
       "status": "active",
       "station_name": "Barangay Pinagkawitan, Lipa City",
@@ -202,7 +227,12 @@
       "profile_image": "/static/uploads/profiles/profile_6_1794614596.jpg",
       "verification_notes": "Confirmed by Barangay Staff",
       "province": "Batangas",
-      "city": "City of Lipa"
+      "city": "City of Lipa",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": "2026-11-19 11:02:28"
     },
     {
       "id": 7,
@@ -236,7 +266,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": "2026-11-19 11:01:32"
     },
     {
       "id": 9,
@@ -270,7 +305,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 10,
@@ -304,7 +344,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 11,
@@ -338,7 +383,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 12,
@@ -372,7 +422,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 13,
@@ -406,7 +461,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 14,
@@ -440,7 +500,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 15,
@@ -474,7 +539,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 16,
@@ -508,7 +578,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 17,
@@ -542,7 +617,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 18,
@@ -576,7 +656,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 19,
@@ -610,7 +695,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 20,
@@ -644,7 +734,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 21,
@@ -678,7 +773,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 22,
@@ -712,7 +812,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 24,
@@ -746,7 +851,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 25,
@@ -780,7 +890,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 26,
@@ -814,7 +929,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 27,
@@ -848,7 +968,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 28,
@@ -882,7 +1007,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 29,
@@ -916,7 +1046,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 30,
@@ -950,7 +1085,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 31,
@@ -984,7 +1124,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 32,
@@ -1018,7 +1163,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 33,
@@ -1052,7 +1202,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 34,
@@ -1086,7 +1241,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 35,
@@ -1120,7 +1280,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 36,
@@ -1154,7 +1319,12 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 37,
@@ -1188,11 +1358,16 @@
       "profile_image": null,
       "verification_notes": "",
       "province": "",
-      "city": ""
+      "city": "",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     },
     {
       "id": 38,
-      "full_name": "Zoe Isabelle Roxas",
+      "full_name": "Noel L Fadir",
       "email": "zoe.roxas@example.com",
       "password": "scrypt:32768:8:1$vdqj2ECyGDqOmXsE$704b318e052906f16fe447eacf189ae27319cf5277ac5515f1ef7c03e305b48c21ebda31e97026230442747304ff72b8a8e72d56e13ffa0830b16882d2a1d7c0",
       "role": "resident",
@@ -1204,25 +1379,30 @@
       "claim_timeout_until": null,
       "cancel_count": 0,
       "is_verified": 0,
-      "first_name": "",
-      "middle_name": "",
-      "last_name": "",
-      "birthday": "",
-      "gender": "",
-      "contact_number": "",
-      "address": "",
+      "first_name": "Noel",
+      "middle_name": "L",
+      "last_name": "Fadir",
+      "birthday": "2004-12-26",
+      "gender": "Male",
+      "contact_number": "09123456789",
+      "address": "0014 Purok 1",
       "face_image": null,
       "face_descriptor": null,
       "verified_at": null,
       "verification_status": "unverified",
-      "barangay": "",
-      "zip_code": "",
-      "id_type": "",
+      "barangay": "Pinagkawitan",
+      "zip_code": "4217",
+      "id_type": "National ID",
       "id_image": null,
       "profile_image": null,
       "verification_notes": "",
-      "province": "",
-      "city": ""
+      "province": "Batangas",
+      "city": "City of Lipa",
+      "id_back_image": null,
+      "verify_cooldown_until": null,
+      "failed_login_attempts": 0,
+      "lockout_until": null,
+      "last_login_at": null
     }
   ],
   "materials": [
@@ -1501,6 +1681,16 @@
       "points_earned": 80,
       "receipt_no": "REC-20261103-2560",
       "created_at": "2026-11-03 14:20:21"
+    },
+    {
+      "id": 26,
+      "user_id": 6,
+      "material_id": 2,
+      "material_name": "Can",
+      "quantity": 16,
+      "points_earned": 128,
+      "receipt_no": "REC-20261119-3766",
+      "created_at": "2026-11-19 07:57:11"
     }
   ],
   "rewards": [
@@ -1509,7 +1699,7 @@
       "title": "1kg Sinandomeng Rice (Bigas)",
       "category": "Food Staples",
       "points_required": 300,
-      "stock": 80,
+      "stock": 79,
       "partner_name": "Barangay Food Bank",
       "status": "available"
     },
@@ -1545,7 +1735,7 @@
       "title": "Eco Tote Bag (Reusable)",
       "category": "Merchandise",
       "points_required": 200,
-      "stock": 96,
+      "stock": 94,
       "partner_name": "Barangay Green Store",
       "status": "available"
     },
@@ -1606,6 +1796,36 @@
       "redemption_code": "RDM-19541",
       "status": "received",
       "created_at": "2026-11-03 14:20:50"
+    },
+    {
+      "id": 4,
+      "user_id": 6,
+      "reward_id": 19,
+      "reward_title": "1kg Sinandomeng Rice (Bigas)",
+      "points_spent": 300,
+      "redemption_code": "RDM-50786",
+      "status": "received",
+      "created_at": "2026-11-19 08:05:43"
+    },
+    {
+      "id": 9,
+      "user_id": 6,
+      "reward_id": 23,
+      "reward_title": "Eco Tote Bag (Reusable)",
+      "points_spent": 200,
+      "redemption_code": "RDM-94460",
+      "status": "received",
+      "created_at": "2026-11-19 08:34:00"
+    },
+    {
+      "id": 11,
+      "user_id": 6,
+      "reward_id": 23,
+      "reward_title": "Eco Tote Bag (Reusable)",
+      "points_spent": 200,
+      "redemption_code": "RDM-77742",
+      "status": "received",
+      "created_at": "2026-11-19 08:37:11"
     }
   ],
   "stations": [

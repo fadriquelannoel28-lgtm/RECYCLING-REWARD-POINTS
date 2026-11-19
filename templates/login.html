@@ -36,6 +36,23 @@
             </div>
           {% endif %}
 
+          {% if lockout_seconds and lockout_seconds > 0 %}
+            <div class="alert alert-danger rounded-4 border-0 shadow-sm p-3 mb-4" id="loginLockoutBanner" data-seconds="{{ lockout_seconds }}" role="alert">
+              <div class="d-flex align-items-start gap-2">
+                <i class="bi bi-shield-lock-fill fs-5 mt-1 flex-shrink-0"></i>
+                <div class="small">
+                  <div class="fw-bold mb-1">Login Temporarily Locked</div>
+                  <div>{{ error or 'Too many failed login attempts. Please wait before trying again.' }}</div>
+                  <div class="mt-2">
+                    <span class="badge bg-danger text-white rounded-pill px-3 py-1 font-monospace">
+                      <i class="bi bi-clock me-1"></i>Try again in <span id="loginLockoutTimer">00:00</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+
           <form action="{{ url_for('login') }}" method="POST" id="loginForm" novalidate>
             <div class="messenger-field-group mb-3 {% if error and error_field == 'email' %}has-error{% endif %}" id="emailGroup">
               <label class="form-label" for="emailInput">Email Address</label>
@@ -60,9 +77,9 @@
               </div>
             </div>
 
-            <button type="submit" class="btn btn-accent w-100 py-2 fw-bold mb-3 btn-pill" id="loginSubmitBtn">
-              <span>Login</span>
-              <i class="bi bi-arrow-right ms-1"></i>
+            <button type="submit" class="btn {% if lockout_seconds and lockout_seconds > 0 %}btn-secondary{% else %}btn-accent{% endif %} w-100 py-2 fw-bold mb-3 btn-pill" id="loginSubmitBtn" {% if lockout_seconds and lockout_seconds > 0 %}disabled{% endif %}>
+              <span>{% if lockout_seconds and lockout_seconds > 0 %}Locked{% else %}Login{% endif %}</span>
+              <i class="bi {% if lockout_seconds and lockout_seconds > 0 %}bi-lock-fill{% else %}bi-arrow-right{% endif %} ms-1"></i>
             </button>
 
             <div class="text-center small text-muted">
@@ -85,10 +102,16 @@
 
           <div class="text-center">
             <span class="text-muted small d-block mb-2">Demo Shortcuts:</span>
-            <div class="d-flex gap-2 justify-content-center flex-wrap">
-              <button type="button" class="btn btn-sm btn-outline-success demo-shortcut-btn" data-email="maria@example.com" data-pass="user123">Resident Demo</button>
-              <button type="button" class="btn btn-sm btn-outline-warning text-dark demo-shortcut-btn" data-email="staff@ecocoins.ph" data-pass="staff123">Staff Demo</button>
-              <button type="button" class="btn btn-sm btn-outline-dark demo-shortcut-btn" data-email="admin@ecocoins.ph" data-pass="admin123">Admin Demo</button>
+            <div class="row g-2">
+              <div class="col-4">
+                <button type="button" class="btn btn-sm btn-outline-success fw-semibold btn-pill w-100 text-nowrap demo-shortcut-btn" data-email="maria@example.com" data-pass="user123">Resident</button>
+              </div>
+              <div class="col-4">
+                <button type="button" class="btn btn-sm btn-outline-success fw-semibold btn-pill w-100 text-nowrap demo-shortcut-btn" data-email="staff@ecocoins.ph" data-pass="staff123">Staff</button>
+              </div>
+              <div class="col-4">
+                <button type="button" class="btn btn-sm btn-outline-success fw-semibold btn-pill w-100 text-nowrap demo-shortcut-btn" data-email="admin@ecocoins.ph" data-pass="admin123">Admin</button>
+              </div>
             </div>
           </div>
         </div>
@@ -367,6 +390,34 @@
       stopCamera();
       startFaceLogin();
     });
+
+    const lockoutBanner = document.getElementById('loginLockoutBanner');
+    const lockoutTimerEl = document.getElementById('loginLockoutTimer');
+    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+    if (lockoutBanner && lockoutTimerEl) {
+      let remSecs = parseInt(lockoutBanner.dataset.seconds || '0', 10);
+      function renderLockoutTimer() {
+        const mins = Math.floor(remSecs / 60);
+        const secs = remSecs % 60;
+        lockoutTimerEl.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+      }
+      renderLockoutTimer();
+      const lockInterval = setInterval(function() {
+        remSecs--;
+        if (remSecs <= 0) {
+          clearInterval(lockInterval);
+          lockoutBanner.classList.add('d-none');
+          if (loginSubmitBtn) {
+            loginSubmitBtn.disabled = false;
+            loginSubmitBtn.classList.remove('btn-secondary');
+            loginSubmitBtn.classList.add('btn-accent');
+            loginSubmitBtn.innerHTML = '<span>Login</span><i class="bi bi-arrow-right ms-1"></i>';
+          }
+        } else {
+          renderLockoutTimer();
+        }
+      }, 1000);
+    }
   });
 </script>
 {% endblock %}

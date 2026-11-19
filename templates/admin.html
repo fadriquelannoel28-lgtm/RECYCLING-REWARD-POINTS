@@ -10,6 +10,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link href="https://cdn.datatables.net/v/dt/dt-3.1.5/datatables.min.css" rel="stylesheet">
   <script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
   <style>
     .crud-dropdown-btn {
@@ -33,6 +34,76 @@
     }
     .crud-dropdown-btn::after {
       display: none !important;
+    }
+    .dt-container .dt-layout-row {
+      margin: 0 0 1rem 0 !important;
+      align-items: center !important;
+      gap: 0.75rem;
+    }
+    .dt-container .dt-layout-row:last-child {
+      margin: 1rem 0 0 0 !important;
+    }
+    .dt-container .dt-length {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 0.5rem !important;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+    .dt-container .dt-length label {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 0.5rem !important;
+      margin: 0 !important;
+      font-weight: 500;
+    }
+    .dt-container .dt-length select.dt-input {
+      border-radius: 9999px !important;
+      border: 1px solid #cbd5e1 !important;
+      padding: 0.35rem 1.75rem 0.35rem 0.85rem !important;
+      font-size: 0.85rem !important;
+      background-color: #ffffff !important;
+      color: #1e293b !important;
+      margin-right: 0.35rem !important;
+      cursor: pointer;
+      outline: none;
+    }
+    .dt-container .dt-search {
+      display: inline-flex !important;
+      align-items: center !important;
+    }
+    .dt-container .dt-search input.dt-input {
+      border-radius: 9999px !important;
+      border: 1px solid #cbd5e1 !important;
+      padding: 0.42rem 1rem !important;
+      min-width: 240px;
+      font-size: 0.85rem !important;
+      background-color: #ffffff !important;
+      color: #1e293b !important;
+      margin-left: 0 !important;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .dt-container .dt-length select.dt-input:focus,
+    .dt-container .dt-search input.dt-input:focus {
+      border-color: #198754 !important;
+      box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.14) !important;
+      outline: none !important;
+    }
+    .dt-container .dt-info {
+      font-size: 0.82rem;
+      color: #64748b;
+    }
+    .dt-container .dt-paging .dt-paging-button {
+      border-radius: 9999px !important;
+      font-size: 0.82rem !important;
+      padding: 0.3rem 0.75rem !important;
+      margin: 0 2px !important;
+    }
+    .dt-container .dt-paging .dt-paging-button.current,
+    .dt-container .dt-paging .dt-paging-button.current:hover {
+      background: var(--eco-forest) !important;
+      border-color: var(--eco-forest) !important;
+      color: #ffffff !important;
     }
     .crud-dropdown-menu {
       min-width: 220px;
@@ -474,13 +545,7 @@
           <p class="text-muted mb-0">Add new residents, edit details or points, and manage resident accounts.</p>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-          <div class="input-group" style="max-width: 320px;">
-            <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
-              <i class="bi bi-search text-muted"></i>
-            </span>
-            <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search residents..." data-target="#adminResidentsTable">
-          </div>
+        <div class="d-flex justify-content-end align-items-center mb-3 flex-wrap gap-2">
           <button class="btn btn-forest d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#addResidentModal">
             <i class="bi bi-person-plus"></i>
             <span>Add Resident</span>
@@ -489,7 +554,7 @@
 
         <div class="card border-0 shadow-sm p-4">
           <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" id="adminResidentsTable" data-paginate="true" data-page-size="20">
+            <table class="table table-hover align-middle mb-0" id="adminResidentsTable">
               <thead class="table-light">
                 <tr>
                   <th>ID</th>
@@ -566,41 +631,10 @@
                       </div>
                     </td>
                   </tr>
-                {% else %}
-                  <tr>
-                    <td colspan="8" class="text-center py-5">
-                      <div class="py-4">
-                        <span class="eco-icon-tile tile-green mx-auto mb-3" style="width: 58px; height: 58px; border-radius: 50%;">
-                          <i class="bi bi-people fs-2"></i>
-                        </span>
-                        <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">No Registered Residents Yet</h5>
-                        <p class="text-muted small mb-3">No resident accounts have been registered in the system yet.</p>
-                        <button type="button" class="btn btn-sm btn-accent btn-pill px-4" data-bs-toggle="modal" data-bs-target="#addResidentModal">
-                          <i class="bi bi-person-plus me-1"></i>Add Resident
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
-          {% if residents_list %}
-            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top pagination-container" data-target="#adminResidentsTable">
-              <div class="text-muted small pagination-info">
-                Showing 1 to {{ 20 if residents_list|length > 20 else residents_list|length }} of {{ residents_list|length }} entries
-              </div>
-              <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-prev" disabled>
-                  <i class="bi bi-arrow-left me-1"></i> Prev
-                </button>
-                <span class="small fw-semibold text-muted px-2 pagination-page-indicator">Page 1 of 1</span>
-                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-next" {% if residents_list|length <= 20 %}disabled{% endif %}>
-                  Next <i class="bi bi-arrow-right ms-1"></i>
-                </button>
-              </div>
-            </div>
-          {% endif %}
         </div>
 
       {% elif tab == 'staff' %}
@@ -609,13 +643,7 @@
           <p class="text-muted mb-0">Create, edit, reset passwords, and manage authorized collection station personnel.</p>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-          <div class="input-group" style="max-width: 320px;">
-            <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
-              <i class="bi bi-search text-muted"></i>
-            </span>
-            <input type="text" class="form-control border-start-0 rounded-end-pill pe-3 table-search-input" placeholder="Search staff..." data-target="#adminStaffTable">
-          </div>
+        <div class="d-flex justify-content-end align-items-center mb-3 flex-wrap gap-2">
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <button class="btn btn-forest d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#assignedStationsModal">
               <i class="bi bi-plus-lg"></i>
@@ -630,7 +658,7 @@
 
         <div class="card border-0 shadow-sm p-4">
           <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" id="adminStaffTable" data-paginate="true" data-page-size="20">
+            <table class="table table-hover align-middle mb-0" id="adminStaffTable">
               <thead class="table-light">
                 <tr>
                   <th>Staff Name</th>
@@ -703,41 +731,10 @@
                       </div>
                     </td>
                   </tr>
-                {% else %}
-                  <tr>
-                    <td colspan="6" class="text-center py-5">
-                      <div class="py-4">
-                        <span class="eco-icon-tile tile-blue mx-auto mb-3" style="width: 58px; height: 58px; border-radius: 50%;">
-                          <i class="bi bi-person-badge fs-2"></i>
-                        </span>
-                        <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">No Staff Accounts Yet</h5>
-                        <p class="text-muted small mb-3">No authorized collection personnel have been added yet.</p>
-                        <button type="button" class="btn btn-sm btn-accent btn-pill px-4" data-bs-toggle="modal" data-bs-target="#addStaffModal">
-                          <i class="bi bi-person-plus me-1"></i>Add Staff Member
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
-          {% if staff_list %}
-            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top pagination-container" data-target="#adminStaffTable">
-              <div class="text-muted small pagination-info">
-                Showing 1 to {{ 20 if staff_list|length > 20 else staff_list|length }} of {{ staff_list|length }} entries
-              </div>
-              <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-prev" disabled>
-                  <i class="bi bi-arrow-left me-1"></i> Prev
-                </button>
-                <span class="small fw-semibold text-muted px-2 pagination-page-indicator">Page 1 of 1</span>
-                <button type="button" class="btn btn-sm btn-outline-success btn-pill px-3 pagination-next" {% if staff_list|length <= 20 %}disabled{% endif %}>
-                  Next <i class="bi bi-arrow-right ms-1"></i>
-                </button>
-              </div>
-            </div>
-          {% endif %}
         </div>
 
       {% elif tab == 'materials' %}
@@ -1400,22 +1397,20 @@
               <input type="email" name="res_email" class="form-control border-start-0 rounded-end-3" placeholder="e.g. maria@example.com" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Please enter a valid email address (e.g. name@domain.com)." required>
             </div>
           </div>
-          <div class="row g-3 mb-3">
-            <div class="col-12 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">Password</label>
-              <div class="input-group">
-                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
-                <input type="password" name="res_password" id="resAddPw" class="form-control border-start-0 border-end-0" placeholder="Enter Password" minlength="6" maxlength="64" title="Password must be at least 6 characters long." required>
-                <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="resAddPw"><i class="bi bi-eye"></i></button>
-              </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted mb-1">Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
+              <input type="password" name="res_password" id="resAddPw" class="form-control border-start-0 border-end-0" placeholder="Enter Password" minlength="6" maxlength="64" title="Password must be at least 6 characters long." required>
+              <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="resAddPw"><i class="bi bi-eye"></i></button>
             </div>
-            <div class="col-12 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">Confirm Password</label>
-              <div class="input-group">
-                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
-                <input type="password" name="res_confirm_password" id="resAddConfirmPw" class="form-control border-start-0 border-end-0" placeholder="Confirm Password" minlength="6" maxlength="64" title="Please confirm your password." required>
-                <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="resAddConfirmPw"><i class="bi bi-eye"></i></button>
-              </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted mb-1">Confirm Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
+              <input type="password" name="res_confirm_password" id="resAddConfirmPw" class="form-control border-start-0 border-end-0" placeholder="Confirm Password" minlength="6" maxlength="64" title="Please confirm your password." required>
+              <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="resAddConfirmPw"><i class="bi bi-eye"></i></button>
             </div>
           </div>
           <div class="mb-3">
@@ -1844,22 +1839,20 @@
               <input type="email" name="staff_email" class="form-control border-start-0 rounded-end-3" placeholder="e.g. maria.staff@ecocoins.ph" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Please enter a valid email address." required>
             </div>
           </div>
-          <div class="row g-3 mb-3">
-            <div class="col-12 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">Password</label>
-              <div class="input-group">
-                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
-                <input type="password" name="staff_password" id="staffAddPw" class="form-control border-start-0 border-end-0" placeholder="Enter Password" minlength="6" maxlength="64" title="Password must be at least 6 characters long." required>
-                <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="staffAddPw"><i class="bi bi-eye"></i></button>
-              </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted mb-1">Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
+              <input type="password" name="staff_password" id="staffAddPw" class="form-control border-start-0 border-end-0" placeholder="Enter Password" minlength="6" maxlength="64" title="Password must be at least 6 characters long." required>
+              <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="staffAddPw"><i class="bi bi-eye"></i></button>
             </div>
-            <div class="col-12 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">Confirm Password</label>
-              <div class="input-group">
-                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
-                <input type="password" name="staff_confirm_password" id="staffAddConfirmPw" class="form-control border-start-0 border-end-0" placeholder="Confirm Password" minlength="6" maxlength="64" title="Please confirm your password." required>
-                <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="staffAddConfirmPw"><i class="bi bi-eye"></i></button>
-              </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted mb-1">Confirm Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
+              <input type="password" name="staff_confirm_password" id="staffAddConfirmPw" class="form-control border-start-0 border-end-0" placeholder="Confirm Password" minlength="6" maxlength="64" title="Please confirm your password." required>
+              <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="staffAddConfirmPw"><i class="bi bi-eye"></i></button>
             </div>
           </div>
           <div class="mb-3">
@@ -2159,42 +2152,38 @@
               <input type="text" name="rew_title" class="form-control border-start-0 rounded-end-3" placeholder="e.g. 5kg Premium Rice or Grocery Voucher" minlength="3" maxlength="100" title="Reward title must be at least 3 characters." required>
             </div>
           </div>
-          <div class="row g-3 mb-3">
-            <div class="col-12 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">Category</label>
-              <div class="input-group">
-                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-tag"></i></span>
-                <select name="rew_category" class="form-select border-start-0 rounded-end-3" required>
-                  <option value="Food Staples">Food Staples</option>
-                  <option value="Canned Goods">Canned Goods</option>
-                  <option value="Merchandise">Merchandise</option>
-                  <option value="Household">Household</option>
-                  <option value="Vouchers">Vouchers</option>
-                </select>
-              </div>
-            </div>
-            <div class="col-12 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">Partner / Provider</label>
-              <div class="input-group">
-                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-shop"></i></span>
-                <input type="text" name="rew_partner" class="form-control border-start-0 rounded-end-3" placeholder="e.g. Barangay Food Bank" maxlength="100">
-              </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted mb-1">Category</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-tag"></i></span>
+              <select name="rew_category" class="form-select border-start-0 rounded-end-3" required>
+                <option value="Food Staples">Food Staples</option>
+                <option value="Canned Goods">Canned Goods</option>
+                <option value="Merchandise">Merchandise</option>
+                <option value="Household">Household</option>
+                <option value="Vouchers">Vouchers</option>
+              </select>
             </div>
           </div>
-          <div class="row g-3 mb-3">
-            <div class="col-12 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">Points Required</label>
-              <div class="input-group">
-                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-coin text-warning"></i></span>
-                <input type="number" name="rew_points" class="form-control border-start-0 rounded-end-3" value="300" min="1" max="1000000" step="1" title="Points required must be at least 1." required>
-              </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted mb-1">Partner / Provider</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-shop"></i></span>
+              <input type="text" name="rew_partner" class="form-control border-start-0 rounded-end-3" placeholder="e.g. Barangay Food Bank" maxlength="100">
             </div>
-            <div class="col-12 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">Initial Stock Available</label>
-              <div class="input-group">
-                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-box"></i></span>
-                <input type="number" name="rew_stock" class="form-control border-start-0 rounded-end-3" value="50" min="0" max="100000" step="1" title="Stock cannot be negative." required>
-              </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted mb-1">Points Required</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-coin text-warning"></i></span>
+              <input type="number" name="rew_points" class="form-control border-start-0 rounded-end-3" value="300" min="1" max="1000000" step="1" title="Points required must be at least 1." required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted mb-1">Initial Stock Available</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-box"></i></span>
+              <input type="number" name="rew_stock" class="form-control border-start-0 rounded-end-3" value="50" min="0" max="100000" step="1" title="Stock cannot be negative." required>
             </div>
           </div>
         </div>
@@ -2851,6 +2840,40 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     staffPw.addEventListener('input', validateStaffPw);
     staffConfirmPw.addEventListener('input', validateStaffPw);
+  }
+});
+</script>
+<script src="https://cdn.datatables.net/v/dt/dt-3.1.5/datatables.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof DataTable === 'undefined') return;
+
+  const adminResidentsEl = document.getElementById('adminResidentsTable');
+  if (adminResidentsEl) {
+    new DataTable('#adminResidentsTable', {
+      pageLength: 10,
+      lengthMenu: [10, 20, 50, 100],
+      columnDefs: [{ orderable: false, targets: -1 }],
+      language: {
+        search: '',
+        searchPlaceholder: 'Search residents...',
+        emptyTable: 'No registered residents yet.'
+      }
+    });
+  }
+
+  const adminStaffEl = document.getElementById('adminStaffTable');
+  if (adminStaffEl) {
+    new DataTable('#adminStaffTable', {
+      pageLength: 10,
+      lengthMenu: [10, 20, 50, 100],
+      columnDefs: [{ orderable: false, targets: -1 }],
+      language: {
+        search: '',
+        searchPlaceholder: 'Search staff...',
+        emptyTable: 'No staff accounts yet.'
+      }
+    });
   }
 });
 </script>

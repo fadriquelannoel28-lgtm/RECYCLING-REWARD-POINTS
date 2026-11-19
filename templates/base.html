@@ -37,6 +37,11 @@
         <li class="nav-item">
           <a class="nav-link px-3 py-2 rounded-pill {% if active_page == 'how_it_works' %}fw-bold text-white bg-eco{% else %}fw-semibold text-secondary{% endif %}" href="{{ url_for('how_it_works') }}">How It Works</a>
         </li>
+        {% if current_user and current_user.role == 'resident' %}
+          <li class="nav-item">
+            <a class="nav-link px-3 py-2 rounded-pill {% if active_page == 'dashboard' %}fw-bold text-white bg-eco{% else %}fw-semibold text-secondary{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a>
+          </li>
+        {% endif %}
         {% if not current_user or current_user.role == 'resident' %}
           <li class="nav-item">
             <a class="nav-link px-3 py-2 rounded-pill {% if active_page == 'ecopoints' %}fw-bold text-white bg-eco{% else %}fw-semibold text-secondary{% endif %}" href="{{ url_for('ecopoints') }}">EcoPoints</a>
@@ -77,7 +82,10 @@
           <div class="dropdown">
             <button class="btn btn-forest dropdown-toggle d-flex align-items-center gap-2 btn-pill" type="button" data-bs-toggle="dropdown">
               <i class="bi bi-person-circle"></i>
-              <span>{{ current_user.full_name }}</span>
+              <span>{{ current_user.first_name }}</span>
+              {% if current_user.role == 'resident' and released_claims_count and released_claims_count > 0 %}
+                <span class="badge bg-info text-dark rounded-pill">{{ released_claims_count }}</span>
+              {% endif %}
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2 rounded-4 p-2">
               {% if current_user.role == 'admin' %}
@@ -92,7 +100,7 @@
                 <li><a class="dropdown-item rounded-3" href="{{ url_for('dashboard') }}"><i class="bi bi-grid me-2"></i>My Dashboard</a></li>
                 <li><a class="dropdown-item rounded-3" href="{{ url_for('ecopoints') }}"><i class="bi bi-coin me-2"></i>My Points</a></li>
                 <li><a class="dropdown-item rounded-3" href="{{ url_for('history') }}"><i class="bi bi-clock-history me-2"></i>Recycling History</a></li>
-                <li><a class="dropdown-item rounded-3" href="{{ url_for('reward_history') }}"><i class="bi bi-receipt me-2"></i>Reward Claims</a></li>
+                <li><a class="dropdown-item rounded-3 d-flex align-items-center justify-content-between" href="{{ url_for('reward_history') }}"><span><i class="bi bi-receipt me-2"></i>Reward Claims</span>{% if released_claims_count and released_claims_count > 0 %}<span class="badge bg-info text-dark rounded-pill">{{ released_claims_count }}</span>{% endif %}</a></li>
                 <li><a class="dropdown-item rounded-3" href="{{ url_for('rewards') }}"><i class="bi bi-gift me-2"></i>Redeem Rewards</a></li>
                 <li><hr class="dropdown-divider my-1"></li>
               {% endif %}

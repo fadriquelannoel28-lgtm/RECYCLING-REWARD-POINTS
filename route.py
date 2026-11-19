@@ -121,13 +121,29 @@ def register_routes(app):
 
     @app.route('/login', methods=['GET', 'POST'])
     def login():
+        existing_user = get_current_user()
+        if existing_user:
+            if existing_user['role'] == 'admin':
+                return redirect(url_for('admin'))
+            elif existing_user['role'] == 'staff':
+                return redirect(url_for('staff'))
+            return redirect(url_for('index'))
+
         error = None
         error_field = None
         message = None
         email = ''
+        lockout_seconds = 0
+        attempts_remaining = None
+        MAX_LOGIN_ATTEMPTS = 5
+        LOCKOUT_MINUTES = 5
+
         if request.method == 'POST':
             email = request.form.get('email', '').strip()
             password = request.form.get('password', '').strip()
+            client_ip = (request.headers.get('X-Forwarded-For') or request.remote_addr or '127.0.0.1').split(',')[0].strip()
+            now_dt = datetime.now()
+            now_str = now_dt.strftime('%Y-%m-%d %H:%M:%S')
 
             if not email:
                 error = 'Please enter your email address.'
@@ -138,22 +154,80 @@ def register_routes(app):
             else:
                 conn = get_db()
                 cur = conn.cursor()
+
                 matched = cur.execute("SELECT * FROM users WHERE LOWER(email) = LOWER(?)", (email,)).fetchone()
-                conn.close()
 
                 if matched:
                     matched = dict(matched)
+                    raw_lockout = (matched.get('lockout_until') or '').strip()
+                    if raw_lockout:
+                        try:
+                            lock_dt = datetime.strptime(raw_lockout, '%Y-%m-%d %H:%M:%S')
+                            if lock_dt > now_dt:
+                                lockout_seconds = int((lock_dt - now_dt).total_seconds())
+                                cur.execute(
+                                    "INSERT INTO login_attempts (email, ip_address, success, reason, created_at) VALUES (?, ?, 0, 'account_locked', ?)",
+                                    (email.lower(), client_ip, now_str)
+                                )
+                                conn.commit()
+                                conn.close()
+                                error = 'Account temporarily locked due to too many failed login attempts.'
+                                error_field = 'password'
+                                return render_template(
+                                    'login.html',
+                                    error=error,
+                                    error_field=error_field,
+                                    message=message,
+                                    email=email,
+                                    lockout_seconds=lockout_seconds,
+                                    attempts_remaining=0,
+                                    active_page='login'
+                                )
+                            else:
+                                cur.execute("UPDATE users SET failed_login_attempts = 0, lockout_until = NULL WHERE id = ?", (matched['id'],))
+                                conn.commit()
+                                matched['failed_login_attempts'] = 0
+                        except Exception:
+                            pass
+
+                    stored_pw = matched.get('password') or ''
                     valid = False
-                    if matched['password'] in ['user123', 'admin123', 'staff123', password]:
+                    needs_rehash = False
+                    if stored_pw.startswith(('scrypt:', 'pbkdf2:')):
+                        valid = check_password_hash(stored_pw, password)
+                    elif stored_pw == password:
                         valid = True
-                    elif check_password_hash(matched['password'], password):
-                        valid = True
+                        needs_rehash = True
 
                     if valid:
                         if matched.get('status') == 'inactive':
+                            cur.execute(
+                                "INSERT INTO login_attempts (email, ip_address, success, reason, created_at) VALUES (?, ?, 0, 'inactive_account', ?)",
+                                (email.lower(), client_ip, now_str)
+                            )
+                            conn.commit()
+                            conn.close()
                             error = f"Your {matched['role']} account has been deactivated by the Administrator."
                             error_field = 'email'
                         else:
+                            if needs_rehash:
+                                cur.execute(
+                                    "UPDATE users SET password = ?, failed_login_attempts = 0, lockout_until = NULL, last_login_at = ? WHERE id = ?",
+                                    (generate_password_hash(password), now_str, matched['id'])
+                                )
+                            else:
+                                cur.execute(
+                                    "UPDATE users SET failed_login_attempts = 0, lockout_until = NULL, last_login_at = ? WHERE id = ?",
+                                    (now_str, matched['id'])
+                                )
+                            cur.execute(
+                                "INSERT INTO login_attempts (email, ip_address, success, reason, created_at) VALUES (?, ?, 1, 'ok', ?)",
+                                (email.lower(), client_ip, now_str)
+                            )
+                            conn.commit()
+                            conn.close()
+                            session.clear()
+                            session.permanent = True
                             session['user_id'] = matched['id']
                             session['user_role'] = matched['role']
                             if matched['role'] == 'admin':
@@ -162,20 +236,69 @@ def register_routes(app):
                                 return redirect(url_for('staff'))
                             return redirect(url_for('dashboard'))
                     else:
-                        error = 'The password you entered is incorrect.'
+                        new_fails = int(matched.get('failed_login_attempts') or 0) + 1
+                        if new_fails >= MAX_LOGIN_ATTEMPTS:
+                            unlock_dt = now_dt + timedelta(minutes=LOCKOUT_MINUTES)
+                            lockout_seconds = LOCKOUT_MINUTES * 60
+                            attempts_remaining = 0
+                            cur.execute(
+                                "UPDATE users SET failed_login_attempts = ?, lockout_until = ? WHERE id = ?",
+                                (new_fails, unlock_dt.strftime('%Y-%m-%d %H:%M:%S'), matched['id'])
+                            )
+                            cur.execute(
+                                "INSERT INTO login_attempts (email, ip_address, success, reason, created_at) VALUES (?, ?, 0, 'lockout_triggered', ?)",
+                                (email.lower(), client_ip, now_str)
+                            )
+                            error = f'Too many failed login attempts. Account temporarily locked for {LOCKOUT_MINUTES} minutes.'
+                        else:
+                            attempts_remaining = MAX_LOGIN_ATTEMPTS - new_fails
+                            cur.execute(
+                                "UPDATE users SET failed_login_attempts = ? WHERE id = ?",
+                                (new_fails, matched['id'])
+                            )
+                            cur.execute(
+                                "INSERT INTO login_attempts (email, ip_address, success, reason, created_at) VALUES (?, ?, 0, 'wrong_password', ?)",
+                                (email.lower(), client_ip, now_str)
+                            )
+                            error = f'Incorrect password. {attempts_remaining} attempt{"s" if attempts_remaining != 1 else ""} remaining before temporary lockout.'
+                        conn.commit()
+                        conn.close()
                         error_field = 'password'
                 else:
-                    error = 'The email you entered is not registered.'
+                    cur.execute(
+                        "INSERT INTO login_attempts (email, ip_address, success, reason, created_at) VALUES (?, ?, 0, 'unknown_email', ?)",
+                        (email.lower(), client_ip, now_str)
+                    )
+                    conn.commit()
+                    conn.close()
+                    error = 'Invalid email address or password.'
                     error_field = 'email'
 
         info_msg = request.args.get('msg')
         if info_msg:
             message = info_msg
 
-        return render_template('login.html', error=error, error_field=error_field, message=message, email=email, active_page='login')
+        return render_template(
+            'login.html',
+            error=error,
+            error_field=error_field,
+            message=message,
+            email=email,
+            lockout_seconds=lockout_seconds,
+            attempts_remaining=attempts_remaining,
+            active_page='login'
+        )
 
     @app.route('/register', methods=['GET', 'POST'])
     def register():
+        existing_user = get_current_user()
+        if existing_user:
+            if existing_user['role'] == 'admin':
+                return redirect(url_for('admin'))
+            elif existing_user['role'] == 'staff':
+                return redirect(url_for('staff'))
+            return redirect(url_for('index'))
+
         error = None
         error_field = None
         first_name = ''
@@ -368,8 +491,8 @@ def register_routes(app):
                 cur.execute(
                     """UPDATE users
                        SET is_verified = 0, verification_status = 'unverified',
-                           face_image = NULL, face_descriptor = NULL, id_image = NULL,
-                           verified_at = NULL, verification_notes = ''
+                           face_image = NULL, face_descriptor = NULL, id_image = NULL, id_back_image = NULL,
+                           verified_at = NULL, verification_notes = '', verify_cooldown_until = NULL
                        WHERE id = ?""",
                     (user['id'],)
                 )
@@ -407,6 +530,22 @@ def register_routes(app):
         if user['role'] == 'admin':
             return redirect(url_for('admin'))
 
+        raw_cooldown = (user.get('verify_cooldown_until') or '').strip()
+        if raw_cooldown:
+            try:
+                until_dt = datetime.strptime(raw_cooldown, '%Y-%m-%d %H:%M:%S')
+                now_dt = datetime.now()
+                if until_dt > now_dt:
+                    diff_secs = int((until_dt - now_dt).total_seconds())
+                    hrs = diff_secs // 3600
+                    mins = (diff_secs % 3600) // 60
+                    rem_str = f"{hrs}h {mins}m" if hrs > 0 else f"{max(1, mins)}m"
+                    session['feedback'] = f"Verification is temporarily locked for 1 day after rejection ({rem_str} remaining, available on {until_dt.strftime('%b %d, %Y %I:%M %p')})."
+                    session['feedback_type'] = 'danger'
+                    return redirect(url_for('dashboard'))
+            except Exception:
+                pass
+
         conn_st = get_db()
         stations_rows = [dict(r) for r in conn_st.execute("SELECT DISTINCT barangay, station_name, assigned_staff FROM stations WHERE status = 'active'").fetchall()]
         conn_st.close()
@@ -427,14 +566,42 @@ def register_routes(app):
             zip_code = request.form.get('zip_code', '').strip()
             id_type = request.form.get('id_type', '').strip()
             id_file = request.files.get('id_picture')
+            id_back_file = request.files.get('id_back_picture')
             id_image_data = request.form.get('id_image_data', '').strip()
             face_image_data = request.form.get('face_image', '').strip()
             face_descriptor_raw = request.form.get('face_descriptor', '').strip()
+
+            existing_face = (user.get('face_image') or '').strip()
+            existing_descriptor = (user.get('face_descriptor') or '').strip()
+            existing_id_front = (user.get('id_image') or '').strip()
+            existing_id_back = (user.get('id_back_image') or '').strip()
+
+            has_id_front = bool((id_file and id_file.filename) or id_image_data or existing_id_front)
+            has_id_back = bool((id_back_file and id_back_file.filename) or existing_id_back)
+            has_face = bool(face_image_data or existing_face)
+
+            birthday_error = None
+            if birthday:
+                try:
+                    dob = datetime.strptime(birthday, '%Y-%m-%d').date()
+                    today = datetime.now().date()
+                    if dob > today:
+                        birthday_error = 'Birthday cannot be in the future.'
+                    else:
+                        age_years = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                        if age_years < 12:
+                            birthday_error = 'Resident must be at least 12 years old to verify.'
+                        elif age_years > 120:
+                            birthday_error = 'Please enter a valid birth year.'
+                except ValueError:
+                    birthday_error = 'Please enter a valid birthday (YYYY-MM-DD).'
 
             if not first_name or not last_name:
                 error = 'Please enter your first and last name.'
             elif not birthday:
                 error = 'Please enter your birthday.'
+            elif birthday_error:
+                error = birthday_error
             elif not contact_number:
                 error = 'Please enter your contact number.'
             elif not province:
@@ -449,20 +616,36 @@ def register_routes(app):
                 error = 'Please enter your ZIP code.'
             elif not id_type:
                 error = 'Please select your valid ID type.'
-            elif (not id_file or not id_file.filename) and not id_image_data:
-                error = 'Please upload a photo of your selected valid ID.'
-            elif not face_image_data:
+            elif not has_id_front:
+                error = 'Please upload the FRONT photo of your valid ID.'
+            elif not has_id_back:
+                error = 'Please upload the BACK photo of your valid ID.'
+            elif not has_face:
                 error = 'Please capture your face photo to complete verification.'
             else:
                 name_parts = [p for p in [first_name, middle_name, last_name] if p]
                 full_name = ' '.join(name_parts)
 
-                saved_face_path = save_image_asset(face_image_data, 'faces', f"resident_{user['id']}.jpg")
+                if face_image_data.startswith('data:'):
+                    saved_face_path = save_image_asset(face_image_data, 'faces', f"resident_{user['id']}.jpg")
+                else:
+                    saved_face_path = existing_face or face_image_data
+
+                saved_descriptor = face_descriptor_raw or existing_descriptor
+
                 if id_file and id_file.filename:
                     ext = os.path.splitext(id_file.filename)[1].lower() or '.jpg'
-                    saved_id_path = save_image_asset(id_file, 'ids', f"id_{user['id']}_{int(datetime.now().timestamp())}{ext}")
+                    saved_id_path = save_image_asset(id_file, 'ids', f"id_front_{user['id']}_{int(datetime.now().timestamp())}{ext}")
+                elif id_image_data:
+                    saved_id_path = save_image_asset(id_image_data, 'ids', f"id_front_{user['id']}.jpg")
                 else:
-                    saved_id_path = save_image_asset(id_image_data, 'ids', f"id_{user['id']}.jpg")
+                    saved_id_path = existing_id_front
+
+                if id_back_file and id_back_file.filename:
+                    ext_b = os.path.splitext(id_back_file.filename)[1].lower() or '.jpg'
+                    saved_id_back_path = save_image_asset(id_back_file, 'ids', f"id_back_{user['id']}_{int(datetime.now().timestamp())}{ext_b}")
+                else:
+                    saved_id_back_path = existing_id_back
 
                 conn = get_db()
                 cur = conn.cursor()
@@ -470,7 +653,7 @@ def register_routes(app):
                     """UPDATE users
                        SET full_name = ?, first_name = ?, middle_name = ?, last_name = ?,
                            birthday = ?, gender = ?, contact_number = ?, province = ?, city = ?, barangay = ?,
-                           address = ?, zip_code = ?, id_type = ?, id_image = ?,
+                           address = ?, zip_code = ?, id_type = ?, id_image = ?, id_back_image = ?,
                            face_image = ?, face_descriptor = ?,
                            is_verified = 0, verification_status = 'pending',
                            verified_at = NULL, verification_notes = ''
@@ -478,8 +661,8 @@ def register_routes(app):
                     (
                         full_name, first_name, middle_name, last_name,
                         birthday, gender, contact_number, province, city, barangay,
-                        address, zip_code, id_type, saved_id_path,
-                        saved_face_path, face_descriptor_raw, user['id']
+                        address, zip_code, id_type, saved_id_path, saved_id_back_path,
+                        saved_face_path, saved_descriptor, user['id']
                     )
                 )
                 conn.commit()
@@ -1124,19 +1307,20 @@ def register_routes(app):
                     else:
                         dup_face = find_duplicate_verified_face(cur, target_res.get('face_descriptor'), resident_id)
                         if dup_face:
-                            reject_note = f"Rejected: Duplicate facial biometrics detected (matches verified resident {dup_face['full_name']})."
+                            cooldown_until = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
+                            reject_note = f"Rejected: Duplicate facial biometrics detected (matches verified resident {dup_face['full_name']}). You may reapply after 24 hours."
                             cur.execute(
-                                "UPDATE users SET is_verified = 0, verification_status = 'unverified', verified_at = NULL, verification_notes = ? WHERE id = ?",
-                                (reject_note, resident_id)
+                                "UPDATE users SET is_verified = 0, verification_status = 'rejected', verified_at = NULL, verification_notes = ?, verify_cooldown_until = ? WHERE id = ?",
+                                (reject_note, cooldown_until, resident_id)
                             )
                             conn.commit()
                             sync_to_json()
-                            feedback = f"Verification Rejected (Duplicate Face): {target_res['full_name']}'s facial scan matches an already-verified resident ({dup_face['full_name']})."
+                            feedback = f"Verification Rejected (Duplicate Face): {target_res['full_name']}'s facial scan matches an already-verified resident ({dup_face['full_name']}). Resident cannot reapply for 24 hours."
                             feedback_type = 'danger'
                         else:
                             now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                             cur.execute(
-                                "UPDATE users SET is_verified = 1, verification_status = 'verified', verified_at = ?, verification_notes = ? WHERE id = ?",
+                                "UPDATE users SET is_verified = 1, verification_status = 'verified', verified_at = ?, verification_notes = ?, verify_cooldown_until = NULL WHERE id = ?",
                                 (now_str, f"Confirmed by {user['full_name']}", resident_id)
                             )
                             conn.commit()
@@ -1145,7 +1329,7 @@ def register_routes(app):
                             feedback_type = 'success'
             elif action == 'reject_verification':
                 resident_id = int(request.form.get('resident_id', 0))
-                reason = request.form.get('reject_reason', 'Submitted details or photo did not match. Please resubmit.').strip()
+                reason = request.form.get('reject_reason', 'Submitted details or photo did not match. Please try again after 24 hours.').strip()
                 target_res = cur.execute("SELECT * FROM users WHERE id = ? AND role = 'resident'", (resident_id,)).fetchone()
                 if target_res:
                     target_res = dict(target_res)
@@ -1153,13 +1337,14 @@ def register_routes(app):
                         feedback = f"Access Denied: {target_res['full_name']} belongs to Barangay {target_res.get('barangay') or 'Unassigned'}, not your assigned station."
                         feedback_type = 'danger'
                     else:
+                        cooldown_until = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
                         cur.execute(
-                            "UPDATE users SET is_verified = 0, verification_status = 'unverified', verified_at = NULL, verification_notes = ? WHERE id = ?",
-                            (reason, resident_id)
+                            "UPDATE users SET is_verified = 0, verification_status = 'rejected', verified_at = NULL, verification_notes = ?, verify_cooldown_until = ? WHERE id = ?",
+                            (reason, cooldown_until, resident_id)
                         )
                         conn.commit()
                         sync_to_json()
-                        feedback = f"Verification request for {target_res['full_name']} was returned for resubmission."
+                        feedback = f"Verification request for {target_res['full_name']} was rejected. Resident cannot reapply for 24 hours."
                         feedback_type = 'danger'
 
             conn.close()
@@ -1203,6 +1388,10 @@ def register_routes(app):
             residents_list = residents_raw
             all_txs = all_txs_raw
             all_redemptions = all_redemptions_raw
+
+        all_redemptions.sort(
+            key=lambda r: 0 if (r.get('status') or '') == 'claimed' else (1 if (r.get('status') or '') == 'released' else 2)
+        )
 
         total_points_distributed = sum(int(t.get('points_earned', 0)) for t in all_txs)
         pending_claims_count = sum(1 for r in all_redemptions if r.get('status') == 'claimed')

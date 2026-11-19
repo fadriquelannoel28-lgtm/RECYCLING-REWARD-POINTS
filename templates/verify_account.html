@@ -12,7 +12,7 @@
                 <i class="bi bi-person-bounding-box fs-3"></i>
               </div>
               <h3 class="fw-bold mb-1" style="color: var(--eco-forest);">Verify Your Resident Account</h3>
-              <p class="text-muted small mb-0">Complete the 3 quick steps below to verify your identity with Facial Recognition.</p>
+              <p class="text-muted small mb-0">Complete the 3 quick steps below: scan your face &amp; ID, review your info, and confirm.</p>
             </div>
 
             <div class="mb-4">
@@ -23,17 +23,17 @@
 
                 <div class="text-center position-relative" style="z-index: 1;">
                   <div id="stepCircle1" class="rounded-circle d-flex align-items-center justify-content-center mx-auto fw-bold text-white bg-success" style="width: 36px; height: 36px; font-size: 0.9rem;">1</div>
-                  <div id="stepLabel1" class="small fw-semibold mt-1 text-success" style="font-size: 0.78rem;">Basic Info</div>
+                  <div id="stepLabel1" class="small fw-semibold mt-1 text-success" style="font-size: 0.78rem;">Face &amp; ID</div>
                 </div>
 
                 <div class="text-center position-relative" style="z-index: 1;">
                   <div id="stepCircle2" class="rounded-circle d-flex align-items-center justify-content-center mx-auto fw-bold text-muted bg-light border" style="width: 36px; height: 36px; font-size: 0.9rem;">2</div>
-                  <div id="stepLabel2" class="small fw-semibold mt-1 text-muted" style="font-size: 0.78rem;">Address</div>
+                  <div id="stepLabel2" class="small fw-semibold mt-1 text-muted" style="font-size: 0.78rem;">Info &amp; Address</div>
                 </div>
 
                 <div class="text-center position-relative" style="z-index: 1;">
                   <div id="stepCircle3" class="rounded-circle d-flex align-items-center justify-content-center mx-auto fw-bold text-muted bg-light border" style="width: 36px; height: 36px; font-size: 0.9rem;">3</div>
-                  <div id="stepLabel3" class="small fw-semibold mt-1 text-muted" style="font-size: 0.78rem;">Face Scan</div>
+                  <div id="stepLabel3" class="small fw-semibold mt-1 text-muted" style="font-size: 0.78rem;">Confirm</div>
                 </div>
               </div>
             </div>
@@ -52,12 +52,141 @@
             {% endif %}
 
             <form action="{{ url_for('verify_account') }}" method="POST" id="verifyWizardForm" enctype="multipart/form-data" novalidate>
-              <input type="hidden" name="face_image" id="faceImageInput">
-              <input type="hidden" name="face_descriptor" id="faceDescriptorInput">
+              <input type="hidden" name="face_image" id="faceImageInput" value="{{ user.face_image or '' }}">
+              <input type="hidden" name="face_descriptor" id="faceDescriptorInput" value="{{ user.face_descriptor or '' }}">
 
               <div id="wizardStep1" class="wizard-step">
-                <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">What's your basic information?</h5>
-                <p class="text-muted small mb-4">Enter your legal name, birthday, and gender just like on your Barangay ID.</p>
+                <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Step 1: Scan Face &amp; Upload Valid ID</h5>
+                <p class="text-muted small mb-3">Complete your live face scan first, then upload your Valid ID so we can auto-fill your details.</p>
+
+                <div class="messenger-field-group mb-3" id="vFaceGroup">
+                  <label class="form-label small fw-semibold">1. Live Facial Recognition Scan <span class="text-danger">*</span></label>
+                  <div id="cameraContainer" class="position-relative mx-auto rounded-4 overflow-hidden bg-dark shadow-sm mb-2" style="max-width: 440px; aspect-ratio: 4 / 3;">
+                    <video id="faceVideo" autoplay muted playsinline class="w-100 h-100 object-fit-cover" style="transform: scaleX(-1);"></video>
+                    <canvas id="faceOverlay" class="position-absolute top-0 start-0 w-100 h-100" style="transform: scaleX(-1); pointer-events: none;"></canvas>
+                    <img id="capturedFacePreview" src="" alt="Captured Face" class="w-100 h-100 object-fit-cover d-none">
+
+                    <div class="position-absolute bottom-0 start-50 translate-middle-x mb-3 w-100 px-3 text-center" style="z-index: 5;">
+                      <span id="faceStatusBadge" class="badge bg-dark bg-opacity-75 text-white border border-light border-opacity-25 rounded-pill px-3 py-2 fw-semibold shadow" style="backdrop-filter: blur(6px); font-size: 0.85rem;">
+                        <i class="bi bi-hourglass-split me-1 text-warning"></i><span>Loading Camera...</span>
+                      </span>
+                    </div>
+
+                    <div id="faceVerifyLoadingOverlay" class="position-absolute top-0 start-0 w-100 h-100 d-none flex-column align-items-center justify-content-center text-center p-4" style="background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); z-index: 10;">
+                      <div id="faceVerifySpinner" class="spinner-border text-success mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                      </div>
+                      <div id="faceVerifyIcon" class="d-none rounded-circle bg-success text-white align-items-center justify-content-center mb-3 shadow" style="width: 56px; height: 56px;">
+                        <i class="bi bi-patch-check-fill fs-2"></i>
+                      </div>
+                      <h6 id="faceVerifyLoadingTitle" class="fw-bold text-white mb-1">Capturing Biometrics...</h6>
+                      <p id="faceVerifyLoadingSubtitle" class="text-white-50 small mb-0">Encoding facial recognition data</p>
+                    </div>
+                  </div>
+
+                  <canvas id="captureCanvas" class="d-none"></canvas>
+
+                  <div class="d-flex justify-content-center gap-2 mb-1">
+                    <button type="button" class="btn btn-accent btn-sm btn-pill px-4 d-none" id="btnCaptureFace" disabled>
+                      <i class="bi bi-camera-fill me-1"></i>
+                      <span>Capture My Face</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-pill px-4 d-none" id="btnRetakeFace">
+                      <i class="bi bi-arrow-clockwise me-1"></i>
+                      <span>Retake Scan</span>
+                    </button>
+                  </div>
+
+                  <div class="messenger-error-msg justify-content-center" style="display: none;">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <span class="msg-text">Please complete your facial recognition scan before continuing.</span>
+                  </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="mb-2">
+                  <label class="form-label small fw-semibold mb-2">2. Valid ID Scan <span class="text-danger">*</span></label>
+                </div>
+
+                <div class="row g-3 mb-4">
+                  <div class="col-12">
+                    <div class="messenger-field-group" id="vIdTypeGroup">
+                      <label class="form-label small fw-semibold" for="vIdType">Valid ID Type <span class="text-danger">*</span></label>
+                      <select class="form-select form-select-lg fs-6" id="vIdType" name="id_type" required>
+                        <option value="" disabled {% if not user.id_type %}selected{% endif %}>Choose ID Type</option>
+                        <option value="National ID" {% if user.id_type == 'National ID' %}selected{% endif %}>National ID (PhilSys)</option>
+                        <option value="Postal ID" {% if user.id_type == 'Postal ID' %}selected{% endif %}>Postal ID</option>
+                        <option value="Voters ID" {% if user.id_type == 'Voters ID' %}selected{% endif %}>Voter's ID</option>
+                      </select>
+                      <div class="messenger-error-msg" style="display: none;">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span class="msg-text">Please select your valid ID type.</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <div class="messenger-field-group" id="vIdPictureGroup">
+                      <label class="form-label small fw-semibold" for="vIdPicture">ID Front Photo <span class="text-danger">*</span></label>
+                      <input type="file" class="form-control form-control-lg fs-6" id="vIdPicture" name="id_picture" accept="image/*" {% if not user.id_image %}required{% endif %}>
+                      <div class="messenger-error-msg" style="display: none;">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span class="msg-text">Please upload the FRONT photo of your ID.</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <div class="messenger-field-group" id="vIdBackPictureGroup">
+                      <label class="form-label small fw-semibold" for="vIdBackPicture">ID Back Photo <span class="text-danger">*</span></label>
+                      <input type="file" class="form-control form-control-lg fs-6" id="vIdBackPicture" name="id_back_picture" accept="image/*" {% if not user.id_back_image %}required{% endif %}>
+                      <div class="messenger-error-msg" style="display: none;">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span class="msg-text">Please upload the BACK photo of your ID.</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12 {% if not user.id_image and not user.id_back_image %}d-none{% endif %}" id="idPreviewBox">
+                    <div class="p-3 border rounded-3 bg-light">
+                      <div class="d-flex flex-wrap align-items-center gap-3">
+                        <div class="d-flex align-items-center gap-2">
+                          <div class="text-center {% if not user.id_image %}d-none{% endif %}" id="idFrontThumbWrap">
+                            <img id="idPreviewImg" src="{{ user.id_image or '' }}" alt="ID Front Preview" class="rounded-2 object-fit-cover border" style="width: 82px; height: 54px;">
+                            <div class="text-muted" style="font-size: 0.7rem;">Front</div>
+                          </div>
+                          <div class="text-center {% if not user.id_back_image %}d-none{% endif %}" id="idBackThumbWrap">
+                            <img id="idBackPreviewImg" src="{{ user.id_back_image or '' }}" alt="ID Back Preview" class="rounded-2 object-fit-cover border" style="width: 82px; height: 54px;">
+                            <div class="text-muted" style="font-size: 0.7rem;">Back</div>
+                          </div>
+                        </div>
+                        <div class="flex-grow-1 small">
+                          <div id="ocrStatusLine" class="fw-semibold text-success d-flex align-items-center gap-2">
+                            <i class="bi bi-check-circle-fill"></i>
+                            <span>{% if user.id_image or user.id_back_image %}Saved ID Photo(s) Loaded{% else %}ID Image Attached{% endif %}</span>
+                          </div>
+                          <div id="ocrSubText" class="text-muted mt-1" style="font-size: 0.78rem;">{% if user.id_image or user.id_back_image %}Your previous progress is saved. Upload new photos only if you want to replace them.{% else %}Extracting name and birthday automatically for Step 2.{% endif %}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                  <a href="{{ url_for('dashboard') }}" class="btn btn-light btn-pill px-4">Cancel</a>
+                  <button type="button" class="btn btn-forest btn-pill px-4" id="btnNext1">
+                    <span>Next: Info &amp; Address</span>
+                    <i class="bi bi-arrow-right ms-1"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div id="wizardStep2" class="wizard-step d-none">
+                <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Step 2: Basic Information &amp; Address</h5>
+                <p class="text-muted small mb-3">Review any details scanned from your ID and correct anything that was misread.</p>
+
+                <div class="alert alert-success rounded-3 small py-2 px-3 mb-3 d-none" id="ocrAutoFillBanner">
+                  <i class="bi bi-magic me-1"></i>
+                  <span id="ocrAutoFillText">Some fields were auto-filled from your ID scan. Please verify and edit if needed.</span>
+                </div>
 
                 <div class="row g-3 mb-3">
                   <div class="col-12 col-sm-6">
@@ -74,6 +203,10 @@
                     <div class="messenger-field-group" id="vMiddleNameGroup">
                       <label class="form-label small fw-semibold" for="vMiddleName">Middle Name <span class="text-muted fw-normal">(Optional)</span></label>
                       <input type="text" class="form-control form-control-lg fs-6" id="vMiddleName" name="middle_name" placeholder="e.g. Reyes" value="{{ user.middle_name or '' }}">
+                      <div class="messenger-error-msg" style="display: none;">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span class="msg-text">Middle name must contain letters only.</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -87,14 +220,14 @@
                   </div>
                 </div>
 
-                <div class="row g-3 mb-4">
+                <div class="row g-3 mb-3">
                   <div class="col-12 col-sm-6">
                     <div class="messenger-field-group" id="vBirthdayGroup">
                       <label class="form-label small fw-semibold" for="vBirthday">Birthday <span class="text-danger">*</span></label>
                       <input type="date" class="form-control form-control-lg fs-6" id="vBirthday" name="birthday" value="{{ user.birthday or '' }}" required>
                       <div class="messenger-error-msg" style="display: none;">
                         <i class="bi bi-exclamation-circle"></i>
-                        <span class="msg-text">Please select your birthday.</span>
+                        <span class="msg-text">Please enter a valid birthday.</span>
                       </div>
                     </div>
                   </div>
@@ -115,19 +248,6 @@
                   </div>
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center pt-2">
-                  <a href="{{ url_for('dashboard') }}" class="btn btn-light btn-pill px-4">Cancel</a>
-                  <button type="button" class="btn btn-forest btn-pill px-4" id="btnNext1">
-                    <span>Next</span>
-                    <i class="bi bi-arrow-right ms-1"></i>
-                  </button>
-                </div>
-              </div>
-
-              <div id="wizardStep2" class="wizard-step d-none">
-                <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Address, Barangay &amp; Valid ID</h5>
-                <p class="text-muted small mb-4">Select your Province, City/Municipality, and Barangay just like on your ID.</p>
-
                 <div class="row g-3 mb-3">
                   <div class="col-12 col-sm-6">
                     <div class="messenger-field-group" id="vContactGroup">
@@ -135,7 +255,7 @@
                       <input type="tel" class="form-control form-control-lg fs-6" id="vContact" name="contact_number" placeholder="e.g. 0917 123 4567" value="{{ user.contact_number or '' }}" required>
                       <div class="messenger-error-msg" style="display: none;">
                         <i class="bi bi-exclamation-circle"></i>
-                        <span class="msg-text">Please enter a valid mobile number.</span>
+                        <span class="msg-text">Please enter a valid Philippine mobile number.</span>
                       </div>
                     </div>
                   </div>
@@ -180,123 +300,99 @@
                   </div>
                 </div>
 
-                <div class="row g-3 mb-3">
+                <div class="row g-3 mb-4">
                   <div class="col-12 col-sm-8">
                     <div class="messenger-field-group" id="vAddressGroup">
                       <label class="form-label small fw-semibold" for="vAddress">House No., Street / Purok <span class="text-danger">*</span></label>
                       <input type="text" class="form-control form-control-lg fs-6" id="vAddress" name="address" placeholder="e.g. Purok 2, Blk 4 Lot 9" value="{{ user.address or '' }}" required>
                       <div class="messenger-error-msg" style="display: none;">
                         <i class="bi bi-exclamation-circle"></i>
-                        <span class="msg-text">Please enter your residential address.</span>
+                        <span class="msg-text">Please enter your house number, street, or purok.</span>
                       </div>
                     </div>
                   </div>
                   <div class="col-12 col-sm-4">
                     <div class="messenger-field-group" id="vZipCodeGroup">
                       <label class="form-label small fw-semibold" for="vZipCode">ZIP Code <span class="text-danger">*</span></label>
-                      <input type="text" class="form-control form-control-lg fs-6" id="vZipCode" name="zip_code" placeholder="e.g. 4217" value="{{ user.zip_code or '4217' }}" required>
+                      <input type="text" class="form-control form-control-lg fs-6" id="vZipCode" name="zip_code" placeholder="e.g. 4217" value="{{ user.zip_code or '4217' }}" maxlength="4" required>
                       <div class="messenger-error-msg" style="display: none;">
                         <i class="bi bi-exclamation-circle"></i>
-                        <span class="msg-text">Enter ZIP code.</span>
+                        <span class="msg-text">Enter a valid 4-digit ZIP code.</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div class="row g-3 mb-4">
-                  <div class="col-12 col-sm-5">
-                    <div class="messenger-field-group" id="vIdTypeGroup">
-                      <label class="form-label small fw-semibold" for="vIdType">Valid ID Type <span class="text-danger">*</span></label>
-                      <select class="form-select form-select-lg fs-6" id="vIdType" name="id_type" required>
-                        <option value="" disabled {% if not user.id_type %}selected{% endif %}>Choose ID Type</option>
-                        <option value="National ID" {% if user.id_type == 'National ID' %}selected{% endif %}>National ID (PhilSys)</option>
-                        <option value="Postal ID" {% if user.id_type == 'Postal ID' %}selected{% endif %}>Postal ID</option>
-                        <option value="Voters ID" {% if user.id_type == 'Voters ID' %}selected{% endif %}>Voter's ID</option>
-                      </select>
-                      <div class="messenger-error-msg" style="display: none;">
-                        <i class="bi bi-exclamation-circle"></i>
-                        <span class="msg-text">Select your ID type.</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-12 col-sm-7">
-                    <div class="messenger-field-group" id="vIdPictureGroup">
-                      <label class="form-label small fw-semibold" for="vIdPicture">Upload Valid ID Picture <span class="text-danger">*</span></label>
-                      <input type="file" class="form-control form-control-lg fs-6" id="vIdPicture" name="id_picture" accept="image/*" required>
-                      <div class="messenger-error-msg" style="display: none;">
-                        <i class="bi bi-exclamation-circle"></i>
-                        <span class="msg-text">Please upload a photo of your ID.</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-12 d-none" id="idPreviewBox">
-                    <div class="p-2 border rounded-3 bg-light d-flex align-items-center gap-3">
-                      <img id="idPreviewImg" src="" alt="ID Preview" class="rounded-2 object-fit-cover" style="width: 80px; height: 52px;">
-                      <span class="small text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>ID Image Attached</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center pt-2">
+                <div class="d-flex justify-content-between align-items-center pt-2 border-top">
                   <button type="button" class="btn btn-outline-secondary btn-pill px-4" id="btnBack2">
                     <i class="bi bi-arrow-left me-1"></i>
                     <span>Back</span>
                   </button>
                   <button type="button" class="btn btn-forest btn-pill px-4" id="btnNext2">
-                    <span>Next: Face Scan</span>
-                    <i class="bi bi-camera ms-1"></i>
+                    <span>Next: Confirm Details</span>
+                    <i class="bi bi-arrow-right ms-1"></i>
                   </button>
                 </div>
               </div>
 
               <div id="wizardStep3" class="wizard-step d-none">
-                <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Facial Recognition Setup</h5>
-                <p class="text-muted small mb-3">Follow the prompt at the bottom of the camera to verify your face is live.</p>
+                <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Step 3: Confirm Your Details</h5>
+                <p class="text-muted small mb-4">Double-check everything below before submitting to your Barangay Staff. You can go back if anything needs correction.</p>
 
-                <div id="cameraContainer" class="position-relative mx-auto rounded-4 overflow-hidden bg-dark shadow-sm mb-3" style="max-width: 440px; aspect-ratio: 4 / 3;">
-                  <video id="faceVideo" autoplay muted playsinline class="w-100 h-100 object-fit-cover" style="transform: scaleX(-1);"></video>
-                  <canvas id="faceOverlay" class="position-absolute top-0 start-0 w-100 h-100" style="transform: scaleX(-1); pointer-events: none;"></canvas>
-                  <img id="capturedFacePreview" src="" alt="Captured Face" class="w-100 h-100 object-fit-cover d-none">
-
-                  <div class="position-absolute bottom-0 start-50 translate-middle-x mb-3 w-100 px-3 text-center" style="z-index: 5;">
-                    <span id="faceStatusBadge" class="badge bg-dark bg-opacity-75 text-white border border-light border-opacity-25 rounded-pill px-3 py-2 fw-semibold shadow" style="backdrop-filter: blur(6px); font-size: 0.85rem;">
-                      <i class="bi bi-hourglass-split me-1 text-warning"></i><span>Loading Camera...</span>
-                    </span>
+                <div class="row g-2 mb-4">
+                  <div class="col-4">
+                    <div class="border rounded-4 p-2 bg-light text-center h-100">
+                      <img id="confirmFaceImg" src="" alt="Face Scan" class="rounded-3 object-fit-cover w-100 border" style="height: 120px;">
+                      <div class="small fw-semibold text-dark mt-2" style="font-size: 0.78rem;"><i class="bi bi-person-bounding-box text-success me-1"></i>Face Scan</div>
+                    </div>
                   </div>
-
-                  <div id="faceVerifyLoadingOverlay" class="position-absolute top-0 start-0 w-100 h-100 d-none flex-column align-items-center justify-content-center text-center p-4" style="background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); z-index: 10;">
-                    <div id="faceVerifySpinner" class="spinner-border text-success mb-3" role="status" style="width: 3rem; height: 3rem;">
-                      <span class="visually-hidden">Loading...</span>
+                  <div class="col-4">
+                    <div class="border rounded-4 p-2 bg-light text-center h-100">
+                      <img id="confirmIdImg" src="" alt="ID Front" class="rounded-3 object-fit-cover w-100 border" style="height: 120px;">
+                      <div class="small fw-semibold text-dark mt-2" style="font-size: 0.78rem;"><i class="bi bi-card-heading text-success me-1"></i>ID Front</div>
                     </div>
-                    <div id="faceVerifyIcon" class="d-none rounded-circle bg-success text-white align-items-center justify-content-center mb-3 shadow" style="width: 56px; height: 56px;">
-                      <i class="bi bi-patch-check-fill fs-2"></i>
+                  </div>
+                  <div class="col-4">
+                    <div class="border rounded-4 p-2 bg-light text-center h-100">
+                      <img id="confirmIdBackImg" src="" alt="ID Back" class="rounded-3 object-fit-cover w-100 border" style="height: 120px;">
+                      <div class="small fw-semibold text-dark mt-2" style="font-size: 0.78rem;"><i class="bi bi-card-text text-success me-1"></i>ID Back</div>
                     </div>
-                    <h6 id="faceVerifyLoadingTitle" class="fw-bold text-white mb-1">Capturing Biometrics...</h6>
-                    <p id="faceVerifyLoadingSubtitle" class="text-white-50 small mb-0">Encoding facial recognition data</p>
                   </div>
                 </div>
 
-                <canvas id="captureCanvas" class="d-none"></canvas>
-
-                <div class="d-flex justify-content-center gap-2 mb-4">
-                  <button type="button" class="btn btn-accent btn-pill px-4 d-none" id="btnCaptureFace" disabled>
-                    <i class="bi bi-camera-fill me-1"></i>
-                    <span>Capture My Face</span>
-                  </button>
-                  <button type="button" class="btn btn-outline-secondary btn-pill px-4 d-none" id="btnRetakeFace">
-                    <i class="bi bi-arrow-clockwise me-1"></i>
-                    <span>Retake Scan</span>
-                  </button>
+                <div class="card border rounded-4 bg-light bg-opacity-50 p-3 p-md-4 mb-4">
+                  <div class="row g-3 small">
+                    <div class="col-12 col-sm-6">
+                      <div class="text-muted">Full Name</div>
+                      <div class="fw-bold text-dark fs-6" id="confirmFullName">-</div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <div class="text-muted">Birthday &amp; Gender</div>
+                      <div class="fw-semibold text-dark" id="confirmBirthdayGender">-</div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <div class="text-muted">Mobile / Contact Number</div>
+                      <div class="fw-semibold text-dark" id="confirmContact">-</div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <div class="text-muted">Submitted ID Type</div>
+                      <div class="fw-semibold text-dark" id="confirmIdType">-</div>
+                    </div>
+                    <div class="col-12">
+                      <div class="text-muted">Complete Residential Address</div>
+                      <div class="fw-semibold text-dark" id="confirmAddress">-</div>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center pt-2 border-top">
                   <button type="button" class="btn btn-outline-secondary btn-pill px-4" id="btnBack3">
-                    <i class="bi bi-arrow-left me-1"></i>
-                    <span>Back</span>
+                    <i class="bi bi-pencil-square me-1"></i>
+                    <span>Back to Edit</span>
                   </button>
-                  <button type="submit" class="btn btn-success btn-pill px-4 fw-semibold" id="btnCompleteVerify" disabled>
+                  <button type="submit" class="btn btn-success btn-pill px-4 fw-semibold" id="btnCompleteVerify">
                     <i class="bi bi-patch-check-fill me-1"></i>
-                    <span>Complete Verification</span>
+                    <span>Confirm &amp; Submit</span>
                   </button>
                 </div>
               </div>
@@ -309,6 +405,7 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const step1 = document.getElementById('wizardStep1');
@@ -327,7 +424,7 @@
     ];
 
     function setFieldError(inputId, groupId, msg) {
-      const inputEl = document.getElementById(inputId);
+      const inputEl = inputId ? document.getElementById(inputId) : null;
       const groupEl = document.getElementById(groupId);
       if (inputEl) inputEl.classList.add('is-invalid');
       if (groupEl) {
@@ -344,7 +441,7 @@
     }
 
     function clearFieldError(inputId, groupId) {
-      const inputEl = document.getElementById(inputId);
+      const inputEl = inputId ? document.getElementById(inputId) : null;
       const groupEl = document.getElementById(groupId);
       if (inputEl) inputEl.classList.remove('is-invalid');
       if (groupEl) {
@@ -356,6 +453,7 @@
 
     const fieldPairs = [
       ['vFirstName', 'vFirstNameGroup'],
+      ['vMiddleName', 'vMiddleNameGroup'],
       ['vLastName', 'vLastNameGroup'],
       ['vBirthday', 'vBirthdayGroup'],
       ['vGender', 'vGenderGroup'],
@@ -366,7 +464,8 @@
       ['vAddress', 'vAddressGroup'],
       ['vZipCode', 'vZipCodeGroup'],
       ['vIdType', 'vIdTypeGroup'],
-      ['vIdPicture', 'vIdPictureGroup']
+      ['vIdPicture', 'vIdPictureGroup'],
+      ['vIdBackPicture', 'vIdBackPictureGroup']
     ];
 
     fieldPairs.forEach(([inputId, groupId]) => {
@@ -377,6 +476,14 @@
       }
     });
 
+    const birthdayInput = document.getElementById('vBirthday');
+    if (birthdayInput) {
+      const now = new Date();
+      const maxDate = new Date(now.getFullYear() - 12, now.getMonth(), now.getDate());
+      birthdayInput.max = maxDate.toISOString().split('T')[0];
+      birthdayInput.min = '1905-01-01';
+    }
+
     function goToStep(stepNum) {
       step1.classList.toggle('d-none', stepNum !== 1);
       step2.classList.toggle('d-none', stepNum !== 2);
@@ -384,71 +491,346 @@
 
       progressBar.style.width = stepNum === 1 ? '0%' : (stepNum === 2 ? '50%' : '100%');
 
-      circles.forEach((circle, idx) => {
-        const current = idx + 1;
-        circle.classList.remove('bg-success', 'text-white', 'bg-light', 'text-muted', 'border');
-        labels[idx].classList.remove('text-success', 'text-muted');
-        if (current <= stepNum) {
-          circle.classList.add('bg-success', 'text-white');
-          labels[idx].classList.add('text-success');
+      circles.forEach((c, idx) => {
+        const s = idx + 1;
+        if (s <= stepNum) {
+          c.className = 'rounded-circle d-flex align-items-center justify-content-center mx-auto fw-bold text-white bg-success';
+          labels[idx].className = 'small fw-semibold mt-1 text-success';
         } else {
-          circle.classList.add('bg-light', 'text-muted', 'border');
-          labels[idx].classList.add('text-muted');
+          c.className = 'rounded-circle d-flex align-items-center justify-content-center mx-auto fw-bold text-muted bg-light border';
+          labels[idx].className = 'small fw-semibold mt-1 text-muted';
         }
       });
 
-      if (stepNum === 3) {
+      if (stepNum === 1) {
         initFaceCamera();
       } else {
         stopCameraStream();
       }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    document.getElementById('btnNext1').addEventListener('click', function() {
+    const idPictureInput = document.getElementById('vIdPicture');
+    const idBackPictureInput = document.getElementById('vIdBackPicture');
+    const idPreviewBox = document.getElementById('idPreviewBox');
+    const idFrontThumbWrap = document.getElementById('idFrontThumbWrap');
+    const idBackThumbWrap = document.getElementById('idBackThumbWrap');
+    const idPreviewImg = document.getElementById('idPreviewImg');
+    const idBackPreviewImg = document.getElementById('idBackPreviewImg');
+    const ocrStatusLine = document.getElementById('ocrStatusLine');
+    const ocrSubText = document.getElementById('ocrSubText');
+    const ocrAutoFillBanner = document.getElementById('ocrAutoFillBanner');
+    const ocrAutoFillText = document.getElementById('ocrAutoFillText');
+    let latestIdPreviewUrl = {{ (user.id_image or '')|tojson }};
+    let latestIdBackPreviewUrl = {{ (user.id_back_image or '')|tojson }};
+    let activeOcrPromises = [];
+    const ocrFilledFields = new Set();
+
+    function toTitleCase(str) {
+      return String(str || '')
+        .toLowerCase()
+        .replace(/\b([a-z])/g, m => m.toUpperCase())
+        .trim();
+    }
+
+    function cleanOcrName(raw) {
+      if (!raw) return '';
+      const cleaned = raw.replace(/[^A-Za-zÀ-ÿ\s.\-']/g, ' ').replace(/\s+/g, ' ').trim();
+      if (cleaned.length < 2) return '';
+      if (/^(republic|philippines|identification|card|last|first|given|middle|name|apelyido|pangalan|gitnang|date|birth|sex|address|tirahan|psn|postal|voter|comelec)$/i.test(cleaned)) {
+        return '';
+      }
+      return toTitleCase(cleaned);
+    }
+
+    function parseOcrBirthday(text) {
+      const monthMap = {
+        jan: '01', january: '01', feb: '02', february: '02', mar: '03', march: '03',
+        apr: '04', april: '04', may: '05', jun: '06', june: '06',
+        jul: '07', july: '07', aug: '08', august: '08', sep: '09', sept: '09', september: '09',
+        oct: '10', october: '10', nov: '11', november: '11', dec: '12', december: '12'
+      };
+      let y = null, m = null, d = null;
+
+      let match = text.match(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})[,\s]+((?:19|20)\d{2})\b/i);
+      if (match) {
+        m = monthMap[match[1].toLowerCase()];
+        d = match[2].padStart(2, '0');
+        y = match[3];
+      }
+      if (!y) {
+        match = text.match(/\b(\d{1,2})\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[,\s]+((?:19|20)\d{2})\b/i);
+        if (match) {
+          d = match[1].padStart(2, '0');
+          m = monthMap[match[2].toLowerCase()];
+          y = match[3];
+        }
+      }
+      if (!y) {
+        match = text.match(/\b((?:19|20)\d{2})[-\/](\d{1,2})[-\/](\d{1,2})\b/);
+        if (match) {
+          y = match[1];
+          m = match[2].padStart(2, '0');
+          d = match[3].padStart(2, '0');
+        }
+      }
+      if (!y) {
+        match = text.match(/\b(\d{1,2})[-\/](\d{1,2})[-\/]((?:19|20)\d{2})\b/);
+        if (match) {
+          const p1 = parseInt(match[1], 10);
+          const p2 = parseInt(match[2], 10);
+          y = match[3];
+          if (p1 <= 12 && p2 <= 31) {
+            m = String(p1).padStart(2, '0');
+            d = String(p2).padStart(2, '0');
+          }
+        }
+      }
+      if (!y || !m || !d) return '';
+      const iso = `${y}-${m}-${d}`;
+      const dt = new Date(iso + 'T00:00:00');
+      const now = new Date();
+      if (isNaN(dt.getTime()) || dt > now) return '';
+      const age = now.getFullYear() - dt.getFullYear();
+      if (age < 12 || age > 120) return '';
+      return iso;
+    }
+
+    function extractLabeledValue(lines, labelRegex) {
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (labelRegex.test(line)) {
+          const after = line.replace(labelRegex, '').replace(/^[:\-\s\/]+/, '').trim();
+          const cleanedSame = cleanOcrName(after);
+          if (cleanedSame) return cleanedSame;
+          if (i + 1 < lines.length) {
+            const cleanedNext = cleanOcrName(lines[i + 1]);
+            if (cleanedNext) return cleanedNext;
+          }
+        }
+      }
+      return '';
+    }
+
+    function parsePhilippineIdText(rawText) {
+      const text = String(rawText || '');
+      const upper = text.toUpperCase();
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      const result = {
+        idType: '',
+        firstName: '',
+        middleName: '',
+        lastName: '',
+        birthday: '',
+        gender: '',
+        zipCode: ''
+      };
+
+      if (/PHILIPPINE\s+IDENTIFICATION|PHILSYS|PAMBANSANG\s+PAGKAKAKILANLAN|\bPSN\b/.test(upper)) {
+        result.idType = 'National ID';
+      } else if (/POSTAL\s+ID|PHLPOST|PHILIPPINE\s+POSTAL/.test(upper)) {
+        result.idType = 'Postal ID';
+      } else if (/COMELEC|VOTER/.test(upper)) {
+        result.idType = 'Voters ID';
+      }
+
+      result.lastName = extractLabeledValue(lines, /(?:apelyido\s*\/?\s*)?(?:last\s*name|surname)/i);
+      result.firstName = extractLabeledValue(lines, /(?:mga\s*pangalan\s*\/?\s*)?(?:given\s*names?|first\s*name)/i);
+      result.middleName = extractLabeledValue(lines, /(?:gitnang\s*apelyido\s*\/?\s*)?(?:middle\s*name)/i);
+      result.birthday = parseOcrBirthday(text);
+
+      if (/\bFEMALE\b/.test(upper)) {
+        result.gender = 'Female';
+      } else if (/\bMALE\b/.test(upper)) {
+        result.gender = 'Male';
+      }
+
+      const zipMatch = text.match(/\b([0-9]{4})\b(?!\s*[-]\s*[0-9]{4})/);
+      if (zipMatch) {
+        const z = parseInt(zipMatch[1], 10);
+        if (z >= 1000 && z <= 9811 && (z < 1900 || z > 2030)) {
+          result.zipCode = zipMatch[1];
+        }
+      }
+
+      return result;
+    }
+
+    async function runIdOcr(file) {
+      if (typeof Tesseract === 'undefined') {
+        ocrStatusLine.className = 'fw-semibold text-success d-flex align-items-center gap-2';
+        ocrStatusLine.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>ID Image Attached</span>';
+        ocrSubText.textContent = 'You can review and fill in your details in Step 2.';
+        return;
+      }
+
+      ocrStatusLine.className = 'fw-semibold text-primary d-flex align-items-center gap-2';
+      ocrStatusLine.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span><span>Reading ID details with OCR...</span>';
+      ocrSubText.textContent = 'Scanning text locally in your browser...';
+
+      try {
+        const ocrRes = await Tesseract.recognize(file, 'eng');
+        const parsed = parsePhilippineIdText(ocrRes && ocrRes.data ? ocrRes.data.text : '');
+        if (parsed.idType) {
+          const idTypeEl = document.getElementById('vIdType');
+          if (idTypeEl && !idTypeEl.value) {
+            idTypeEl.value = parsed.idType;
+            clearFieldError('vIdType', 'vIdTypeGroup');
+            ocrFilledFields.add('ID Type');
+          }
+        }
+        if (parsed.firstName) {
+          document.getElementById('vFirstName').value = parsed.firstName;
+          clearFieldError('vFirstName', 'vFirstNameGroup');
+          ocrFilledFields.add('First Name');
+        }
+        if (parsed.middleName) {
+          document.getElementById('vMiddleName').value = parsed.middleName;
+          clearFieldError('vMiddleName', 'vMiddleNameGroup');
+          ocrFilledFields.add('Middle Name');
+        }
+        if (parsed.lastName) {
+          document.getElementById('vLastName').value = parsed.lastName;
+          clearFieldError('vLastName', 'vLastNameGroup');
+          ocrFilledFields.add('Last Name');
+        }
+        if (parsed.birthday) {
+          document.getElementById('vBirthday').value = parsed.birthday;
+          clearFieldError('vBirthday', 'vBirthdayGroup');
+          ocrFilledFields.add('Birthday');
+        }
+        if (parsed.gender) {
+          document.getElementById('vGender').value = parsed.gender;
+          clearFieldError('vGender', 'vGenderGroup');
+          ocrFilledFields.add('Gender');
+        }
+        if (parsed.zipCode) {
+          document.getElementById('vZipCode').value = parsed.zipCode;
+          clearFieldError('vZipCode', 'vZipCodeGroup');
+          ocrFilledFields.add('ZIP Code');
+        }
+
+        const filledList = Array.from(ocrFilledFields);
+        if (filledList.length > 0) {
+          ocrStatusLine.className = 'fw-semibold text-success d-flex align-items-center gap-2';
+          ocrStatusLine.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>ID Scanned Successfully</span>';
+          ocrSubText.textContent = 'Auto-filled for Step 2: ' + filledList.join(', ') + '. You can edit anything in the next step.';
+          ocrAutoFillText.textContent = 'Auto-filled from your ID scan: ' + filledList.join(', ') + '. Double-check and fix any misread info.';
+          ocrAutoFillBanner.classList.remove('d-none');
+        } else {
+          ocrStatusLine.className = 'fw-semibold text-success d-flex align-items-center gap-2';
+          ocrStatusLine.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>ID Image Attached</span>';
+          ocrSubText.textContent = 'Could not read printed text clearly — you can review and edit your details in Step 2.';
+          ocrAutoFillBanner.classList.add('d-none');
+        }
+      } catch (err) {
+        ocrStatusLine.className = 'fw-semibold text-success d-flex align-items-center gap-2';
+        ocrStatusLine.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>ID Image Attached</span>';
+        ocrSubText.textContent = 'OCR unavailable — please enter your info in Step 2.';
+      }
+    }
+
+    function queueOcr(file) {
+      const p = runIdOcr(file).finally(() => {
+        activeOcrPromises = activeOcrPromises.filter(item => item !== p);
+      });
+      activeOcrPromises.push(p);
+    }
+
+    if (idPictureInput) {
+      idPictureInput.addEventListener('change', function() {
+        const file = this.files && this.files[0];
+        if (file) {
+          clearFieldError('vIdPicture', 'vIdPictureGroup');
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            latestIdPreviewUrl = e.target.result;
+            idPreviewImg.src = latestIdPreviewUrl;
+            idFrontThumbWrap.classList.remove('d-none');
+            idPreviewBox.classList.remove('d-none');
+          };
+          reader.readAsDataURL(file);
+          queueOcr(file);
+        }
+      });
+    }
+
+    if (idBackPictureInput) {
+      idBackPictureInput.addEventListener('change', function() {
+        const file = this.files && this.files[0];
+        if (file) {
+          clearFieldError('vIdBackPicture', 'vIdBackPictureGroup');
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            latestIdBackPreviewUrl = e.target.result;
+            idBackPreviewImg.src = latestIdBackPreviewUrl;
+            idBackThumbWrap.classList.remove('d-none');
+            idPreviewBox.classList.remove('d-none');
+          };
+          reader.readAsDataURL(file);
+          queueOcr(file);
+        }
+      });
+    }
+
+    const btnNext1 = document.getElementById('btnNext1');
+    btnNext1.addEventListener('click', async function() {
       let valid = true;
       let firstInvalid = null;
 
-      const fn = document.getElementById('vFirstName').value.trim();
-      const ln = document.getElementById('vLastName').value.trim();
-      const bd = document.getElementById('vBirthday').value.trim();
-      const gd = document.getElementById('vGender').value.trim();
+      const faceImgVal = document.getElementById('faceImageInput').value.trim();
+      const idType = document.getElementById('vIdType').value.trim();
+      const hasFront = (idPictureInput.files && idPictureInput.files.length > 0) || Boolean(latestIdPreviewUrl);
+      const hasBack = (idBackPictureInput.files && idBackPictureInput.files.length > 0) || Boolean(latestIdBackPreviewUrl);
 
-      if (!fn || fn.length < 2) {
-        setFieldError('vFirstName', 'vFirstNameGroup', "What's your first name?");
+      if (!faceImgVal) {
+        setFieldError(null, 'vFaceGroup', 'Please complete your facial recognition scan first.');
         valid = false;
-        firstInvalid = firstInvalid || 'vFirstName';
       } else {
-        clearFieldError('vFirstName', 'vFirstNameGroup');
+        clearFieldError(null, 'vFaceGroup');
       }
 
-      if (!ln || ln.length < 2) {
-        setFieldError('vLastName', 'vLastNameGroup', "What's your last name?");
+      if (!idType) {
+        setFieldError('vIdType', 'vIdTypeGroup', 'Please select your valid ID type.');
         valid = false;
-        firstInvalid = firstInvalid || 'vLastName';
+        firstInvalid = firstInvalid || 'vIdType';
       } else {
-        clearFieldError('vLastName', 'vLastNameGroup');
+        clearFieldError('vIdType', 'vIdTypeGroup');
       }
 
-      if (!bd) {
-        setFieldError('vBirthday', 'vBirthdayGroup', 'Please select your birthday.');
+      if (!hasFront) {
+        setFieldError('vIdPicture', 'vIdPictureGroup', 'Please upload the FRONT photo of your valid ID.');
         valid = false;
-        firstInvalid = firstInvalid || 'vBirthday';
+        firstInvalid = firstInvalid || 'vIdPicture';
       } else {
-        clearFieldError('vBirthday', 'vBirthdayGroup');
+        clearFieldError('vIdPicture', 'vIdPictureGroup');
       }
 
-      if (!gd) {
-        setFieldError('vGender', 'vGenderGroup', 'Please choose a gender.');
+      if (!hasBack) {
+        setFieldError('vIdBackPicture', 'vIdBackPictureGroup', 'Please upload the BACK photo of your valid ID.');
         valid = false;
-        firstInvalid = firstInvalid || 'vGender';
+        firstInvalid = firstInvalid || 'vIdBackPicture';
       } else {
-        clearFieldError('vGender', 'vGenderGroup');
+        clearFieldError('vIdBackPicture', 'vIdBackPictureGroup');
       }
 
       if (!valid) {
         if (firstInvalid) document.getElementById(firstInvalid).focus();
         return;
       }
+
+      if (activeOcrPromises.length > 0) {
+        const origHtml = btnNext1.innerHTML;
+        btnNext1.disabled = true;
+        btnNext1.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span><span>Reading ID...</span>';
+        try {
+          await Promise.all(activeOcrPromises);
+        } catch (e) {}
+        btnNext1.innerHTML = origHtml;
+        btnNext1.disabled = false;
+      }
+
       goToStep(2);
     });
 
@@ -456,39 +838,97 @@
       goToStep(1);
     });
 
-    const idPictureInput = document.getElementById('vIdPicture');
-    const idPreviewBox = document.getElementById('idPreviewBox');
-    const idPreviewImg = document.getElementById('idPreviewImg');
-
-    idPictureInput.addEventListener('change', function() {
-      const file = this.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          idPreviewImg.src = e.target.result;
-          idPreviewBox.classList.remove('d-none');
-        };
-        reader.readAsDataURL(file);
-      } else {
-        idPreviewBox.classList.add('d-none');
+    function computeAgeYears(dateStr) {
+      if (!dateStr) return null;
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return null;
+      const dob = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      if (isNaN(dob.getTime())) return null;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (dob > today) return -1;
+      let age = today.getFullYear() - dob.getFullYear();
+      const mDiff = today.getMonth() - dob.getMonth();
+      if (mDiff < 0 || (mDiff === 0 && today.getDate() < dob.getDate())) {
+        age--;
       }
-    });
+      return age;
+    }
 
     document.getElementById('btnNext2').addEventListener('click', function() {
       let valid = true;
       let firstInvalid = null;
 
+      const firstName = document.getElementById('vFirstName').value.trim();
+      const middleName = document.getElementById('vMiddleName').value.trim();
+      const lastName = document.getElementById('vLastName').value.trim();
+      const birthday = document.getElementById('vBirthday').value.trim();
+      const gender = document.getElementById('vGender').value.trim();
       const contact = document.getElementById('vContact').value.trim();
       const province = document.getElementById('vProvince').value.trim();
       const city = document.getElementById('vCity').value.trim();
       const barangay = document.getElementById('vBarangay').value.trim();
       const address = document.getElementById('vAddress').value.trim();
       const zipCode = document.getElementById('vZipCode').value.trim();
-      const idType = document.getElementById('vIdType').value.trim();
-      const idFile = idPictureInput.files.length;
 
-      if (!contact || contact.length < 7) {
-        setFieldError('vContact', 'vContactGroup', 'Please enter a valid mobile number.');
+      const nameRegex = /^[A-Za-zÀ-ÿ\s.\-']{2,}$/;
+
+      if (!firstName || !nameRegex.test(firstName)) {
+        setFieldError('vFirstName', 'vFirstNameGroup', firstName ? 'First name must contain letters only.' : "What's your first name?");
+        valid = false;
+        firstInvalid = firstInvalid || 'vFirstName';
+      } else {
+        clearFieldError('vFirstName', 'vFirstNameGroup');
+      }
+
+      if (middleName && !/^[A-Za-zÀ-ÿ\s.\-']+$/.test(middleName)) {
+        setFieldError('vMiddleName', 'vMiddleNameGroup', 'Middle name must contain letters only.');
+        valid = false;
+        firstInvalid = firstInvalid || 'vMiddleName';
+      } else {
+        clearFieldError('vMiddleName', 'vMiddleNameGroup');
+      }
+
+      if (!lastName || !nameRegex.test(lastName)) {
+        setFieldError('vLastName', 'vLastNameGroup', lastName ? 'Last name must contain letters only.' : "What's your last name?");
+        valid = false;
+        firstInvalid = firstInvalid || 'vLastName';
+      } else {
+        clearFieldError('vLastName', 'vLastNameGroup');
+      }
+
+      const age = computeAgeYears(birthday);
+      if (!birthday || age === null) {
+        setFieldError('vBirthday', 'vBirthdayGroup', 'Please enter a valid birthday.');
+        valid = false;
+        firstInvalid = firstInvalid || 'vBirthday';
+      } else if (age < 0) {
+        setFieldError('vBirthday', 'vBirthdayGroup', 'Birthday cannot be in the future.');
+        valid = false;
+        firstInvalid = firstInvalid || 'vBirthday';
+      } else if (age < 12) {
+        setFieldError('vBirthday', 'vBirthdayGroup', 'Resident must be at least 12 years old to verify.');
+        valid = false;
+        firstInvalid = firstInvalid || 'vBirthday';
+      } else if (age > 120) {
+        setFieldError('vBirthday', 'vBirthdayGroup', 'Please enter a realistic birth year.');
+        valid = false;
+        firstInvalid = firstInvalid || 'vBirthday';
+      } else {
+        clearFieldError('vBirthday', 'vBirthdayGroup');
+      }
+
+      if (!gender) {
+        setFieldError('vGender', 'vGenderGroup', 'Please choose a gender.');
+        valid = false;
+        firstInvalid = firstInvalid || 'vGender';
+      } else {
+        clearFieldError('vGender', 'vGenderGroup');
+      }
+
+      const cleanDigits = contact.replace(/[\s\-\(\)]/g, '');
+      if (!/^(?:\+?639|09)\d{9}$/.test(cleanDigits)) {
+        setFieldError('vContact', 'vContactGroup', 'Enter a valid PH mobile number (e.g. 0917 123 4567).');
         valid = false;
         firstInvalid = firstInvalid || 'vContact';
       } else {
@@ -520,41 +960,37 @@
       }
 
       if (!address || address.length < 4) {
-        setFieldError('vAddress', 'vAddressGroup', 'Please enter your residential address.');
+        setFieldError('vAddress', 'vAddressGroup', 'Please enter your house number, street, or purok.');
         valid = false;
         firstInvalid = firstInvalid || 'vAddress';
       } else {
         clearFieldError('vAddress', 'vAddressGroup');
       }
 
-      if (!zipCode || zipCode.length < 3) {
-        setFieldError('vZipCode', 'vZipCodeGroup', 'Enter ZIP code.');
+      if (!/^\d{4}$/.test(zipCode)) {
+        setFieldError('vZipCode', 'vZipCodeGroup', 'Please enter a valid 4-digit ZIP code.');
         valid = false;
         firstInvalid = firstInvalid || 'vZipCode';
       } else {
         clearFieldError('vZipCode', 'vZipCodeGroup');
       }
 
-      if (!idType) {
-        setFieldError('vIdType', 'vIdTypeGroup', 'Select your ID type.');
-        valid = false;
-        firstInvalid = firstInvalid || 'vIdType';
-      } else {
-        clearFieldError('vIdType', 'vIdTypeGroup');
-      }
-
-      if (!idFile) {
-        setFieldError('vIdPicture', 'vIdPictureGroup', 'Please upload a photo of your ID.');
-        valid = false;
-        firstInvalid = firstInvalid || 'vIdPicture';
-      } else {
-        clearFieldError('vIdPicture', 'vIdPictureGroup');
-      }
-
       if (!valid) {
         if (firstInvalid) document.getElementById(firstInvalid).focus();
         return;
       }
+
+      const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
+      const idTypeVal = document.getElementById('vIdType').value.trim();
+      document.getElementById('confirmFaceImg').src = document.getElementById('faceImageInput').value;
+      document.getElementById('confirmIdImg').src = latestIdPreviewUrl;
+      document.getElementById('confirmIdBackImg').src = latestIdBackPreviewUrl;
+      document.getElementById('confirmIdType').textContent = idTypeVal || 'Valid ID';
+      document.getElementById('confirmFullName').textContent = fullName;
+      document.getElementById('confirmBirthdayGender').textContent = `${birthday} (${age} yrs old) • ${gender}`;
+      document.getElementById('confirmContact').textContent = contact;
+      document.getElementById('confirmAddress').textContent = `${address}, Brgy. ${barangay}, ${city}, ${province} ${zipCode}`;
+
       goToStep(3);
     });
 
@@ -569,7 +1005,6 @@
     const statusBadge = document.getElementById('faceStatusBadge');
     const btnCapture = document.getElementById('btnCaptureFace');
     const btnRetake = document.getElementById('btnRetakeFace');
-    const btnComplete = document.getElementById('btnCompleteVerify');
     const faceImageInput = document.getElementById('faceImageInput');
     const faceDescriptorInput = document.getElementById('faceDescriptorInput');
 
@@ -666,6 +1101,16 @@
 
     async function initFaceCamera() {
       if (faceImageInput.value) {
+        previewImg.src = faceImageInput.value;
+        previewImg.classList.remove('d-none');
+        video.classList.add('d-none');
+        overlay.classList.add('d-none');
+        btnCapture.classList.add('d-none');
+        btnRetake.classList.remove('d-none');
+        setBadge('success', '<i class="bi bi-patch-check-fill me-1"></i><span>Saved face scan loaded!</span>');
+        return;
+      }
+      if (mediaStream) {
         return;
       }
       resetVerifyLiveness();
@@ -773,18 +1218,19 @@
       const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.85);
       faceImageInput.value = dataUrl;
       faceDescriptorInput.value = latestDescriptor ? JSON.stringify(latestDescriptor) : '';
+      clearFieldError(null, 'vFaceGroup');
 
       showVerifyLoading(true);
-      await new Promise(r => setTimeout(r, 700));
-      verifyLoadingSubtitle.textContent = 'Preparing face profile...';
       await new Promise(r => setTimeout(r, 600));
+      verifyLoadingSubtitle.textContent = 'Preparing face profile...';
+      await new Promise(r => setTimeout(r, 500));
 
       verifySpinner.classList.add('d-none');
       verifyIcon.classList.remove('d-none');
       verifyIcon.classList.add('d-inline-flex');
       verifyLoadingTitle.textContent = 'Face Captured!';
-      verifyLoadingSubtitle.textContent = 'Ready to submit for staff confirmation';
-      await new Promise(r => setTimeout(r, 750));
+      verifyLoadingSubtitle.textContent = 'Now upload your Valid ID below to proceed';
+      await new Promise(r => setTimeout(r, 650));
 
       showVerifyLoading(false);
       previewImg.src = dataUrl;
@@ -796,7 +1242,6 @@
 
       btnCapture.classList.add('d-none');
       btnRetake.classList.remove('d-none');
-      btnComplete.disabled = false;
 
       setBadge('success', '<i class="bi bi-patch-check-fill me-1"></i><span>Face verified &amp; captured!</span>');
     }
@@ -819,7 +1264,6 @@
       btnRetake.classList.add('d-none');
       btnCapture.classList.add('d-none');
       btnCapture.disabled = true;
-      btnComplete.disabled = true;
 
       initFaceCamera();
     });
@@ -976,6 +1420,7 @@
     });
 
     loadProvinces();
+    initFaceCamera();
 
     window.addEventListener('beforeunload', stopCameraStream);
   });

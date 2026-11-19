@@ -15,7 +15,7 @@
 </head>
 <body class="bg-light">
 
-<nav class="navbar navbar-expand-lg bg-white border-bottom shadow-sm sticky-top py-2">
+<nav class="navbar navbar-expand-lg bg-white border-bottom shadow-sm sticky-top py-2" style="z-index: 1030;">
   <div class="container-fluid px-3 px-lg-4">
     <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-dark fs-5" href="{{ url_for('staff') }}">
       <span class="eco-brand-badge bg-success text-white">
@@ -77,7 +77,7 @@
 
   <div class="row g-4">
     <div class="col-lg-3 col-xl-2">
-      <div class="card border-0 shadow-sm p-3 sticky-top" style="top: 75px;">
+      <div class="card border-0 shadow-sm p-3 sticky-top" style="top: 80px; z-index: 10;">
         <div class="text-uppercase small fw-bold text-muted mb-2" style="font-size: 0.72rem; letter-spacing: 1px;">Station Modules</div>
         <nav class="nav nav-pills flex-column gap-1">
           <a href="{{ url_for('staff', tab='dashboard') }}" class="nav-link py-2 px-3 {% if tab == 'dashboard' or not tab %}active bg-success text-white{% else %}text-dark{% endif %}">
@@ -89,8 +89,11 @@
           <a href="{{ url_for('staff', tab='history') }}" class="nav-link py-2 px-3 {% if tab == 'history' %}active bg-success text-white{% else %}text-dark{% endif %}">
             <i class="bi bi-clock-history me-2"></i> Deposit History
           </a>
-          <a href="{{ url_for('staff', tab='claims') }}" class="nav-link py-2 px-3 {% if tab == 'claims' %}active bg-success text-white{% else %}text-dark{% endif %}">
-            <i class="bi bi-gift me-2"></i> Reward Claims
+          <a href="{{ url_for('staff', tab='claims') }}" class="nav-link py-2 px-3 d-flex align-items-center justify-content-between {% if tab == 'claims' %}active bg-success text-white{% else %}text-dark{% endif %}">
+            <span><i class="bi bi-gift me-2"></i> Reward Claims</span>
+            {% if staff_stats.pending_claims > 0 %}
+              <span class="badge rounded-pill {% if tab == 'claims' %}bg-white text-success{% else %}bg-warning text-dark{% endif %}">{{ staff_stats.pending_claims }}</span>
+            {% endif %}
           </a>
           <a href="{{ url_for('staff', tab='residents') }}" class="nav-link py-2 px-3 {% if tab == 'residents' %}active bg-success text-white{% else %}text-dark{% endif %}">
             <i class="bi bi-people me-2"></i> Residents List
@@ -209,72 +212,12 @@
                   <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Station Collection Activity</h5>
                   <p class="text-muted small mb-0">Daily recyclable items processed and points awarded.</p>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                  <span class="badge rounded-pill px-3 py-1 text-dark" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3);">
-                    <span class="d-inline-block rounded-circle me-1" style="width: 8px; height: 8px; background: #10b981;"></span> Recycled Units
-                  </span>
-                  <span class="badge rounded-pill px-3 py-1 text-dark" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3);">
-                    <span class="d-inline-block rounded-circle me-1" style="width: 8px; height: 8px; background: #3b82f6;"></span> Points
-                  </span>
-                </div>
+                <span class="badge bg-light text-muted border rounded-pill px-3 py-1 small">
+                  <i class="bi bi-graph-up me-1"></i>Live Trend
+                </span>
               </div>
-
-              <div class="w-100" style="min-height: 230px;">
-                <svg viewBox="0 0 560 240" class="w-100 h-auto" style="overflow: visible; display: block;" preserveAspectRatio="xMidYMid meet">
-                  <defs>
-                    <linearGradient id="itemsAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#10b981" stop-opacity="0.32"/>
-                      <stop offset="100%" stop-color="#10b981" stop-opacity="0.01"/>
-                    </linearGradient>
-                    <linearGradient id="ptsAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.22"/>
-                      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.01"/>
-                    </linearGradient>
-                  </defs>
-
-                  {% for g in staff_svg.grid_lines %}
-                    <line x1="{{ g.x1 }}" y1="{{ g.y }}" x2="{{ g.x2 }}" y2="{{ g.y }}" stroke="#f1f5f9" stroke-width="1.2" stroke-dasharray="3 3"/>
-                    <text x="{{ g.x1 - 8 }}" y="{{ g.y + 4 }}" text-anchor="end" font-size="10" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif">{{ g.it_label }}</text>
-                  {% endfor %}
-
-                  {% if staff_svg.a_items %}
-                    <path d="{{ staff_svg.a_items }}" fill="url(#itemsAreaGrad)"/>
-                  {% endif %}
-                  {% if staff_svg.a_pts %}
-                    <path d="{{ staff_svg.a_pts }}" fill="url(#ptsAreaGrad)"/>
-                  {% endif %}
-
-                  {% if staff_svg.p_items %}
-                    <path d="{{ staff_svg.p_items }}" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                  {% endif %}
-                  {% if staff_svg.p_pts %}
-                    <path d="{{ staff_svg.p_pts }}" fill="none" stroke="#3b82f6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 3"/>
-                  {% endif %}
-
-                  {% for pt in staff_svg.items_coords %}
-                    <circle cx="{{ pt.x }}" cy="{{ pt.y }}" r="4.5" fill="#ffffff" stroke="#10b981" stroke-width="2.5">
-                      <title>{{ pt.val }} items</title>
-                    </circle>
-                  {% endfor %}
-
-                  {% for pt in staff_svg.pts_coords %}
-                    <circle cx="{{ pt.x }}" cy="{{ pt.y }}" r="3.5" fill="#ffffff" stroke="#3b82f6" stroke-width="2">
-                      <title>{{ pt.val }} points</title>
-                    </circle>
-                  {% endfor %}
-
-                  {% for xl in staff_svg.x_labels %}
-                    <text x="{{ xl.x }}" y="{{ xl.y }}" text-anchor="middle" font-size="11" fill="#64748b" font-weight="500" font-family="system-ui, -apple-system, sans-serif">{{ xl.text }}</text>
-                  {% endfor %}
-                </svg>
-              </div>
-
-              <div class="d-flex align-items-center justify-content-between pt-3 mt-2 border-top text-muted small">
-                <div class="d-flex align-items-center gap-1">
-                  <i class="bi bi-info-circle text-success"></i>
-                  <span>Solid curve: <strong>Items Collected</strong> &bull; Dashed curve: <strong>Points Awarded</strong></span>
-                </div>
-                <span class="text-success fw-semibold">{{ staff_stats.total_items }} units total</span>
+              <div style="height: 250px; position: relative;">
+                <canvas id="staffDashLineChart"></canvas>
               </div>
             </div>
           </div>
@@ -283,50 +226,45 @@
             <div class="card border-0 shadow-sm p-4 h-100 bg-white rounded-4">
               <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                 <div>
-                  <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Material Stream Share</h5>
+                  <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Collected Streams</h5>
                   <p class="text-muted small mb-0">Distribution of collected materials.</p>
                 </div>
-                <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 small fw-semibold">
-                  {{ staff_stats.total_items }} Items
+                <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 small">
+                  {{ staff_stats.total_items }} Total Items
                 </span>
               </div>
-
-              <div class="position-relative d-flex align-items-center justify-content-center py-2" style="min-height: 170px;">
-                <svg viewBox="0 0 200 200" style="width: 165px; height: 165px; transform: rotate(-90deg); display: block;">
-                  <circle cx="100" cy="100" r="54" fill="transparent" stroke="#f1f5f9" stroke-width="22"/>
-                  {% for sl in staff_svg.donut_slices %}
-                    <circle cx="100" cy="100" r="54" fill="transparent" stroke="{{ sl.color }}" stroke-width="22" stroke-dasharray="{{ sl.dash }}" stroke-dashoffset="{{ sl.offset }}"/>
-                  {% endfor %}
-                </svg>
-                <div class="position-absolute text-center" style="pointer-events: none;">
-                  <div class="fw-bold fs-3 text-dark lh-1">{{ staff_stats.total_items }}</div>
-                  <div class="text-muted fw-semibold small text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">Units</div>
-                </div>
+              <div style="height: 190px; position: relative;">
+                <canvas id="staffDashPieChart"></canvas>
               </div>
-
               <div class="row g-2 mt-2 pt-2 border-top">
-                {% for sl in staff_svg.donut_slices %}
-                  <div class="col-6">
-                    <div class="p-2 rounded-3 bg-light border">
-                      <div class="d-flex align-items-center justify-content-between mb-1">
-                        <div class="d-flex align-items-center gap-1">
-                          <span class="rounded-circle" style="width: 9px; height: 9px; background-color: {{ sl.color }}; flex-shrink: 0;"></span>
-                          <span class="small fw-semibold text-truncate" style="font-size: 0.78rem;">{{ sl.name }}</span>
-                        </div>
-                        <span class="small fw-bold text-dark">{{ sl.qty }}</span>
-                      </div>
-                      <div class="progress" style="height: 4px;">
-                        <div class="progress-bar" style="width: {{ sl.pct }}%; background-color: {{ sl.color }};"></div>
-                      </div>
-                      <div class="text-end text-muted mt-1" style="font-size: 0.7rem;">{{ sl.pct }}%</div>
-                    </div>
+                <div class="col-6">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #198754; flex-shrink: 0;"></span>
+                    <span class="small text-muted text-truncate">Plastics:</span>
+                    <span class="small fw-bold ms-auto">{{ staff_stats.cat_breakdown['Plastic']['qty']|default(0) }}</span>
                   </div>
-                {% endfor %}
-                {% if not staff_svg.donut_slices %}
-                  <div class="col-12 text-center text-muted small py-2">
-                    No materials recorded yet.
+                </div>
+                <div class="col-6">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #0d6efd; flex-shrink: 0;"></span>
+                    <span class="small text-muted text-truncate">Cans:</span>
+                    <span class="small fw-bold ms-auto">{{ staff_stats.cat_breakdown['Metal']['qty']|default(0) }}</span>
                   </div>
-                {% endif %}
+                </div>
+                <div class="col-6">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #f59e0b; flex-shrink: 0;"></span>
+                    <span class="small text-muted text-truncate">Paper:</span>
+                    <span class="small fw-bold ms-auto">{{ staff_stats.cat_breakdown['Paper']['qty']|default(0) }}</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #8b5cf6; flex-shrink: 0;"></span>
+                    <span class="small text-muted text-truncate">Glass/Other:</span>
+                    <span class="small fw-bold ms-auto">{{ staff_stats.cat_breakdown['Glass']['qty']|default(0) }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -823,8 +761,8 @@
               </thead>
               <tbody>
                 {% for rd in all_redemptions %}
-                  <tr class="table-row-item">
-                    <td><span class="font-monospace fw-bold bg-light px-2 py-1 rounded border">{{ rd.redemption_code }}</span></td>
+                  <tr class="table-row-item" {% if rd.status == 'claimed' %}style="--bs-table-bg: #fffbeb; --bs-table-hover-bg: #fef3c7;"{% elif rd.status == 'released' %}style="--bs-table-bg: #eff6ff; --bs-table-hover-bg: #dbeafe;"{% endif %}>
+                    <td><span class="font-monospace fw-bold bg-white px-2 py-1 rounded border">{{ rd.redemption_code }}</span></td>
                     <td class="fw-semibold">{{ rd.resident_name|default('Resident') }}</td>
                     <td>{{ rd.reward_title }}</td>
                     <td class="text-success fw-bold">{{ "{:,}".format(rd.points_spent) }} pts</td>
@@ -835,11 +773,11 @@
                           <i class="bi bi-check2-all me-1"></i>Handed Over
                         </span>
                       {% elif rd.status == 'released' %}
-                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2.5 py-1 rounded-pill">
+                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2.5 py-1 rounded-pill">
                           <i class="bi bi-box-seam me-1"></i>Released
                         </span>
                       {% else %}
-                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2.5 py-1 rounded-pill">
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1 rounded-pill">
                           <i class="bi bi-hourglass-split me-1"></i>Ready for Handover
                         </span>
                       {% endif %}
@@ -854,7 +792,7 @@
                           </button>
                         </form>
                       {% elif rd.status == 'released' %}
-                        <span class="badge bg-light text-muted border px-2.5 py-1 rounded-pill">
+                        <span class="badge bg-white text-primary border border-primary-subtle px-2.5 py-1 rounded-pill">
                           <i class="bi bi-clock-history me-1"></i>Waiting for Confirmation
                         </span>
                       {% else %}
@@ -949,115 +887,183 @@
           {% endif %}
         </div>
       {% elif tab == 'verifications' %}
-        <div class="card border-0 shadow-sm p-4 mb-4 bg-white">
-          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <div>
-              <h4 class="fw-bold mb-1" style="color: var(--eco-forest);">Resident Verification Approvals</h4>
-              <p class="text-muted small mb-0">
-                Review and confirm resident identity, valid ID, and facial recognition captures assigned to:
-                <strong>Barangay {{ staff_barangays|join(', ') if staff_barangays else 'All Assigned Areas' }}</strong>
-              </p>
+        <div class="row g-3 align-items-start mb-4" id="verificationsWorkspace">
+          <div class="col-12" id="verificationsListCol">
+            <div class="card border-0 shadow-sm p-3 p-md-4 bg-white rounded-4">
+              <div class="mb-3">
+                <h4 class="fw-bold mb-1" style="color: var(--eco-forest);">Resident Verification Approvals</h4>
+                <p class="text-muted small mb-0">
+                  Review and confirm resident identity, valid ID, and facial recognition captures assigned to:
+                  <strong>Barangay {{ staff_barangays|join(', ') if staff_barangays else 'All Assigned Areas' }}</strong>
+                </p>
+              </div>
+
+              {% if pending_verifications %}
+                {% set flagged_count = pending_verifications|selectattr('duplicate_face_match')|list|length %}
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                  <div class="d-flex flex-wrap align-items-center gap-2 flex-grow-1">
+                    <div class="input-group input-group-sm" style="max-width: 280px;">
+                      <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
+                        <i class="bi bi-search text-muted"></i>
+                      </span>
+                      <input type="text" class="form-control border-start-0 rounded-end-pill pe-3" id="verifSearchInput" placeholder="Search name or ECO-RES ID...">
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <button type="button" class="btn btn-sm btn-success rounded-pill fw-semibold px-3 py-1 verif-filter-btn" data-filter="all">All ({{ pending_verifications|length }})</button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill fw-semibold px-3 py-1 verif-filter-btn" data-filter="flagged">Flagged{% if flagged_count > 0 %} ({{ flagged_count }}){% endif %}</button>
+                    </div>
+                  </div>
+                  <div class="btn-group btn-group-sm" id="verifPager">
+                    <button type="button" class="btn btn-outline-secondary" id="verifPrevBtn" disabled><i class="bi bi-chevron-left"></i></button>
+                    <button type="button" class="btn btn-light border text-dark fw-semibold px-3" id="verifPageIndicator" disabled>1</button>
+                    <button type="button" class="btn btn-outline-secondary" id="verifNextBtn" disabled><i class="bi bi-chevron-right"></i></button>
+                  </div>
+                </div>
+
+                <div class="table-responsive border rounded-3">
+                  <table class="table table-hover align-middle mb-0" id="pendingVerifTable">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Resident</th>
+                        <th>ID Type</th>
+                        <th>Flags / Status</th>
+                        <th class="text-end">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for r in pending_verifications %}
+                        <tr class="verif-row"
+                            data-id="{{ r.id }}"
+                            data-name="{{ r.full_name|e }}"
+                            data-qr="{{ r.qr_code|e }}"
+                            data-email="{{ r.email|e }}"
+                            data-birthday="{{ r.birthday or '-' }}"
+                            data-gender="{{ r.gender or '-' }}"
+                            data-contact="{{ r.contact_number or '-' }}"
+                            data-address="{{ (r.address or '-')|e }}, Brgy. {{ (r.barangay or '-')|e }}{% if r.city %}, {{ r.city|e }}{% endif %}{% if r.province %}, {{ r.province|e }}{% endif %} {{ r.zip_code or '' }}"
+                            data-idtype="{{ (r.id_type or 'Valid ID')|e }}"
+                            data-faceimg="{{ r.face_image or '' }}"
+                            data-idimg="{{ r.id_image or '' }}"
+                            data-idbackimg="{{ r.id_back_image or '' }}"
+                            data-dup="{{ (r.duplicate_face_match or '')|e }}"
+                            data-flagged="{{ '1' if r.duplicate_face_match else '0' }}"
+                            data-search="{{ (r.full_name ~ ' ' ~ r.qr_code ~ ' ' ~ r.email)|lower|e }}">
+                          <td>
+                            <div class="fw-semibold text-dark">{{ r.full_name }}</div>
+                            <div class="small text-muted">{{ r.qr_code }} &bull; {{ r.email }}</div>
+                          </td>
+                          <td class="text-secondary">{{ r.id_type or 'Valid ID' }}</td>
+                          <td>
+                            <div class="d-flex flex-wrap align-items-center gap-1">
+                              <span class="badge bg-info-subtle text-primary border border-info-subtle rounded-pill px-2 py-1">Pending</span>
+                              {% if r.duplicate_face_match %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1">
+                                  <i class="bi bi-exclamation-circle-fill me-1"></i>Duplicate Face
+                                </span>
+                              {% elif r.has_face_scan %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
+                                  <i class="bi bi-person-check-fill me-1"></i>Unique Face
+                                </span>
+                              {% endif %}
+                            </div>
+                          </td>
+                          <td class="text-end">
+                            <button type="button" class="btn btn-sm btn-forest rounded-3 px-3 fw-semibold verif-review-btn">Review</button>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                <div id="verifEmptyFilterMsg" class="text-center text-muted small py-4 d-none">
+                  No matching verification requests found.
+                </div>
+              {% else %}
+                <div class="text-center py-5 border rounded-4 bg-light bg-opacity-50">
+                  <i class="bi bi-shield-check fs-1 text-success mb-2 d-block"></i>
+                  <h6 class="fw-bold mb-1">All Caught Up!</h6>
+                  <p class="text-muted small mb-0">No pending resident verification requests for your assigned barangay right now.</p>
+                </div>
+              {% endif %}
             </div>
-            <span class="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill px-3 py-2 fw-semibold">
-              <i class="bi bi-hourglass-split me-1"></i>{{ pending_verifications|length }} Pending Review
-            </span>
           </div>
 
-          {% if pending_verifications %}
-            <div class="row g-3">
-              {% for r in pending_verifications %}
-                <div class="col-12">
-                  <div class="card border rounded-4 p-3 p-md-4 bg-light bg-opacity-50">
-                    <div class="row g-3 align-items-center">
-                      <div class="col-md-3">
-                        <div class="d-flex gap-2 justify-content-center">
-                          <div class="text-center">
-                            {% if r.face_image %}
-                              <a href="{{ r.face_image }}" target="_blank" title="Click to enlarge face photo">
-                                <img src="{{ r.face_image }}" alt="Face Photo" class="rounded-3 object-fit-cover border shadow-sm" style="width: 96px; height: 96px;">
-                              </a>
-                            {% else %}
-                              <div class="rounded-3 bg-white border d-flex align-items-center justify-content-center" style="width: 96px; height: 96px;">
-                                <i class="bi bi-person fs-2 text-muted"></i>
-                              </div>
-                            {% endif %}
-                            <div class="small text-muted mt-1" style="font-size: 0.72rem;">Face Scan</div>
-                          </div>
-                          <div class="text-center">
-                            {% if r.id_image %}
-                              <a href="{{ r.id_image }}" target="_blank" title="Click to enlarge ID picture">
-                                <img src="{{ r.id_image }}" alt="Valid ID" class="rounded-3 object-fit-cover border shadow-sm" style="width: 96px; height: 96px;">
-                              </a>
-                            {% else %}
-                              <div class="rounded-3 bg-white border d-flex align-items-center justify-content-center" style="width: 96px; height: 96px;">
-                                <i class="bi bi-card-heading fs-2 text-muted"></i>
-                              </div>
-                            {% endif %}
-                            <div class="small text-muted mt-1" style="font-size: 0.72rem;">{{ r.id_type or 'Valid ID' }}</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="col-md-6">
-                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                          <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">{{ r.full_name }}</h5>
-                          <span class="badge bg-info-subtle text-primary border border-info-subtle rounded-pill px-2.5 py-1 small">Pending</span>
-                          {% if r.duplicate_face_match %}
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2.5 py-1 small">
-                              <i class="bi bi-exclamation-octagon-fill me-1"></i>Duplicate Face
-                            </span>
-                          {% elif r.has_face_scan %}
-                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 small">
-                              <i class="bi bi-person-check-fill me-1"></i>Unique Face Scan
-                            </span>
-                          {% endif %}
-                          <span class="badge bg-white text-dark border font-monospace small">{{ r.qr_code }}</span>
-                        </div>
-                        <div class="text-muted small mb-2">{{ r.email }}</div>
-                        <div class="row g-1 small text-secondary">
-                          <div class="col-sm-6"><i class="bi bi-cake2 me-1"></i><strong>Birthday:</strong> {{ r.birthday or '-' }} ({{ r.gender or '-' }})</div>
-                          <div class="col-sm-6"><i class="bi bi-telephone me-1"></i><strong>Contact:</strong> {{ r.contact_number or '-' }}</div>
-                          <div class="col-12"><i class="bi bi-geo-alt me-1"></i><strong>Address:</strong> {{ r.address or '-' }}, Brgy. {{ r.barangay or '-' }}{% if r.city %}, {{ r.city }}{% endif %}{% if r.province %}, {{ r.province }}{% endif %} {{ r.zip_code or '' }}</div>
-                          <div class="col-12"><i class="bi bi-card-heading me-1"></i><strong>ID Submitted:</strong> {{ r.id_type or '-' }}</div>
-                        </div>
-                        {% if r.duplicate_face_match %}
-                          <div class="alert alert-danger py-1 px-2 small mt-2 mb-0 rounded-3">
-                            <i class="bi bi-shield-exclamation me-1"></i><strong>Duplicate Facial Biometrics Detected:</strong> Matches verified resident <strong>{{ r.duplicate_face_match }}</strong>. Confirming will reject this duplicate request.
-                          </div>
-                        {% endif %}
-                      </div>
-
-                      <div class="col-md-3 d-flex flex-column gap-2">
-                        <form action="{{ url_for('staff') }}" method="POST" class="m-0">
-                          <input type="hidden" name="tab" value="verifications">
-                          <input type="hidden" name="staff_action" value="approve_verification">
-                          <input type="hidden" name="resident_id" value="{{ r.id }}">
-                          <button type="submit" class="btn btn-success btn-pill w-100 fw-semibold shadow-sm">
-                            <i class="bi bi-patch-check-fill me-1"></i>Confirm &amp; Verify
-                          </button>
-                        </form>
-                        <form action="{{ url_for('staff') }}" method="POST" class="m-0">
-                          <input type="hidden" name="tab" value="verifications">
-                          <input type="hidden" name="staff_action" value="reject_verification">
-                          <input type="hidden" name="resident_id" value="{{ r.id }}">
-                          <input type="hidden" name="reject_reason" value="Submitted details or ID picture could not be confirmed. Please resubmit.">
-                          <button type="submit" class="btn btn-outline-danger btn-pill w-100 btn-sm">
-                            <i class="bi bi-x-circle me-1"></i>Return / Reject
-                          </button>
-                        </form>
-                      </div>
+          <div class="col-12 col-xl-4 d-none" id="verifReviewCol">
+            <div class="card border-0 shadow-sm rounded-4 bg-white sticky-top" style="top: 80px; z-index: 10;">
+              <div class="card-header bg-white border-bottom px-3 py-3 d-flex align-items-center justify-content-between rounded-top-4">
+                <div class="fw-bold text-dark text-truncate pe-2" id="reviewPanelTitle">Resident Review</div>
+                <button type="button" class="btn-close btn-sm" id="closeReviewPanelBtn" aria-label="Close"></button>
+              </div>
+              <div class="card-body p-3">
+                <div class="alert alert-danger rounded-3 small p-2 px-3 mb-3 d-none" id="reviewDupAlert">
+                  <div class="d-flex align-items-start gap-2">
+                    <i class="bi bi-exclamation-circle-fill mt-1 flex-shrink-0"></i>
+                    <div>
+                      <strong>Duplicate Facial Biometrics Detected:</strong>
+                      Matches verified resident <strong id="reviewDupName"></strong>. Confirming will reject this duplicate request.
                     </div>
                   </div>
                 </div>
-              {% endfor %}
+
+                <div class="row g-2 mb-3 text-center">
+                  <div class="col-4">
+                    <a href="#" target="_blank" id="reviewFaceLink" class="d-block text-decoration-none">
+                      <div class="border rounded-3 overflow-hidden bg-light d-flex align-items-center justify-content-center" style="height: 96px;" id="reviewFaceWrap">
+                        <img src="" alt="Face Scan" id="reviewFaceImg" class="w-100 h-100 object-fit-cover d-none">
+                        <i class="bi bi-person fs-2 text-muted" id="reviewFacePlaceholder"></i>
+                      </div>
+                    </a>
+                    <div class="small text-muted mt-1" style="font-size: 0.72rem;">Face Scan</div>
+                  </div>
+                  <div class="col-4">
+                    <a href="#" target="_blank" id="reviewIdLink" class="d-block text-decoration-none">
+                      <div class="border rounded-3 overflow-hidden bg-light d-flex align-items-center justify-content-center" style="height: 96px;" id="reviewIdWrap">
+                        <img src="" alt="ID Front" id="reviewIdImg" class="w-100 h-100 object-fit-cover d-none">
+                        <i class="bi bi-card-heading fs-2 text-muted" id="reviewIdPlaceholder"></i>
+                      </div>
+                    </a>
+                    <div class="small text-muted mt-1" style="font-size: 0.72rem;" id="reviewIdLabel">ID Front</div>
+                  </div>
+                  <div class="col-4">
+                    <a href="#" target="_blank" id="reviewIdBackLink" class="d-block text-decoration-none">
+                      <div class="border rounded-3 overflow-hidden bg-light d-flex align-items-center justify-content-center" style="height: 96px;" id="reviewIdBackWrap">
+                        <img src="" alt="ID Back" id="reviewIdBackImg" class="w-100 h-100 object-fit-cover d-none">
+                        <i class="bi bi-card-text fs-2 text-muted" id="reviewIdBackPlaceholder"></i>
+                      </div>
+                    </a>
+                    <div class="small text-muted mt-1" style="font-size: 0.72rem;">ID Back</div>
+                  </div>
+                </div>
+
+                <div class="border-top pt-3 small text-secondary d-flex flex-column gap-2 mb-3">
+                  <div><i class="bi bi-envelope me-2 text-muted"></i><strong>Email:</strong> <span id="reviewEmail">-</span></div>
+                  <div><i class="bi bi-calendar3 me-2 text-muted"></i><strong>Birthday:</strong> <span id="reviewBirthday">-</span></div>
+                  <div><i class="bi bi-telephone me-2 text-muted"></i><strong>Contact:</strong> <span id="reviewContact">-</span></div>
+                  <div><i class="bi bi-house-door me-2 text-muted"></i><strong>Address:</strong> <span id="reviewAddress">-</span></div>
+                </div>
+
+                <div class="border-top pt-3 d-flex flex-column gap-2">
+                  <form action="{{ url_for('staff') }}" method="POST" class="m-0">
+                    <input type="hidden" name="tab" value="verifications">
+                    <input type="hidden" name="staff_action" value="approve_verification">
+                    <input type="hidden" name="resident_id" id="reviewApproveId" value="">
+                    <button type="submit" class="btn btn-forest btn-pill w-100 fw-semibold py-2 shadow-sm">
+                      <i class="bi bi-check-circle-fill me-1"></i>Confirm &amp; Verify
+                    </button>
+                  </form>
+                  <form action="{{ url_for('staff') }}" method="POST" class="m-0">
+                    <input type="hidden" name="tab" value="verifications">
+                    <input type="hidden" name="staff_action" value="reject_verification">
+                    <input type="hidden" name="resident_id" id="reviewRejectId" value="">
+                    <input type="hidden" name="reject_reason" value="Submitted details or ID picture could not be confirmed. Please resubmit.">
+                    <button type="submit" class="btn btn-outline-danger btn-pill w-100 fw-semibold py-2">
+                      <i class="bi bi-x-circle me-1"></i>Return / Reject
+                    </button>
+                  </form>
+                </div>
+              </div>
             </div>
-          {% else %}
-            <div class="text-center py-5 border rounded-4 bg-light bg-opacity-50">
-              <i class="bi bi-shield-check fs-1 text-success mb-2 d-block"></i>
-              <h6 class="fw-bold mb-1">All Caught Up!</h6>
-              <p class="text-muted small mb-0">No pending resident verification requests for your assigned barangay right now.</p>
-            </div>
-          {% endif %}
+          </div>
         </div>
 
         <div class="card border-0 shadow-sm p-4 bg-white">
@@ -1804,6 +1810,186 @@ document.addEventListener('DOMContentLoaded', function() {
   } else if (formQr && formQr.value && manualIn && lookupBtn) {
     manualIn.value = formQr.value;
     lookupBtn.click();
+  }
+
+  const verifTable = document.getElementById('pendingVerifTable');
+  if (verifTable) {
+    const allRows = Array.from(verifTable.querySelectorAll('tbody tr.verif-row'));
+    const searchInput = document.getElementById('verifSearchInput');
+    const filterBtns = Array.from(document.querySelectorAll('.verif-filter-btn'));
+    const prevBtn = document.getElementById('verifPrevBtn');
+    const nextBtn = document.getElementById('verifNextBtn');
+    const pageIndicator = document.getElementById('verifPageIndicator');
+    const emptyMsg = document.getElementById('verifEmptyFilterMsg');
+    const listCol = document.getElementById('verificationsListCol');
+    const reviewCol = document.getElementById('verifReviewCol');
+    const closeReviewBtn = document.getElementById('closeReviewPanelBtn');
+
+    const PAGE_SIZE = 10;
+    let activeFilter = 'all';
+    let currentPage = 1;
+
+    function getFilteredRows() {
+      const q = (searchInput ? searchInput.value : '').trim().toLowerCase();
+      return allRows.filter(row => {
+        if (activeFilter === 'flagged' && row.dataset.flagged !== '1') return false;
+        if (q && !(row.dataset.search || '').includes(q)) return false;
+        return true;
+      });
+    }
+
+    function renderVerifPage() {
+      const filtered = getFilteredRows();
+      const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+      if (currentPage > totalPages) currentPage = totalPages;
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const visibleSet = new Set(filtered.slice(start, start + PAGE_SIZE));
+
+      allRows.forEach(row => {
+        row.classList.toggle('d-none', !visibleSet.has(row));
+      });
+
+      if (emptyMsg) {
+        emptyMsg.classList.toggle('d-none', filtered.length > 0);
+      }
+      if (pageIndicator) pageIndicator.textContent = String(currentPage);
+      if (prevBtn) prevBtn.disabled = currentPage <= 1;
+      if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+    }
+
+    function openReviewPanel(row) {
+      allRows.forEach(r => r.classList.remove('table-success'));
+      row.classList.add('table-success');
+
+      document.getElementById('reviewPanelTitle').textContent = row.dataset.name + ' / ' + row.dataset.qr;
+      document.getElementById('reviewEmail').textContent = row.dataset.email || '-';
+      document.getElementById('reviewBirthday').textContent = (row.dataset.birthday || '-') + ' (' + (row.dataset.gender || '-') + ')';
+      document.getElementById('reviewContact').textContent = row.dataset.contact || '-';
+      document.getElementById('reviewAddress').textContent = row.dataset.address || '-';
+      document.getElementById('reviewIdLabel').textContent = row.dataset.idtype || 'Valid ID';
+      document.getElementById('reviewApproveId').value = row.dataset.id || '';
+      document.getElementById('reviewRejectId').value = row.dataset.id || '';
+
+      const dupAlert = document.getElementById('reviewDupAlert');
+      const dupName = document.getElementById('reviewDupName');
+      if (row.dataset.dup) {
+        dupName.textContent = row.dataset.dup;
+        dupAlert.classList.remove('d-none');
+      } else {
+        dupAlert.classList.add('d-none');
+      }
+
+      const faceImg = document.getElementById('reviewFaceImg');
+      const faceLink = document.getElementById('reviewFaceLink');
+      const facePh = document.getElementById('reviewFacePlaceholder');
+      if (row.dataset.faceimg) {
+        faceImg.src = row.dataset.faceimg;
+        faceImg.classList.remove('d-none');
+        facePh.classList.add('d-none');
+        faceLink.href = row.dataset.faceimg;
+      } else {
+        faceImg.src = '';
+        faceImg.classList.add('d-none');
+        facePh.classList.remove('d-none');
+        faceLink.removeAttribute('href');
+      }
+
+      const idImg = document.getElementById('reviewIdImg');
+      const idLink = document.getElementById('reviewIdLink');
+      const idPh = document.getElementById('reviewIdPlaceholder');
+      if (row.dataset.idimg) {
+        idImg.src = row.dataset.idimg;
+        idImg.classList.remove('d-none');
+        idPh.classList.add('d-none');
+        idLink.href = row.dataset.idimg;
+      } else {
+        idImg.src = '';
+        idImg.classList.add('d-none');
+        idPh.classList.remove('d-none');
+        idLink.removeAttribute('href');
+      }
+
+      const idBackImg = document.getElementById('reviewIdBackImg');
+      const idBackLink = document.getElementById('reviewIdBackLink');
+      const idBackPh = document.getElementById('reviewIdBackPlaceholder');
+      if (row.dataset.idbackimg) {
+        idBackImg.src = row.dataset.idbackimg;
+        idBackImg.classList.remove('d-none');
+        idBackPh.classList.add('d-none');
+        idBackLink.href = row.dataset.idbackimg;
+      } else {
+        idBackImg.src = '';
+        idBackImg.classList.add('d-none');
+        idBackPh.classList.remove('d-none');
+        idBackLink.removeAttribute('href');
+      }
+
+      listCol.classList.remove('col-12');
+      listCol.classList.add('col-12', 'col-xl-8');
+      reviewCol.classList.remove('d-none');
+      if (window.innerWidth < 1200) {
+        reviewCol.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    function closeReviewPanel() {
+      allRows.forEach(r => r.classList.remove('table-success'));
+      reviewCol.classList.add('d-none');
+      listCol.classList.remove('col-xl-8');
+      listCol.classList.add('col-12');
+      document.getElementById('reviewFaceImg').src = '';
+      document.getElementById('reviewIdImg').src = '';
+      document.getElementById('reviewIdBackImg').src = '';
+    }
+
+    verifTable.querySelectorAll('.verif-review-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const row = this.closest('tr.verif-row');
+        if (row) openReviewPanel(row);
+      });
+    });
+
+    if (closeReviewBtn) {
+      closeReviewBtn.addEventListener('click', closeReviewPanel);
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', function() {
+        currentPage = 1;
+        renderVerifPage();
+      });
+    }
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        activeFilter = this.dataset.filter || 'all';
+        filterBtns.forEach(b => {
+          const isAct = b === this;
+          b.classList.toggle('btn-success', isAct);
+          b.classList.toggle('btn-outline-secondary', !isAct);
+        });
+        currentPage = 1;
+        renderVerifPage();
+      });
+    });
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', function() {
+        if (currentPage > 1) {
+          currentPage--;
+          renderVerifPage();
+        }
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', function() {
+        currentPage++;
+        renderVerifPage();
+      });
+    }
+
+    renderVerifPage();
   }
 });
 </script>
