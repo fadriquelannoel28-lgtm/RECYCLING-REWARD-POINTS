@@ -204,7 +204,7 @@ a.btn-lg {
 }
 
 .card {
-  border-radius: 20px;
+  border-radius: 0.25rem;
   border: 1px solid var(--eco-border);
   background-color: #ffffff;
 }

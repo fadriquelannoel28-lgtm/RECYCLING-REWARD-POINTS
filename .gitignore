@@ -1,1 +1,4 @@
 jqueryNT-main/
+.env
+__pycache__/
+*.pyc

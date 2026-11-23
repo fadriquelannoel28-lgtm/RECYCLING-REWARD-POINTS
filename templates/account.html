@@ -63,7 +63,7 @@
           </div>
         {% endif %}
 
-        <div class="card border-0 shadow-sm p-4 mb-4 bg-white">
+        <div class="card border-0 shadow-sm p-4 mb-3 bg-white rounded-1 gap-2">
           <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-3">
               <div class="position-relative flex-shrink-0">
@@ -141,7 +141,7 @@
         </div>
 
         {% if current_user.role == 'resident' %}
-          <div class="card border-0 shadow-sm p-4 mb-4 {% if current_user.verification_status == 'verified' %}bg-white{% elif current_user.verification_status == 'pending' %}border-start border-4 border-primary bg-white{% else %}border-start border-4 border-warning bg-white{% endif %}">
+          <div class="card border-0 shadow-sm p-4 mb-3 {% if current_user.verification_status == 'verified' %} bg-white {% elif current_user.verification_status == 'pending' %} border-start border-4 border-primary bg-white {% else %} border-start border-4 border-warning bg-white {% endif %} rounded-1 gap-2">
             <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
               <div class="d-flex align-items-start gap-3">
                 <span class="eco-icon-tile {% if current_user.verification_status == 'verified' %}tile-green{% elif current_user.verification_status == 'pending' %}tile-blue{% else %}tile-orange{% endif %}" style="width: 44px; height: 44px; flex-shrink: 0;">
@@ -229,7 +229,7 @@
 
         <div class="row g-4">
           <div class="col-md-6">
-            <div class="card border-0 shadow-sm p-4 h-100 bg-white">
+            <div class="card border-0 shadow-sm p-4 h-100 bg-white rounded-1 gap-2 mb-3">
               <div class="d-flex align-items-center gap-2 mb-3">
                 <span class="eco-icon-tile tile-blue" style="width: 36px; height: 36px;">
                   <i class="bi bi-person-lines-fill"></i>
@@ -295,7 +295,7 @@
           </div>
 
           <div class="col-md-6">
-            <div class="card border-0 shadow-sm p-4 h-100 bg-white">
+            <div class="card border-0 shadow-sm p-4 h-100 bg-white rounded-1 gap-2 mb-3">
               <div class="d-flex align-items-center gap-2 mb-3">
                 <span class="eco-icon-tile tile-orange" style="width: 36px; height: 36px;">
                   <i class="bi bi-shield-lock"></i>
@@ -324,14 +324,14 @@
                 <div class="messenger-field-group mb-3 {% if feedback and feedback_type == 'danger' and feedback_field == 'new_password' %}has-error{% endif %}" id="newPwGroup">
                   <label class="form-label" for="newPassInput">New Password</label>
                   <div class="input-group">
-                    <input type="password" name="new_password" id="newPassInput" class="form-control {% if feedback and feedback_type == 'danger' and feedback_field == 'new_password' %}is-invalid{% endif %}" placeholder="Min 6 characters" autocomplete="new-password">
+                    <input type="password" name="new_password" id="newPassInput" class="form-control {% if feedback and feedback_type == 'danger' and feedback_field == 'new_password' %}is-invalid{% endif %}" placeholder="Min 8 characters" autocomplete="new-password">
                     <button type="button" class="btn btn-outline-secondary toggle-password" data-target="newPassInput" aria-label="Toggle password visibility">
                       <i class="bi bi-eye"></i>
                     </button>
                   </div>
                   <div class="messenger-error-msg" id="newPwError" {% if not (feedback and feedback_type == 'danger' and feedback_field == 'new_password') %}style="display: none;"{% endif %}>
                     <i class="bi bi-exclamation-circle"></i>
-                    <span class="msg-text">{{ feedback if (feedback and feedback_type == 'danger' and feedback_field == 'new_password') else 'New password must be at least 6 characters long.' }}</span>
+                    <span class="msg-text">{{ feedback if (feedback and feedback_type == 'danger' and feedback_field == 'new_password') else 'New password must be at least 8 characters long.' }}</span>
                   </div>
                 </div>
 

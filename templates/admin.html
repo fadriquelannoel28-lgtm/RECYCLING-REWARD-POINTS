@@ -3,13 +3,56 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
   <title>Admin Portal - EcoCoins</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.min.css') }}?v=20261123">
+  <script>
+    (function() {
+      const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+      const csrfToken = tokenMeta ? tokenMeta.getAttribute('content') : '';
+      if (!csrfToken) return;
+      function attachCsrf(form) {
+        if (!form || !form.method || form.method.toUpperCase() !== 'POST') return;
+        let inp = form.querySelector('input[name="csrf_token"]');
+        if (!inp) {
+          inp = document.createElement('input');
+          inp.type = 'hidden';
+          inp.name = 'csrf_token';
+          form.appendChild(inp);
+        }
+        inp.value = csrfToken;
+      }
+      document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('form').forEach(attachCsrf);
+      });
+      document.addEventListener('submit', function(e) { attachCsrf(e.target); }, true);
+      const origSubmit = HTMLFormElement.prototype.submit;
+      HTMLFormElement.prototype.submit = function() {
+        attachCsrf(this);
+        return origSubmit.apply(this, arguments);
+      };
+      const origFetch = window.fetch;
+      window.fetch = function(input, init) {
+        const opts = init ? Object.assign({}, init) : {};
+        const method = (opts.method || 'GET').toUpperCase();
+        const urlStr = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+        const isSameOrigin = !urlStr || urlStr.startsWith('/') || urlStr.startsWith(window.location.origin);
+        if (isSameOrigin && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+          const headers = new Headers(opts.headers || {});
+          if (!headers.has('X-CSRF-Token')) {
+            headers.set('X-CSRF-Token', csrfToken);
+          }
+          opts.headers = headers;
+        }
+        return origFetch.call(this, input, opts);
+      };
+    })();
+  </script>
   <link href="https://cdn.datatables.net/v/dt/dt-3.1.5/datatables.min.css" rel="stylesheet">
   <script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
   <style>
@@ -58,7 +101,7 @@
       font-weight: 500;
     }
     .dt-container .dt-length select.dt-input {
-      border-radius: 9999px !important;
+      border-radius: 0.375rem !important;
       border: 1px solid #cbd5e1 !important;
       padding: 0.35rem 1.75rem 0.35rem 0.85rem !important;
       font-size: 0.85rem !important;
@@ -73,9 +116,9 @@
       align-items: center !important;
     }
     .dt-container .dt-search input.dt-input {
-      border-radius: 9999px !important;
+      border-radius: 0.375rem !important;
       border: 1px solid #cbd5e1 !important;
-      padding: 0.42rem 1rem !important;
+      padding: 0.42rem 0.85rem !important;
       min-width: 240px;
       font-size: 0.85rem !important;
       background-color: #ffffff !important;
@@ -94,7 +137,7 @@
       color: #64748b;
     }
     .dt-container .dt-paging .dt-paging-button {
-      border-radius: 9999px !important;
+      border-radius: 0.375rem !important;
       font-size: 0.82rem !important;
       padding: 0.3rem 0.75rem !important;
       margin: 0 2px !important;
@@ -378,10 +421,10 @@
 
         <div class="row g-3 mb-4">
           <div class="col-6 col-xl-3">
-            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+            <div class="card rounded-1 border-0 shadow-sm p-3 h-100 gap-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted small fw-semibold text-uppercase">Residents</span>
-                <span class="badge bg-info-subtle text-info rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                <span class="badge text-info p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
                   <i class="bi bi-people fs-6"></i>
                 </span>
               </div>
@@ -391,10 +434,10 @@
           </div>
 
           <div class="col-6 col-xl-3">
-            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+            <div class="card rounded-1 border-0 shadow-sm p-3 h-100 gap-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted small fw-semibold text-uppercase">Recyclables</span>
-                <span class="badge bg-success-subtle text-success rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                <span class="badge text-success p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
                   <i class="bi bi-recycle fs-6"></i>
                 </span>
               </div>
@@ -404,10 +447,10 @@
           </div>
 
           <div class="col-6 col-xl-3">
-            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+            <div class="card rounded-1 border-0 shadow-sm p-3 h-100 gap-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted small fw-semibold text-uppercase">EcoPoints Issued</span>
-                <span class="badge bg-warning-subtle text-warning rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                <span class="badge text-warning p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
                   <i class="bi bi-coin fs-6"></i>
                 </span>
               </div>
@@ -417,10 +460,10 @@
           </div>
 
           <div class="col-6 col-xl-3">
-            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+            <div class="card rounded-1 border-0 shadow-sm p-3 h-100 gap-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted small fw-semibold text-uppercase">Waste Diverted</span>
-                <span class="badge bg-success-subtle text-success rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                <span class="badge text-success p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
                   <i class="bi bi-tree fs-6"></i>
                 </span>
               </div>
@@ -432,7 +475,7 @@
 
         <div class="row g-4 mb-4">
           <div class="col-lg-7">
-            <div class="card rounded-4 border-0 shadow-sm p-4 h-100">
+            <div class="card rounded-1 border-0 shadow-sm p-4 h-100 gap-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                 <div>
                   <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Recycling Activity Trend</h5>
@@ -449,60 +492,30 @@
           </div>
 
           <div class="col-lg-5">
-            <div class="card rounded-4 border-0 shadow-sm p-4 h-100">
+            <div class="card rounded-1 border-0 shadow-sm p-4 h-100 gap-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                 <div>
                   <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Collected Streams</h5>
                   <p class="text-muted small mb-0">Material share across all hubs.</p>
                 </div>
-                <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 small">
+                <span class="badge text-success px-2 py-1 small">
                   {{ stats.total_items_collected }} Total Items
                 </span>
               </div>
-              <div style="height: 190px; position: relative;">
+              <div style="height: 250px; position: relative;">
                 <canvas id="adminDashPieChart"></canvas>
-              </div>
-              <div class="row g-2 mt-2 pt-2 border-top">
-                <div class="col-6">
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #198754; flex-shrink: 0;"></span>
-                    <span class="small text-muted text-truncate">Plastics:</span>
-                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Plastic']['qty'] }}</span>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #0d6efd; flex-shrink: 0;"></span>
-                    <span class="small text-muted text-truncate">Cans:</span>
-                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Metal']['qty'] }}</span>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #f59e0b; flex-shrink: 0;"></span>
-                    <span class="small text-muted text-truncate">Paper:</span>
-                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Paper']['qty'] }}</span>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #8b5cf6; flex-shrink: 0;"></span>
-                    <span class="small text-muted text-truncate">Glass/Other:</span>
-                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Glass']['qty'] }}</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="card rounded-4 border-0 shadow-sm p-4 mb-4">
+        <div class="card rounded-1 border-0 shadow-sm p-4 mb-3 gap-2">
           <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <div>
               <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Recent Recycling Activities</h5>
               <p class="text-muted small mb-0">Latest verified recyclable deposits across the barangay network.</p>
             </div>
-            <a href="{{ url_for('admin', tab='monitoring') }}" class="btn btn-sm btn-outline-success btn-pill">
+            <a href="{{ url_for('admin', tab='monitoring') }}" class="btn btn-sm text-success ">
               View All Logs
             </a>
           </div>
@@ -545,14 +558,14 @@
           <p class="text-muted mb-0">Add new residents, edit details or points, and manage resident accounts.</p>
         </div>
 
-        <div class="d-flex justify-content-end align-items-center mb-3 flex-wrap gap-2">
-          <button class="btn btn-forest d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#addResidentModal">
+        <div id="adminResToolbarBtns" class="d-inline-flex align-items-center gap-2">
+          <button class="btn btn-forest btn-sm d-flex align-items-center gap-2 rounded-2 px-3 py-2" data-bs-toggle="modal" data-bs-target="#addResidentModal">
             <i class="bi bi-person-plus"></i>
             <span>Add Resident</span>
           </button>
         </div>
 
-        <div class="card border-0 shadow-sm p-4">
+        <div class="card border-0 shadow-sm p-4 rounded-1 gap-2 mb-3">
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="adminResidentsTable">
               <thead class="table-light">
@@ -643,20 +656,18 @@
           <p class="text-muted mb-0">Create, edit, reset passwords, and manage authorized collection station personnel.</p>
         </div>
 
-        <div class="d-flex justify-content-end align-items-center mb-3 flex-wrap gap-2">
-          <div class="d-flex align-items-center gap-2 flex-wrap">
-            <button class="btn btn-forest d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#assignedStationsModal">
-              <i class="bi bi-plus-lg"></i>
-              <span>Assigned Station</span>
-            </button>
-            <button class="btn btn-forest d-flex align-items-center gap-2 btn-pill" data-bs-toggle="modal" data-bs-target="#addStaffModal">
-              <i class="bi bi-person-plus"></i>
-              <span>Add Staff Member</span>
-            </button>
-          </div>
+        <div id="adminStaffToolbarBtns" class="d-inline-flex align-items-center gap-2 flex-wrap">
+          <button class="btn btn-forest btn-sm d-flex align-items-center gap-2 rounded-2 px-3 py-2" data-bs-toggle="modal" data-bs-target="#assignedStationsModal">
+            <i class="bi bi-plus-lg"></i>
+            <span>Assigned Station</span>
+          </button>
+          <button class="btn btn-forest btn-sm d-flex align-items-center gap-2 rounded-2 px-3 py-2" data-bs-toggle="modal" data-bs-target="#addStaffModal">
+            <i class="bi bi-person-plus"></i>
+            <span>Add Staff Member</span>
+          </button>
         </div>
 
-        <div class="card border-0 shadow-sm p-4">
+        <div class="card border-0 shadow-sm p-4 rounded-1 gap-2 mb-3">
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="adminStaffTable">
               <thead class="table-light">
@@ -756,7 +767,7 @@
           </button>
         </div>
 
-        <div class="card border-0 shadow-sm p-4">
+        <div class="card border-0 shadow-sm p-4 rounded-1 gap-2 mb-3">
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="adminMaterialsTable" data-paginate="true" data-page-size="20">
               <thead class="table-light">
@@ -881,7 +892,7 @@
           </button>
         </div>
 
-        <div class="card border-0 shadow-sm p-4">
+        <div class="card border-0 shadow-sm p-4 rounded-1 gap-2 mb-3">
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="adminRewardsTable" data-paginate="true" data-page-size="20">
               <thead class="table-light">
@@ -993,7 +1004,7 @@
           <span class="badge bg-light text-dark border px-3 py-2">Total Logs: {{ all_transactions|length }}</span>
         </div>
 
-        <div class="card border-0 shadow-sm p-4">
+        <div class="card border-0 shadow-sm p-4 rounded-1 gap-2 mb-3">
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="adminMonitoringTable" data-paginate="true" data-page-size="20">
               <thead class="table-light">
@@ -1045,30 +1056,30 @@
               <h3 class="fw-bold mb-0">Barangay Recycling & Environmental Analytics</h3>
               <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">Official Compliance</span>
             </div>
-            <p class="text-muted mb-0">Live community recycling monitoring, material streams, resident participation, and official records for Barangay Pinagkawitan, Lipa City.</p>
+            <p class="text-muted mb-0">Live community recycling monitoring, material streams, resident participation, and official records for <strong>{{ selected_barangay_label }}</strong>.</p>
           </div>
-          <div class="d-flex flex-wrap gap-2">
-            <a href="{{ url_for('report_participation_pdf') }}" target="_blank" class="btn btn-outline-secondary btn-sm btn-pill d-flex align-items-center gap-2">
-              <i class="bi bi-file-earmark-pdf text-danger"></i>
-              <span>Participation PDF</span>
-            </a>
-            <a href="{{ url_for('report_materials_pdf') }}" target="_blank" class="btn btn-outline-secondary btn-sm btn-pill d-flex align-items-center gap-2">
-              <i class="bi bi-file-earmark-pdf text-danger"></i>
-              <span>Materials PDF</span>
-            </a>
-            <button onclick="window.print()" class="btn btn-forest btn-sm btn-pill d-flex align-items-center gap-2">
-              <i class="bi bi-printer"></i>
-              <span>Print Report</span>
-            </button>
-          </div>
+          <form action="{{ url_for('admin') }}" method="GET" class="m-0">
+            <input type="hidden" name="tab" value="reports">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-white border-success text-success rounded-start-2">
+                <i class="bi bi-geo-alt-fill"></i>
+              </span>
+              <select name="barangay" id="reportBarangayFilter" class="form-select border-success fw-semibold rounded-end-2" onchange="this.form.submit()" aria-label="Filter reports by Barangay" style="min-width: 220px;">
+                {% for rb in report_barangays %}
+                  <option value="{{ rb.barangay }}" {% if selected_barangay|lower == rb.barangay|lower %}selected{% endif %}>{{ rb.label }}</option>
+                {% endfor %}
+                <option value="all" {% if selected_barangay|lower == 'all' or not selected_barangay %}selected{% endif %}>All Barangays</option>
+              </select>
+            </div>
+          </form>
         </div>
 
         <div class="row g-3 mb-4">
           <div class="col-6 col-lg-3">
-            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+            <div class="card rounded-1 border-0 shadow-sm p-3 h-100 gap-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted small fw-semibold text-uppercase">Total Recyclables</span>
-                <span class="badge bg-success-subtle text-success rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                <span class="badge text-success p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
                   <i class="bi bi-recycle fs-6"></i>
                 </span>
               </div>
@@ -1077,10 +1088,10 @@
             </div>
           </div>
           <div class="col-6 col-lg-3">
-            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+            <div class="card rounded-1 border-0 shadow-sm p-3 h-100 gap-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted small fw-semibold text-uppercase">EcoPoints Circulated</span>
-                <span class="badge bg-warning-subtle text-warning rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                <span class="badge text-warning p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
                   <i class="bi bi-coin fs-6"></i>
                 </span>
               </div>
@@ -1089,10 +1100,10 @@
             </div>
           </div>
           <div class="col-6 col-lg-3">
-            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+            <div class="card rounded-1 border-0 shadow-sm p-3 h-100 gap-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted small fw-semibold text-uppercase">Community Reach</span>
-                <span class="badge bg-info-subtle text-info rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                <span class="badge text-info p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
                   <i class="bi bi-people fs-6"></i>
                 </span>
               </div>
@@ -1101,10 +1112,10 @@
             </div>
           </div>
           <div class="col-6 col-lg-3">
-            <div class="card rounded-4 border-0 shadow-sm p-3 h-100">
+            <div class="card rounded-1 border-0 shadow-sm p-3 h-100 gap-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted small fw-semibold text-uppercase">Waste Diverted</span>
-                <span class="badge bg-success-subtle text-success rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                <span class="badge text-success p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
                   <i class="bi bi-tree fs-6"></i>
                 </span>
               </div>
@@ -1116,7 +1127,7 @@
 
         <div class="row g-4 mb-4">
           <div class="col-lg-7">
-            <div class="card rounded-4 border-0 shadow-sm p-4 h-100">
+            <div class="card rounded-1 border-0 shadow-sm p-4 h-100 gap-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                 <div>
                   <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Collection Activity & Points Issuance Trend</h5>
@@ -1133,48 +1144,18 @@
           </div>
 
           <div class="col-lg-5">
-            <div class="card rounded-4 border-0 shadow-sm p-4 h-100">
+            <div class="card rounded-1 border-0 shadow-sm p-4 h-100 gap-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                 <div>
                   <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Material Category Share</h5>
                   <p class="text-muted small mb-0">Proportion of collected recyclables by category.</p>
                 </div>
-                <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 small">
+                <span class="badge text-success px-2 py-1 small">
                   {{ stats.total_items_collected }} Total Items
                 </span>
               </div>
-              <div style="height: 220px; position: relative;">
+              <div style="height: 260px; position: relative;">
                 <canvas id="materialsPieChart"></canvas>
-              </div>
-              <div class="row g-2 mt-2 pt-2 border-top">
-                <div class="col-6">
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #198754; flex-shrink: 0;"></span>
-                    <span class="small text-muted text-truncate">Plastics:</span>
-                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Plastic']['qty'] }}</span>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #0d6efd; flex-shrink: 0;"></span>
-                    <span class="small text-muted text-truncate">Cans:</span>
-                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Metal']['qty'] }}</span>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #f59e0b; flex-shrink: 0;"></span>
-                    <span class="small text-muted text-truncate">Paper:</span>
-                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Paper']['qty'] }}</span>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="rounded-circle" style="width: 10px; height: 10px; background-color: #8b5cf6; flex-shrink: 0;"></span>
-                    <span class="small text-muted text-truncate">Glass/Other:</span>
-                    <span class="small fw-bold ms-auto">{{ stats.cat_breakdown['Glass']['qty'] }}</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -1182,7 +1163,7 @@
 
         <div class="row g-4 mb-4">
           <div class="col-lg-7">
-            <div class="card rounded-4 border-0 shadow-sm p-4 h-100">
+            <div class="card rounded-1 border-0 shadow-sm p-4 h-100 gap-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                   <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Material Stream Performance</h5>
@@ -1201,23 +1182,24 @@
                     </tr>
                   </thead>
                   <tbody>
-                    {% for key, item in stats.cat_breakdown.items() %}
+                    {% for item in stats.material_stream_performance %}
                     <tr>
                       <td class="fw-semibold">
                         <span class="d-inline-block rounded-circle me-2" style="width: 8px; height: 8px; background-color: {{ item.color }};"></span>
                         {{ item.name }}
                       </td>
-                      <td><span class="badge bg-light text-dark border">{{ key }}</span></td>
+                      <td><span class="badge bg-light text-dark border">{{ item.category }}</span></td>
                       <td class="text-center fw-bold">{{ item.qty }}</td>
-                      <td class="text-end text-success fw-bold">+{{ item.points }} pts</td>
+                      <td class="text-end text-success fw-bold">+{{ "{:,}".format(item.points) }} pts</td>
                       <td class="text-end">
                         <div class="d-flex align-items-center justify-content-end gap-2">
                           <span class="small fw-semibold">{{ item.share }}%</span>
-                          <div class="progress flex-grow-0" style="width: 50px; height: 6px;">
-                            <div class="progress-bar" style="width: {{ item.share }}%; background-color: {{ item.color }};"></div>
-                          </div>
                         </div>
                       </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                      <td colspan="5" class="text-center text-muted py-4">No materials configured yet.</td>
                     </tr>
                     {% endfor %}
                   </tbody>
@@ -1227,27 +1209,25 @@
           </div>
 
           <div class="col-lg-5">
-            <div class="card rounded-4 border-0 shadow-sm p-4 h-100">
+            <div class="card rounded-1 border-0 shadow-sm p-4 h-100 gap-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                   <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Top Participating Residents</h5>
                   <p class="text-muted small mb-0">Honor roll of most active barangay recyclers.</p>
                 </div>
-                <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 small">Honor Roll</span>
+                <span class="badge text-success px-2 py-1 small">Honor Roll</span>
               </div>
               <div class="list-group list-group-flush">
                 {% for r in stats.top_recyclers %}
                 <div class="list-group-item d-flex align-items-center justify-content-between px-0 py-2 border-0 border-bottom">
                   <div class="d-flex align-items-center gap-2">
-                    <span class="badge {% if loop.index == 1 %}bg-warning text-dark{% elif loop.index == 2 %}bg-secondary text-white{% elif loop.index == 3 %}bg-danger text-white{% else %}bg-light text-dark border{% endif %} rounded-circle" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem;">
-                      {{ loop.index }}
-                    </span>
+                    <span class="fw-bold text-muted small" style="min-width: 20px;">{{ loop.index }}</span>
                     <div>
                       <div class="fw-semibold small mb-0">{{ r.name }}</div>
                       <span class="text-muted" style="font-size: 0.75rem;">{{ r.qr_code }} • {{ r.deposits }} deposits</span>
                     </div>
                   </div>
-                  <span class="badge bg-success-subtle text-success fw-bold px-2 py-1 small">+{{ r.points }} pts</span>
+                  <span class="badge text-success fw-bold px-2 py-1 small">+{{ r.points }} pts</span>
                 </div>
                 {% else %}
                 <div class="text-center py-4 text-muted small">No resident deposits recorded yet.</div>
@@ -1264,7 +1244,7 @@
 
         <div class="row g-4">
           <div class="col-md-6">
-            <div class="card rounded-4 border-0 shadow-sm p-4 h-100 d-flex flex-column justify-content-between">
+            <div class="card rounded-1 border-0 shadow-sm p-4 h-100 d-flex flex-column justify-content-between gap-2 mb-3">
               <div>
                 <div class="d-flex align-items-center justify-content-between mb-3">
                   <div class="d-flex align-items-center">
@@ -1273,7 +1253,6 @@
                     </span>
                     <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Community Participation Report</h5>
                   </div>
-                  <span class="badge bg-success-subtle text-success">PDF Certified</span>
                 </div>
                 <p class="text-muted small mb-3">Formal barangay report detailing community registry, collection staff roster, resident engagement rate, and redemption statistics.</p>
                 <ul class="list-group list-group-flush mb-4">
@@ -1296,11 +1275,11 @@
                 </ul>
               </div>
               <div class="d-flex gap-2">
-                <a href="{{ url_for('report_participation_pdf') }}" target="_blank" class="btn btn-forest btn-pill flex-grow-1 d-flex align-items-center justify-content-center gap-2">
+                <a href="{{ url_for('report_participation_pdf', barangay=selected_barangay) }}" target="_blank" class="btn btn-forest btn-pill flex-grow-1 d-flex align-items-center justify-content-center gap-2">
                   <i class="bi bi-file-earmark-pdf"></i>
                   <span>View PDF Report</span>
                 </a>
-                <a href="{{ url_for('report_participation_pdf', download=1) }}" class="btn btn-outline-secondary btn-pill px-3 d-flex align-items-center" title="Download PDF">
+                <a href="{{ url_for('report_participation_pdf', barangay=selected_barangay, download=1) }}" class="btn btn-outline-secondary btn-pill px-3 d-flex align-items-center" title="Download PDF">
                   <i class="bi bi-download"></i>
                 </a>
               </div>
@@ -1308,7 +1287,7 @@
           </div>
 
           <div class="col-md-6">
-            <div class="card rounded-4 border-0 shadow-sm p-4 h-100 d-flex flex-column justify-content-between">
+            <div class="card rounded-1 border-0 shadow-sm p-4 h-100 d-flex flex-column justify-content-between gap-2 mb-3">
               <div>
                 <div class="d-flex align-items-center justify-content-between mb-3">
                   <div class="d-flex align-items-center">
@@ -1317,7 +1296,6 @@
                     </span>
                     <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Collected Materials Summary</h5>
                   </div>
-                  <span class="badge bg-success-subtle text-success">PDF Certified</span>
                 </div>
                 <p class="text-muted small mb-3">Detailed inventory of all recycled plastics, aluminum cans, and municipal recyclables divert calculations.</p>
                 <ul class="list-group list-group-flush mb-4">
@@ -1340,11 +1318,11 @@
                 </ul>
               </div>
               <div class="d-flex gap-2">
-                <a href="{{ url_for('report_materials_pdf') }}" target="_blank" class="btn btn-forest btn-pill flex-grow-1 d-flex align-items-center justify-content-center gap-2">
+                <a href="{{ url_for('report_materials_pdf', barangay=selected_barangay) }}" target="_blank" class="btn btn-forest btn-pill flex-grow-1 d-flex align-items-center justify-content-center gap-2">
                   <i class="bi bi-file-earmark-pdf"></i>
                   <span>View PDF Report</span>
                 </a>
-                <a href="{{ url_for('report_materials_pdf', download=1) }}" class="btn btn-outline-secondary btn-pill px-3 d-flex align-items-center" title="Download PDF">
+                <a href="{{ url_for('report_materials_pdf', barangay=selected_barangay, download=1) }}" class="btn btn-outline-secondary btn-pill px-3 d-flex align-items-center" title="Download PDF">
                   <i class="bi bi-download"></i>
                 </a>
               </div>
@@ -1397,20 +1375,22 @@
               <input type="email" name="res_email" class="form-control border-start-0 rounded-end-3" placeholder="e.g. maria@example.com" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Please enter a valid email address (e.g. name@domain.com)." required>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-muted mb-1">Password</label>
-            <div class="input-group">
-              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
-              <input type="password" name="res_password" id="resAddPw" class="form-control border-start-0 border-end-0" placeholder="Enter Password" minlength="6" maxlength="64" title="Password must be at least 6 characters long." required>
-              <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="resAddPw"><i class="bi bi-eye"></i></button>
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Password</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
+                <input type="password" name="res_password" id="resAddPw" class="form-control border-start-0 border-end-0" placeholder="Enter Password" minlength="6" maxlength="64" title="Password must be at least 6 characters long." required>
+                <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="resAddPw"><i class="bi bi-eye"></i></button>
+              </div>
             </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-muted mb-1">Confirm Password</label>
-            <div class="input-group">
-              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
-              <input type="password" name="res_confirm_password" id="resAddConfirmPw" class="form-control border-start-0 border-end-0" placeholder="Confirm Password" minlength="6" maxlength="64" title="Please confirm your password." required>
-              <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="resAddConfirmPw"><i class="bi bi-eye"></i></button>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Confirm Password</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
+                <input type="password" name="res_confirm_password" id="resAddConfirmPw" class="form-control border-start-0 border-end-0" placeholder="Confirm Password" minlength="6" maxlength="64" title="Please confirm your password." required>
+                <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="resAddConfirmPw"><i class="bi bi-eye"></i></button>
+              </div>
             </div>
           </div>
           <div class="mb-3">
@@ -1570,7 +1550,7 @@
         </div>
 
         <div class="collapse mb-3" id="addStationCollapse">
-          <div class="card border p-3 bg-light rounded-3">
+          <div class="card border p-3 bg-light rounded-1 gap-2 mb-3">
             <h6 class="fw-bold mb-2 text-dark">Register New Collection Station</h6>
             <form action="{{ url_for('admin', tab='staff') }}" method="POST">
               <input type="hidden" name="admin_action" value="add_station">
@@ -1585,23 +1565,13 @@
                 </div>
               </div>
               <div class="row g-2 mb-3">
-                <div class="col-md-4">
-                  <label class="form-label small fw-semibold mb-1">Province</label>
-                  <select id="addStationProvince" class="form-select rounded-3" required>
-                    <option value="" disabled selected>Loading provinces...</option>
-                  </select>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label small fw-semibold mb-1">City / Municipality</label>
-                  <select name="city" id="addStationCity" class="form-select rounded-3" required disabled>
-                    <option value="" disabled selected>Select Province first</option>
-                  </select>
-                </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                   <label class="form-label small fw-semibold mb-1">Barangay</label>
-                  <select name="barangay" id="addStationBrgy" class="form-select rounded-3" required disabled>
-                    <option value="" disabled selected>Select City first</option>
-                  </select>
+                  <input type="text" name="barangay" class="form-control rounded-3" value="Pinagkawitan" minlength="2" maxlength="100" title="Barangay must be at least 2 characters." required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold mb-1">City</label>
+                  <input type="text" name="city" class="form-control rounded-3" value="Lipa City" minlength="2" maxlength="100" pattern="^[A-Za-z\s\.\-']{2,}$" title="City must be at least 2 characters and contain letters only." required>
                 </div>
               </div>
               <div class="d-flex justify-content-end gap-2">
@@ -1761,24 +1731,14 @@
             <label class="form-label small fw-semibold text-muted mb-1">Station Code</label>
             <input type="text" name="station_code" id="editStationCode" class="form-control rounded-3" minlength="3" maxlength="20" pattern="^[A-Za-z0-9\-]+$" title="Station code should be alphanumeric with hyphens (e.g. STN-LP-01)." required>
           </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-muted mb-1">Province</label>
-            <select id="editStationProvince" class="form-select rounded-3" required>
-              <option value="" disabled selected>Loading provinces...</option>
-            </select>
-          </div>
           <div class="row g-2 mb-3">
             <div class="col-12 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">City / Municipality</label>
-              <select name="city" id="editStationCity" class="form-select rounded-3" required disabled>
-                <option value="" disabled selected>Select Province first</option>
-              </select>
+              <label class="form-label small fw-semibold text-muted mb-1">Barangay</label>
+              <input type="text" name="barangay" id="editStationBrgy" class="form-control rounded-3" minlength="2" maxlength="100" title="Barangay must be at least 2 characters." required>
             </div>
             <div class="col-12 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">Barangay</label>
-              <select name="barangay" id="editStationBrgy" class="form-select rounded-3" required disabled>
-                <option value="" disabled selected>Select City first</option>
-              </select>
+              <label class="form-label small fw-semibold text-muted mb-1">City</label>
+              <input type="text" name="city" id="editStationCity" class="form-control rounded-3" minlength="2" maxlength="100" pattern="^[A-Za-z\s\.\-']{2,}$" title="City must be at least 2 characters and contain letters only." required>
             </div>
           </div>
           <div class="mb-3">
@@ -1839,20 +1799,22 @@
               <input type="email" name="staff_email" class="form-control border-start-0 rounded-end-3" placeholder="e.g. maria.staff@ecocoins.ph" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Please enter a valid email address." required>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-muted mb-1">Password</label>
-            <div class="input-group">
-              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
-              <input type="password" name="staff_password" id="staffAddPw" class="form-control border-start-0 border-end-0" placeholder="Enter Password" minlength="6" maxlength="64" title="Password must be at least 6 characters long." required>
-              <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="staffAddPw"><i class="bi bi-eye"></i></button>
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Password</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
+                <input type="password" name="staff_password" id="staffAddPw" class="form-control border-start-0 border-end-0" placeholder="Enter Password" minlength="6" maxlength="64" title="Password must be at least 6 characters long." required>
+                <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="staffAddPw"><i class="bi bi-eye"></i></button>
+              </div>
             </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-muted mb-1">Confirm Password</label>
-            <div class="input-group">
-              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
-              <input type="password" name="staff_confirm_password" id="staffAddConfirmPw" class="form-control border-start-0 border-end-0" placeholder="Confirm Password" minlength="6" maxlength="64" title="Please confirm your password." required>
-              <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="staffAddConfirmPw"><i class="bi bi-eye"></i></button>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Confirm Password</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-lock"></i></span>
+                <input type="password" name="staff_confirm_password" id="staffAddConfirmPw" class="form-control border-start-0 border-end-0" placeholder="Confirm Password" minlength="6" maxlength="64" title="Please confirm your password." required>
+                <button type="button" class="input-group-text bg-white text-muted border-start-0 rounded-end-3 toggle-password" data-target="staffAddConfirmPw"><i class="bi bi-eye"></i></button>
+              </div>
             </div>
           </div>
           <div class="mb-3">
@@ -2152,38 +2114,42 @@
               <input type="text" name="rew_title" class="form-control border-start-0 rounded-end-3" placeholder="e.g. 5kg Premium Rice or Grocery Voucher" minlength="3" maxlength="100" title="Reward title must be at least 3 characters." required>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-muted mb-1">Category</label>
-            <div class="input-group">
-              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-tag"></i></span>
-              <select name="rew_category" class="form-select border-start-0 rounded-end-3" required>
-                <option value="Food Staples">Food Staples</option>
-                <option value="Canned Goods">Canned Goods</option>
-                <option value="Merchandise">Merchandise</option>
-                <option value="Household">Household</option>
-                <option value="Vouchers">Vouchers</option>
-              </select>
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Category</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-tag"></i></span>
+                <select name="rew_category" class="form-select border-start-0 rounded-end-3" required>
+                  <option value="Food Staples">Food Staples</option>
+                  <option value="Canned Goods">Canned Goods</option>
+                  <option value="Merchandise">Merchandise</option>
+                  <option value="Household">Household</option>
+                  <option value="Vouchers">Vouchers</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Partner / Provider</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-shop"></i></span>
+                <input type="text" name="rew_partner" class="form-control border-start-0 rounded-end-3" placeholder="e.g. Barangay Food Bank" maxlength="100">
+              </div>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-muted mb-1">Partner / Provider</label>
-            <div class="input-group">
-              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-shop"></i></span>
-              <input type="text" name="rew_partner" class="form-control border-start-0 rounded-end-3" placeholder="e.g. Barangay Food Bank" maxlength="100">
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Points Required</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-coin text-warning"></i></span>
+                <input type="number" name="rew_points" class="form-control border-start-0 rounded-end-3" value="300" min="1" max="1000000" step="1" title="Points required must be at least 1." required>
+              </div>
             </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-muted mb-1">Points Required</label>
-            <div class="input-group">
-              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-coin text-warning"></i></span>
-              <input type="number" name="rew_points" class="form-control border-start-0 rounded-end-3" value="300" min="1" max="1000000" step="1" title="Points required must be at least 1." required>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-muted mb-1">Initial Stock Available</label>
-            <div class="input-group">
-              <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-box"></i></span>
-              <input type="number" name="rew_stock" class="form-control border-start-0 rounded-end-3" value="50" min="0" max="100000" step="1" title="Stock cannot be negative." required>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Initial Stock Available</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted border-end-0 rounded-start-3 ps-3"><i class="bi bi-box"></i></span>
+                <input type="number" name="rew_stock" class="form-control border-start-0 rounded-end-3" value="50" min="0" max="100000" step="1" title="Stock cannot be negative." required>
+              </div>
             </div>
           </div>
         </div>
@@ -2295,15 +2261,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/app.min.js') }}?v=20261123"></script>
 <script id="adminChartData" type="application/json">
 {
-  "catBreakdown": [
-    {{ stats.cat_breakdown['Plastic']['qty']|default(0) }},
-    {{ stats.cat_breakdown['Metal']['qty']|default(0) }},
-    {{ stats.cat_breakdown['Paper']['qty']|default(0) }},
-    {{ stats.cat_breakdown['Glass']['qty']|default(0) }}
-  ],
+  "dynamicMaterials": {{ stats.dynamic_materials|tojson }},
   "timelineLabels": {{ stats.timeline_labels|tojson }},
   "timelineItems": {{ stats.timeline_items|tojson }},
   "timelinePoints": {{ stats.timeline_points|tojson }}
@@ -2312,22 +2273,28 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const chartDataEl = document.getElementById('adminChartData');
-  let adminCharts = { catBreakdown: [0, 0, 0, 0], timelineLabels: [], timelineItems: [], timelinePoints: [] };
+  let adminCharts = { dynamicMaterials: [], timelineLabels: [], timelineItems: [], timelinePoints: [] };
   if (chartDataEl) {
     try {
       adminCharts = JSON.parse(chartDataEl.textContent);
     } catch (e) {}
   }
 
+  const palette = ['#198754', '#0d6efd', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1'];
+  const dynMats = Array.isArray(adminCharts.dynamicMaterials) ? adminCharts.dynamicMaterials : [];
+  const dynLabels = dynMats.length ? dynMats.map(m => m.name) : ['No Data'];
+  const dynQtys = dynMats.length ? dynMats.map(m => m.qty) : [0];
+  const dynColors = dynLabels.map((_, idx) => palette[idx % palette.length]);
+
   const pieCanvas = document.getElementById('materialsPieChart');
   if (pieCanvas && typeof Chart !== 'undefined') {
     new Chart(pieCanvas, {
       type: 'doughnut',
       data: {
-        labels: ['Plastic Bottles', 'Aluminum Cans', 'Paper & Cardboard', 'Glass & Others'],
+        labels: dynLabels,
         datasets: [{
-          data: adminCharts.catBreakdown,
-          backgroundColor: ['#198754', '#0d6efd', '#f59e0b', '#8b5cf6'],
+          data: dynQtys,
+          backgroundColor: dynColors,
           borderWidth: 2,
           borderColor: '#ffffff',
           hoverOffset: 4
@@ -2338,7 +2305,15 @@ document.addEventListener('DOMContentLoaded', function() {
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            display: false
+            display: true,
+            position: 'bottom',
+            labels: {
+              usePointStyle: true,
+              pointStyle: 'circle',
+              boxWidth: 8,
+              padding: 12,
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 }
+            }
           },
           tooltip: {
             callbacks: {
@@ -2351,7 +2326,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           }
         },
-        cutout: '68%'
+        cutout: '66%'
       }
     });
   }
@@ -2417,10 +2392,10 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(adminDashPie, {
       type: 'doughnut',
       data: {
-        labels: ['Plastic Bottles', 'Aluminum Cans', 'Paper & Cardboard', 'Glass & Others'],
+        labels: dynLabels,
         datasets: [{
-          data: adminCharts.catBreakdown,
-          backgroundColor: ['#198754', '#0d6efd', '#f59e0b', '#8b5cf6'],
+          data: dynQtys,
+          backgroundColor: dynColors,
           borderWidth: 2,
           borderColor: '#ffffff',
           hoverOffset: 4
@@ -2430,7 +2405,17 @@ document.addEventListener('DOMContentLoaded', function() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              usePointStyle: true,
+              pointStyle: 'circle',
+              boxWidth: 8,
+              padding: 12,
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 }
+            }
+          },
           tooltip: {
             callbacks: {
               label: function(context) {
@@ -2442,7 +2427,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           }
         },
-        cutout: '68%'
+        cutout: '66%'
       }
     });
   }
@@ -2618,178 +2603,15 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('editStationId').value = this.getAttribute('data-id');
       document.getElementById('editStationName').value = this.getAttribute('data-name');
       document.getElementById('editStationCode').value = this.getAttribute('data-code');
-      const targetBrgy = this.getAttribute('data-brgy') || '';
-      const targetCity = this.getAttribute('data-city') || 'City of Lipa';
+      document.getElementById('editStationBrgy').value = this.getAttribute('data-brgy');
+      document.getElementById('editStationCity').value = this.getAttribute('data-city');
       document.getElementById('editStationStatus').value = this.getAttribute('data-status') || 'active';
-      loadStationPsgc('editStationProvince', 'editStationCity', 'editStationBrgy', 'Batangas', targetCity, targetBrgy);
       const modalEl = document.getElementById('editStationModal');
       if (modalEl && typeof bootstrap !== 'undefined') {
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
       }
     });
   });
-
-  const ADMIN_PSGC_BASE = 'https://psgc.gitlab.io/api';
-  let adminProvincesCache = null;
-
-  function resetStationSelect(el, placeholder, disabled = true) {
-    if (!el) return;
-    el.innerHTML = '';
-    const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = placeholder;
-    opt.disabled = true;
-    opt.selected = true;
-    el.appendChild(opt);
-    el.disabled = disabled;
-  }
-
-  function matchCityOption(options, targetCity) {
-    if (!targetCity) return null;
-    const t = targetCity.trim().toLowerCase();
-    const norm = t.replace(/^city of\s+/i, '').replace(/\s+city$/i, '').trim();
-    return Array.from(options).find(o => {
-      const ov = o.value.trim().toLowerCase();
-      const onorm = ov.replace(/^city of\s+/i, '').replace(/\s+city$/i, '').trim();
-      return ov === t || (norm && onorm === norm);
-    }) || null;
-  }
-
-  function applyStationFallback(provEl, cityEl, brgyEl, defProv, defCity, defBrgy) {
-    resetStationSelect(provEl, 'Select Province', false);
-    const pOpt = document.createElement('option');
-    pOpt.value = defProv || 'Batangas';
-    pOpt.textContent = defProv || 'Batangas';
-    provEl.appendChild(pOpt);
-    provEl.value = pOpt.value;
-
-    resetStationSelect(cityEl, 'Select City / Municipality', false);
-    const cOpt = document.createElement('option');
-    cOpt.value = defCity || 'City of Lipa';
-    cOpt.textContent = defCity || 'City of Lipa';
-    cityEl.appendChild(cOpt);
-    cityEl.value = cOpt.value;
-
-    resetStationSelect(brgyEl, 'Select Barangay', false);
-    const bOpt = document.createElement('option');
-    bOpt.value = defBrgy || 'Pinagkawitan';
-    bOpt.textContent = defBrgy || 'Pinagkawitan';
-    brgyEl.appendChild(bOpt);
-    brgyEl.value = bOpt.value;
-  }
-
-  async function loadStationBarangays(cityEl, brgyEl, preselectBrgy = '') {
-    const selected = cityEl.options[cityEl.selectedIndex];
-    const cityCode = selected ? selected.dataset.code : '';
-    resetStationSelect(brgyEl, 'Loading barangays...', true);
-    if (!cityCode) return;
-    try {
-      const res = await fetch(`${ADMIN_PSGC_BASE}/cities-municipalities/${cityCode}/barangays/`);
-      if (!res.ok) throw new Error('PSGC error');
-      const list = await res.json();
-      list.sort((a, b) => a.name.localeCompare(b.name));
-      resetStationSelect(brgyEl, 'Select Barangay', false);
-      list.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item.name;
-        opt.textContent = item.name;
-        brgyEl.appendChild(opt);
-      });
-      if (preselectBrgy) {
-        const match = Array.from(brgyEl.options).find(o => o.value.toLowerCase() === preselectBrgy.trim().toLowerCase());
-        if (match) brgyEl.value = match.value;
-      }
-    } catch (err) {
-      if (preselectBrgy) {
-        resetStationSelect(brgyEl, 'Select Barangay', false);
-        const opt = document.createElement('option');
-        opt.value = preselectBrgy;
-        opt.textContent = preselectBrgy;
-        brgyEl.appendChild(opt);
-        brgyEl.value = preselectBrgy;
-      }
-    }
-  }
-
-  async function loadStationCities(provEl, cityEl, brgyEl, preselectCity = '', preselectBrgy = '') {
-    const selected = provEl.options[provEl.selectedIndex];
-    const provCode = selected ? selected.dataset.code : '';
-    const isRegion = selected ? selected.dataset.region === 'true' : false;
-    resetStationSelect(cityEl, 'Loading cities / municipalities...', true);
-    resetStationSelect(brgyEl, 'Select City first', true);
-    if (!provCode) return;
-    try {
-      const url = isRegion
-        ? `${ADMIN_PSGC_BASE}/regions/${provCode}/cities-municipalities/`
-        : `${ADMIN_PSGC_BASE}/provinces/${provCode}/cities-municipalities/`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('PSGC error');
-      const list = await res.json();
-      list.sort((a, b) => a.name.localeCompare(b.name));
-      resetStationSelect(cityEl, 'Select City / Municipality', false);
-      list.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item.name;
-        opt.textContent = item.name;
-        opt.dataset.code = item.code;
-        cityEl.appendChild(opt);
-      });
-      if (preselectCity) {
-        const match = matchCityOption(cityEl.options, preselectCity);
-        if (match) {
-          cityEl.value = match.value;
-          await loadStationBarangays(cityEl, brgyEl, preselectBrgy);
-        }
-      }
-    } catch (err) {
-      applyStationFallback(provEl, cityEl, brgyEl, selected ? selected.value : 'Batangas', preselectCity, preselectBrgy);
-    }
-  }
-
-  async function loadStationPsgc(provId, cityId, brgyId, defProv = 'Batangas', defCity = 'City of Lipa', defBrgy = 'Pinagkawitan') {
-    const provEl = document.getElementById(provId);
-    const cityEl = document.getElementById(cityId);
-    const brgyEl = document.getElementById(brgyId);
-    if (!provEl || !cityEl || !brgyEl) return;
-
-    if (!provEl.dataset.psgcBound) {
-      provEl.dataset.psgcBound = 'true';
-      provEl.addEventListener('change', () => loadStationCities(provEl, cityEl, brgyEl));
-      cityEl.addEventListener('change', () => loadStationBarangays(cityEl, brgyEl));
-    }
-
-    resetStationSelect(provEl, 'Loading provinces...', true);
-    try {
-      if (!adminProvincesCache) {
-        const res = await fetch(`${ADMIN_PSGC_BASE}/provinces/`);
-        if (!res.ok) throw new Error('PSGC error');
-        const list = await res.json();
-        list.push({ code: '130000000', name: 'Metro Manila (NCR)', isRegion: true });
-        list.sort((a, b) => a.name.localeCompare(b.name));
-        adminProvincesCache = list;
-      }
-      resetStationSelect(provEl, 'Select Province', false);
-      adminProvincesCache.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item.name;
-        opt.textContent = item.name;
-        opt.dataset.code = item.code;
-        if (item.isRegion) opt.dataset.region = 'true';
-        provEl.appendChild(opt);
-      });
-      if (defProv) {
-        const match = Array.from(provEl.options).find(o => o.value.toLowerCase() === defProv.toLowerCase());
-        if (match) {
-          provEl.value = match.value;
-          await loadStationCities(provEl, cityEl, brgyEl, defCity, defBrgy);
-        }
-      }
-    } catch (err) {
-      applyStationFallback(provEl, cityEl, brgyEl, defProv, defCity, defBrgy);
-    }
-  }
-
-  loadStationPsgc('addStationProvince', 'addStationCity', 'addStationBrgy', 'Batangas', 'City of Lipa', 'Pinagkawitan');
 
   document.querySelectorAll('.toggle-password').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -2848,6 +2670,16 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
   if (typeof DataTable === 'undefined') return;
 
+  function mountToolbarBtns(tableEl, btnsId) {
+    const btns = document.getElementById(btnsId);
+    const wrapper = tableEl ? tableEl.closest('.dt-container') : null;
+    const endCell = wrapper ? wrapper.querySelector('.dt-layout-row:first-child .dt-layout-end') : null;
+    if (btns && endCell) {
+      endCell.classList.add('d-flex', 'align-items-center', 'justify-content-end', 'gap-2', 'flex-wrap');
+      endCell.appendChild(btns);
+    }
+  }
+
   const adminResidentsEl = document.getElementById('adminResidentsTable');
   if (adminResidentsEl) {
     new DataTable('#adminResidentsTable', {
@@ -2860,6 +2692,7 @@ document.addEventListener('DOMContentLoaded', function() {
         emptyTable: 'No registered residents yet.'
       }
     });
+    mountToolbarBtns(adminResidentsEl, 'adminResToolbarBtns');
   }
 
   const adminStaffEl = document.getElementById('adminStaffTable');
@@ -2874,6 +2707,7 @@ document.addEventListener('DOMContentLoaded', function() {
         emptyTable: 'No staff accounts yet.'
       }
     });
+    mountToolbarBtns(adminStaffEl, 'adminStaffToolbarBtns');
   }
 });
 </script>

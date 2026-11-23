@@ -3,6 +3,14 @@ import json
 import base64
 import math
 import random
+import re
+import secrets
+import smtplib
+import time
+import urllib.parse
+import urllib.request
+import urllib.error
+from email.message import EmailMessage
 import numpy as np
 from datetime import datetime, timedelta
 from flask import render_template, request, redirect, url_for, session, jsonify, make_response
@@ -77,14 +85,16 @@ def resident_matches_barangays(resident_barangay, staff_barangays):
         return False
     return r_brgy in [b.strip().lower() for b in staff_barangays]
 
-def find_duplicate_verified_face(cur, descriptor_raw, exclude_user_id, threshold=0.58):
+def find_duplicate_verified_face(cur, descriptor_raw, exclude_user_id, threshold=0.42):
     if not descriptor_raw:
         return None
     try:
         target_list = json.loads(descriptor_raw)
-        if not isinstance(target_list, list) or not target_list:
+        if not isinstance(target_list, list) or len(target_list) != 128:
             return None
         target = np.array(target_list, dtype=float)
+        if not np.all(np.isfinite(target)) or float(np.linalg.norm(target)) < 0.1:
+            return None
     except Exception:
         return None
 
@@ -98,9 +108,11 @@ def find_duplicate_verified_face(cur, descriptor_raw, exclude_user_id, threshold
     for row in rows:
         try:
             stored_list = json.loads(row['face_descriptor'])
-            if not isinstance(stored_list, list) or len(stored_list) != len(target):
+            if not isinstance(stored_list, list) or len(stored_list) != 128:
                 continue
             stored = np.array(stored_list, dtype=float)
+            if not np.all(np.isfinite(stored)) or float(np.linalg.norm(stored)) < 0.1:
+                continue
             dist = float(np.linalg.norm(target - stored))
             if dist < best_dist:
                 best_dist = dist
@@ -109,7 +121,55 @@ def find_duplicate_verified_face(cur, descriptor_raw, exclude_user_id, threshold
             continue
     return best_dup
 
+def build_dynamic_material_chart(txs, active_materials=None):
+    agg = {}
+    if active_materials:
+        for m in active_materials:
+            m_name = (m.get('name') if isinstance(m, dict) else str(m)).strip()
+            if m_name and m_name not in agg:
+                agg[m_name] = {'name': m_name, 'qty': 0, 'points': 0}
+    for t in txs:
+        m_name = (t.get('material_name') or 'Other').strip()
+        qty = int(t.get('quantity') or 0)
+        pts = int(t.get('points_earned') or 0)
+        if m_name not in agg:
+            agg[m_name] = {'name': m_name, 'qty': 0, 'points': 0}
+        agg[m_name]['qty'] += qty
+        agg[m_name]['points'] += pts
+    items = sorted(agg.values(), key=lambda x: (-x['qty'], -x['points'], x['name']))
+    sum_qty = sum(x['qty'] for x in items)
+    sum_pts = sum(x['points'] for x in items)
+    for x in items:
+        x['qty_pct'] = round((x['qty'] / sum_qty) * 100) if sum_qty > 0 else 0
+        x['pts_pct'] = round((x['points'] / sum_pts) * 100) if sum_pts > 0 else 0
+    return items
+
 def register_routes(app):
+
+    RESIDENT_INACTIVITY_TIMEOUT_SECONDS = 600
+
+    @app.before_request
+    def enforce_resident_inactivity_timeout():
+        if request.endpoint == 'static':
+            return None
+        if session.get('user_id') and session.get('user_role') == 'resident':
+            now_ts = time.time()
+            last_activity = session.get('last_activity')
+            if last_activity is not None:
+                try:
+                    if (now_ts - float(last_activity)) >= RESIDENT_INACTIVITY_TIMEOUT_SECONDS:
+                        session.clear()
+                        if request.path.startswith('/api/'):
+                            return jsonify({
+                                'status': 'session_expired',
+                                'message': 'You have been automatically logged out after 10 minutes of inactivity.',
+                                'redirect': url_for('login', reason='timeout')
+                            }), 401
+                        return redirect(url_for('login', reason='timeout'))
+                except (TypeError, ValueError):
+                    pass
+            session['last_activity'] = now_ts
+        return None
 
     @app.route('/')
     def index():
@@ -131,7 +191,7 @@ def register_routes(app):
 
         error = None
         error_field = None
-        message = None
+        message = 'You have been automatically logged out after 10 minutes of inactivity for your security.' if request.args.get('reason') == 'timeout' else None
         email = ''
         lockout_seconds = 0
         attempts_remaining = None
@@ -305,39 +365,56 @@ def register_routes(app):
         last_name = ''
         email = ''
         if request.method == 'POST':
+            honeypot = request.form.get('website', '').strip()
+            if honeypot:
+                error = 'Registration request could not be processed.'
+                error_field = 'email'
+                return render_template('register.html', error=error, error_field=error_field, first_name='', last_name='', email='', active_page='register')
+
             first_name = request.form.get('first_name', '').strip()
             last_name = request.form.get('last_name', '').strip()
-            email = request.form.get('email', '').strip()
+            email = request.form.get('email', '').strip().lower()
             password = request.form.get('password', '')
             confirm_password = request.form.get('confirm_password', '')
             terms = request.form.get('terms')
 
             full_name = f"{first_name} {last_name}".strip() if first_name else request.form.get('full_name', '').strip()
+            name_pattern = re.compile(r"^[A-Za-zÀ-ÿ\s.\-']{2,50}$")
+            email_pattern = re.compile(r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$")
+            weak_passwords = {'password', 'password1', 'password123', '12345678', '123456789', 'qwerty123', 'admin123', 'ecocoins123', 'welcome123'}
+            email_prefix = email.split('@')[0] if '@' in email else ''
+            pw_lower = password.lower()
 
             if not first_name:
                 error = 'Please enter your first name.'
                 error_field = 'first_name'
+            elif not name_pattern.match(first_name):
+                error = 'First name must be 2–50 letters only (no numbers or symbols).'
+                error_field = 'first_name'
             elif not last_name:
                 error = 'Please enter your last name.'
                 error_field = 'last_name'
-            elif not email:
-                error = 'Please enter your email address.'
+            elif not name_pattern.match(last_name):
+                error = 'Last name must be 2–50 letters only (no numbers or symbols).'
+                error_field = 'last_name'
+            elif not email or not email_pattern.match(email):
+                error = 'Please enter a valid email address.'
                 error_field = 'email'
             elif not password:
                 error = 'Please enter a password.'
                 error_field = 'password'
-            elif len(first_name) < 2 or len(last_name) < 2:
-                error = 'Names must be at least 2 characters.'
-                error_field = 'first_name' if len(first_name) < 2 else 'last_name'
-            elif any(char.isdigit() for char in (first_name + last_name)):
-                error = 'Names cannot contain numbers.'
-                error_field = 'first_name' if any(char.isdigit() for char in first_name) else 'last_name'
+            elif len(password) < 8 or len(password) > 64:
+                error = 'Password must be 8 to 64 characters long.'
+                error_field = 'password'
+            elif not re.search(r"[A-Z]", password) or not re.search(r"[a-z]", password) or not re.search(r"\d", password) or not re.search(r"[^A-Za-z0-9]", password):
+                error = 'Password must include uppercase, lowercase, a number, and a special character.'
+                error_field = 'password'
+            elif pw_lower in weak_passwords or (len(email_prefix) >= 3 and email_prefix in pw_lower) or (len(first_name) >= 3 and first_name.lower() in pw_lower) or (len(last_name) >= 3 and last_name.lower() in pw_lower):
+                error = 'Password is too weak or contains your name/email. Please choose a stronger password.'
+                error_field = 'password'
             elif password != confirm_password:
                 error = 'The passwords you entered do not match.'
                 error_field = 'confirm_password'
-            elif len(password) < 6:
-                error = 'Password must be at least 6 characters.'
-                error_field = 'password'
             elif not terms:
                 error = 'You must agree to the Terms and Conditions.'
                 error_field = 'terms'
@@ -351,17 +428,21 @@ def register_routes(app):
                     error_field = 'email'
                 else:
                     qr_code = f'ECO-RES-{random.randint(10000, 99999)}'
+                    while cur.execute("SELECT 1 FROM users WHERE qr_code = ?", (qr_code,)).fetchone():
+                        qr_code = f'ECO-RES-{random.randint(10000, 99999)}'
                     created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     hashed_pw = generate_password_hash(password)
                     cur.execute(
-                        "INSERT INTO users (full_name, email, password, role, qr_code, points, status, created_at) VALUES (?, ?, ?, 'resident', ?, 0, 'active', ?)",
-                        (full_name, email, hashed_pw, qr_code, created_at)
+                        "INSERT INTO users (full_name, first_name, last_name, email, password, role, qr_code, points, status, created_at) VALUES (?, ?, ?, ?, ?, 'resident', ?, 0, 'active', ?)",
+                        (full_name, first_name, last_name, email, hashed_pw, qr_code, created_at)
                     )
                     conn.commit()
                     new_id = cur.lastrowid
                     conn.close()
                     sync_to_json()
 
+                    session.clear()
+                    session.permanent = True
                     session['user_id'] = new_id
                     session['user_role'] = 'resident'
                     return redirect(url_for('dashboard'))
@@ -370,7 +451,10 @@ def register_routes(app):
 
     @app.route('/logout')
     def logout():
+        reason = request.args.get('reason')
         session.clear()
+        if reason == 'timeout':
+            return redirect(url_for('login', reason='timeout'))
         return redirect(url_for('login'))
 
     @app.route('/account', methods=['GET', 'POST'])
@@ -451,8 +535,8 @@ def register_routes(app):
                     feedback = 'Please enter a new password.'
                     feedback_type = 'danger'
                     feedback_field = 'new_password'
-                elif len(new_pw) < 6:
-                    feedback = 'New password must be at least 6 characters long.'
+                elif len(new_pw) < 8:
+                    feedback = 'New password must be at least 8 characters long.'
                     feedback_type = 'danger'
                     feedback_field = 'new_password'
                 elif new_pw != confirm_pw:
@@ -676,7 +760,7 @@ def register_routes(app):
         feedback = session.pop('feedback', None)
         feedback_type = session.pop('feedback_type', 'info')
 
-        return render_template(
+        resp = make_response(render_template(
             'verify_account.html',
             active_page='verify_account',
             user=user,
@@ -684,7 +768,9 @@ def register_routes(app):
             error=error,
             feedback=feedback,
             feedback_type=feedback_type
-        )
+        ))
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        return resp
 
     @app.route('/verify-account/edit-request', methods=['POST'])
     def edit_verification_request():
@@ -713,38 +799,85 @@ def register_routes(app):
     def api_face_login():
         data = request.get_json(silent=True) or {}
         descriptor = data.get('descriptor')
-        if not descriptor or not isinstance(descriptor, list):
+        if not descriptor or not isinstance(descriptor, list) or len(descriptor) != 128:
             return jsonify({'status': 'error', 'message': 'Invalid face descriptor.'}), 400
 
-        target = np.array(descriptor, dtype=float)
+        try:
+            target = np.array(descriptor, dtype=float)
+            if not np.all(np.isfinite(target)) or float(np.linalg.norm(target)) < 0.1:
+                return jsonify({'status': 'error', 'message': 'Invalid facial biometric vector.'}), 400
+        except Exception:
+            return jsonify({'status': 'error', 'message': 'Invalid face descriptor.'}), 400
+
+        client_ip = (request.headers.get('X-Forwarded-For') or request.remote_addr or '127.0.0.1').split(',')[0].strip()
+        now_dt = datetime.now()
+        now_str = now_dt.strftime('%Y-%m-%d %H:%M:%S')
+
         conn = get_db()
         cur = conn.cursor()
         rows = cur.execute(
-            "SELECT id, full_name, email, role, status, qr_code, face_descriptor FROM users WHERE role = 'resident' AND is_verified = 1 AND verification_status = 'verified' AND face_descriptor IS NOT NULL AND face_descriptor != ''"
+            "SELECT id, full_name, email, role, status, qr_code, lockout_until, face_descriptor FROM users WHERE role = 'resident' AND is_verified = 1 AND verification_status = 'verified' AND face_descriptor IS NOT NULL AND face_descriptor != ''"
         ).fetchall()
-        conn.close()
 
-        best_match = None
-        best_dist = 0.58
+        STRICT_FACE_THRESHOLD = 0.42
+        MIN_MARGIN = 0.06
+        scored = []
         for row in rows:
             try:
                 stored_list = json.loads(row['face_descriptor'])
-                if not isinstance(stored_list, list) or len(stored_list) != len(target):
+                if not isinstance(stored_list, list) or len(stored_list) != 128:
                     continue
                 stored = np.array(stored_list, dtype=float)
+                if not np.all(np.isfinite(stored)):
+                    continue
                 dist = float(np.linalg.norm(target - stored))
-                if dist < best_dist:
-                    best_dist = dist
-                    best_match = dict(row)
+                scored.append((dist, dict(row)))
             except Exception:
                 continue
 
+        scored.sort(key=lambda x: x[0])
+        best_match = None
+        best_dist = 999.0
+        if scored and scored[0][0] < STRICT_FACE_THRESHOLD:
+            if len(scored) == 1 or (scored[1][0] - scored[0][0]) >= MIN_MARGIN:
+                best_dist, best_match = scored[0]
+
         if not best_match:
-            return jsonify({'status': 'not_found', 'message': 'Face not recognized or account is not yet verified by staff.'}), 404
+            cur.execute(
+                "INSERT INTO login_attempts (email, ip_address, success, reason, created_at) VALUES (?, ?, 0, 'face_not_matched', ?)",
+                ('face-login', client_ip, now_str)
+            )
+            conn.commit()
+            conn.close()
+            return jsonify({'status': 'not_found', 'message': 'Face not recognized. Please ensure good lighting or sign in with your email and password.'}), 404
+
+        raw_lockout = (best_match.get('lockout_until') or '').strip()
+        if raw_lockout:
+            try:
+                lock_dt = datetime.strptime(raw_lockout, '%Y-%m-%d %H:%M:%S')
+                if lock_dt > now_dt:
+                    conn.close()
+                    return jsonify({'status': 'error', 'message': 'This account is temporarily locked due to failed login attempts. Please try again later.'}), 403
+            except Exception:
+                pass
 
         if best_match.get('status') == 'inactive':
+            conn.close()
             return jsonify({'status': 'error', 'message': 'Your resident account has been deactivated by the Administrator.'}), 403
 
+        cur.execute(
+            "UPDATE users SET failed_login_attempts = 0, lockout_until = NULL, last_login_at = ? WHERE id = ?",
+            (now_str, best_match['id'])
+        )
+        cur.execute(
+            "INSERT INTO login_attempts (email, ip_address, success, reason, created_at) VALUES (?, ?, 1, 'face_login_ok', ?)",
+            (best_match['email'].lower(), client_ip, now_str)
+        )
+        conn.commit()
+        conn.close()
+
+        session.clear()
+        session.permanent = True
         session['user_id'] = best_match['id']
         session['user_role'] = best_match['role']
         confidence = round(max(0.0, min(100.0, (1.0 - best_dist) * 100.0)), 1)
@@ -759,31 +892,45 @@ def register_routes(app):
     def api_identify_face():
         data = request.get_json(silent=True) or {}
         descriptor = data.get('descriptor')
-        if not descriptor or not isinstance(descriptor, list):
+        if not descriptor or not isinstance(descriptor, list) or len(descriptor) != 128:
             return jsonify({'status': 'error', 'message': 'Invalid face descriptor.'}), 400
 
-        target = np.array(descriptor, dtype=float)
+        try:
+            target = np.array(descriptor, dtype=float)
+            if not np.all(np.isfinite(target)) or float(np.linalg.norm(target)) < 0.1:
+                return jsonify({'status': 'error', 'message': 'Invalid facial biometric vector.'}), 400
+        except Exception:
+            return jsonify({'status': 'error', 'message': 'Invalid face descriptor.'}), 400
+
         conn = get_db()
         cur = conn.cursor()
         rows = cur.execute(
-            "SELECT id, full_name, email, qr_code, points, face_descriptor, face_image FROM users WHERE role = 'resident' AND is_verified = 1 AND face_descriptor IS NOT NULL AND face_descriptor != ''"
+            "SELECT id, full_name, email, qr_code, points, face_descriptor, face_image FROM users WHERE role = 'resident' AND is_verified = 1 AND verification_status = 'verified' AND face_descriptor IS NOT NULL AND face_descriptor != ''"
         ).fetchall()
         conn.close()
 
-        best_match = None
-        best_dist = 0.58
+        STRICT_FACE_THRESHOLD = 0.42
+        MIN_MARGIN = 0.06
+        scored = []
         for row in rows:
             try:
                 stored_list = json.loads(row['face_descriptor'])
-                if not isinstance(stored_list, list) or len(stored_list) != len(target):
+                if not isinstance(stored_list, list) or len(stored_list) != 128:
                     continue
                 stored = np.array(stored_list, dtype=float)
+                if not np.all(np.isfinite(stored)):
+                    continue
                 dist = float(np.linalg.norm(target - stored))
-                if dist < best_dist:
-                    best_dist = dist
-                    best_match = dict(row)
+                scored.append((dist, dict(row)))
             except Exception:
                 continue
+
+        scored.sort(key=lambda x: x[0])
+        best_match = None
+        best_dist = 999.0
+        if scored and scored[0][0] < STRICT_FACE_THRESHOLD:
+            if len(scored) == 1 or (scored[1][0] - scored[0][0]) >= MIN_MARGIN:
+                best_dist, best_match = scored[0]
 
         if best_match:
             confidence = round(max(0.0, min(100.0, (1.0 - best_dist) * 100.0)), 1)
@@ -814,6 +961,7 @@ def register_routes(app):
         cur = conn.cursor()
         user_txs = [dict(r) for r in cur.execute("SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC", (user['id'],)).fetchall()]
         user_redemptions = [dict(r) for r in cur.execute("SELECT * FROM redemptions WHERE user_id = ? ORDER BY created_at DESC", (user['id'],)).fetchall()]
+        active_materials = [dict(r) for r in cur.execute("SELECT name FROM materials WHERE status = 'active' ORDER BY id ASC").fetchall()]
         conn.close()
 
         bottle_count = 0
@@ -889,6 +1037,7 @@ def register_routes(app):
             'glass_count': glass_count,
             'other_count': other_count,
             'cat_breakdown': cat_breakdown,
+            'dynamic_materials': build_dynamic_material_chart(user_txs, active_materials),
             'timeline_labels': timeline_labels,
             'timeline_items': timeline_items,
             'timeline_points': timeline_points
@@ -923,35 +1072,49 @@ def register_routes(app):
         conn = get_db()
         cur = conn.cursor()
         user_txs = [dict(r) for r in cur.execute("SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC", (user['id'],)).fetchall()]
+        active_materials = [dict(r) for r in cur.execute("SELECT name FROM materials WHERE status = 'active' ORDER BY id ASC").fetchall()]
         conn.close()
 
         bottle_points = 0
         can_points = 0
-        other_points = 0
+        paper_points = 0
+        glass_points = 0
         for t in user_txs:
             name = t.get('material_name', '').lower()
             pts = int(t.get('points_earned', 0))
             if 'bottle' in name or 'plastic' in name:
                 bottle_points += pts
-            elif 'can' in name:
+            elif 'can' in name or 'metal' in name or 'aluminum' in name:
                 can_points += pts
+            elif 'paper' in name or 'cardboard' in name:
+                paper_points += pts
             else:
-                other_points += pts
+                glass_points += pts
 
-        total = max(1, bottle_points + can_points + other_points)
-        bottle_pct = round((bottle_points / total) * 100)
-        can_pct = round((can_points / total) * 100)
-        other_pct = round((other_points / total) * 100)
+        total_earned_points = bottle_points + can_points + paper_points + glass_points
+        total = max(1, total_earned_points)
+        bottle_pct = round((bottle_points / total) * 100) if total_earned_points > 0 else 0
+        can_pct = round((can_points / total) * 100) if total_earned_points > 0 else 0
+        paper_pct = round((paper_points / total) * 100) if total_earned_points > 0 else 0
+        glass_pct = round((glass_points / total) * 100) if total_earned_points > 0 else 0
+        other_points = paper_points + glass_points
+        other_pct = round((other_points / total) * 100) if total_earned_points > 0 else 0
 
         return render_template(
             'ecopoints.html',
             active_page='ecopoints',
             user_transactions=user_txs,
+            dynamic_materials=build_dynamic_material_chart(user_txs, active_materials),
+            total_earned_points=total_earned_points,
             bottle_points=bottle_points,
             can_points=can_points,
+            paper_points=paper_points,
+            glass_points=glass_points,
             other_points=other_points,
             bottle_pct=bottle_pct,
             can_pct=can_pct,
+            paper_pct=paper_pct,
+            glass_pct=glass_pct,
             other_pct=other_pct
         )
 
@@ -968,6 +1131,7 @@ def register_routes(app):
         conn = get_db()
         cur = conn.cursor()
         user_txs = [dict(r) for r in cur.execute("SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC", (user['id'],)).fetchall()]
+        active_materials = [dict(r) for r in cur.execute("SELECT name FROM materials WHERE status = 'active' ORDER BY id ASC").fetchall()]
         conn.close()
 
         return render_template('history.html', active_page='history', user_transactions=user_txs)
@@ -1310,7 +1474,7 @@ def register_routes(app):
                             cooldown_until = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
                             reject_note = f"Rejected: Duplicate facial biometrics detected (matches verified resident {dup_face['full_name']}). You may reapply after 24 hours."
                             cur.execute(
-                                "UPDATE users SET is_verified = 0, verification_status = 'rejected', verified_at = NULL, verification_notes = ?, verify_cooldown_until = ? WHERE id = ?",
+                                "UPDATE users SET is_verified = 0, verification_status = 'rejected', face_image = NULL, face_descriptor = NULL, id_image = NULL, id_back_image = NULL, verified_at = NULL, verification_notes = ?, verify_cooldown_until = ? WHERE id = ?",
                                 (reject_note, cooldown_until, resident_id)
                             )
                             conn.commit()
@@ -1339,7 +1503,7 @@ def register_routes(app):
                     else:
                         cooldown_until = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
                         cur.execute(
-                            "UPDATE users SET is_verified = 0, verification_status = 'rejected', verified_at = NULL, verification_notes = ?, verify_cooldown_until = ? WHERE id = ?",
+                            "UPDATE users SET is_verified = 0, verification_status = 'rejected', face_image = NULL, face_descriptor = NULL, id_image = NULL, id_back_image = NULL, verified_at = NULL, verification_notes = ?, verify_cooldown_until = ? WHERE id = ?",
                             (reason, cooldown_until, resident_id)
                         )
                         conn.commit()
@@ -1365,11 +1529,17 @@ def register_routes(app):
         staff_barangays = get_staff_barangays(cur, user)
 
         all_txs_raw = [dict(r) for r in cur.execute("""
-            SELECT t.*, u.full_name AS resident_name, u.qr_code AS resident_qr, u.barangay AS resident_barangay
+            SELECT t.*, u.full_name AS resident_name, u.first_name AS first_name, u.qr_code AS resident_qr, u.barangay AS resident_barangay
             FROM transactions t
             LEFT JOIN users u ON t.user_id = u.id
             ORDER BY t.created_at DESC
         """).fetchall()]
+        for tx_row in all_txs_raw:
+            fn = (tx_row.get('first_name') or '').strip()
+            if not fn:
+                rn = (tx_row.get('resident_name') or 'Resident').strip()
+                fn = rn.split()[0] if rn else 'Resident'
+            tx_row['first_name'] = fn
 
         residents_raw = [dict(r) for r in cur.execute("SELECT * FROM users WHERE role = 'resident' ORDER BY full_name ASC").fetchall()]
         all_materials = [dict(r) for r in cur.execute("SELECT * FROM materials WHERE status = 'active' ORDER BY id ASC").fetchall()]
@@ -1558,6 +1728,7 @@ def register_routes(app):
             'total_items': total_items_collected,
             'diverted_kg': diverted_kg,
             'cat_breakdown': cat_breakdown,
+            'dynamic_materials': build_dynamic_material_chart(all_txs),
             'timeline_labels': timeline_labels,
             'timeline_items': timeline_items,
             'timeline_points': timeline_points,
@@ -1736,8 +1907,8 @@ def register_routes(app):
                 elif any(char.isdigit() for char in name):
                     feedback = 'Resident name cannot contain numbers.'
                     feedback_type = 'danger'
-                elif len(password) < 6:
-                    feedback = 'Password must be at least 6 characters.'
+                elif len(password) < 8:
+                    feedback = 'Password must be at least 8 characters.'
                     feedback_type = 'danger'
                 elif confirm_password and password != confirm_password:
                     feedback = 'Passwords do not match. Please confirm your password.'
@@ -1796,8 +1967,8 @@ def register_routes(app):
             elif action == 'reset_resident_password':
                 res_id = int(request.form.get('res_id', 0))
                 new_password = request.form.get('new_password', '').strip()
-                if len(new_password) < 6:
-                    feedback = 'Password must be at least 6 characters.'
+                if len(new_password) < 8:
+                    feedback = 'Password must be at least 8 characters.'
                     feedback_type = 'danger'
                 else:
                     hashed_pw = generate_password_hash(new_password)
@@ -1833,8 +2004,8 @@ def register_routes(app):
                 elif any(char.isdigit() for char in name):
                     feedback = 'Staff name cannot contain numbers.'
                     feedback_type = 'danger'
-                elif len(password) < 6:
-                    feedback = 'Password must be at least 6 characters.'
+                elif len(password) < 8:
+                    feedback = 'Password must be at least 8 characters.'
                     feedback_type = 'danger'
                 elif confirm_password and password != confirm_password:
                     feedback = 'Passwords do not match. Please confirm your password.'
@@ -1889,8 +2060,8 @@ def register_routes(app):
             elif action == 'reset_staff_password':
                 staff_id = int(request.form.get('staff_id', 0))
                 new_password = request.form.get('new_password', '').strip()
-                if len(new_password) < 6:
-                    feedback = 'Password must be at least 6 characters.'
+                if len(new_password) < 8:
+                    feedback = 'Password must be at least 8 characters.'
                     feedback_type = 'danger'
                 else:
                     hashed_pw = generate_password_hash(new_password)
@@ -1995,7 +2166,7 @@ def register_routes(app):
         cur = conn.cursor()
 
         all_txs = [dict(r) for r in cur.execute("""
-            SELECT t.*, u.full_name AS resident_name, u.qr_code AS resident_qr
+            SELECT t.*, u.full_name AS resident_name, u.qr_code AS resident_qr, u.barangay AS resident_barangay
             FROM transactions t
             LEFT JOIN users u ON t.user_id = u.id
             ORDER BY t.created_at DESC
@@ -2020,11 +2191,39 @@ def register_routes(app):
         except Exception:
             pass
         all_redemptions = [dict(r) for r in cur.execute("""
-            SELECT r.*, u.full_name AS resident_name, u.qr_code AS resident_qr
+            SELECT r.*, u.full_name AS resident_name, u.qr_code AS resident_qr, u.barangay AS resident_barangay
             FROM redemptions r
             LEFT JOIN users u ON r.user_id = u.id
             ORDER BY r.created_at DESC
         """).fetchall()]
+
+        report_barangays = []
+        seen_brgys = set()
+        for stn in all_stations:
+            b_name = (stn.get('barangay') or '').strip()
+            c_name = (stn.get('city') or '').strip()
+            if b_name and b_name.lower() not in seen_brgys:
+                seen_brgys.add(b_name.lower())
+                lbl = f"Barangay {b_name}, {c_name}" if c_name else f"Barangay {b_name}"
+                report_barangays.append({'barangay': b_name, 'label': lbl})
+
+        raw_brgy_arg = request.args.get('barangay')
+        if tab == 'reports':
+            if raw_brgy_arg is None:
+                default_brgy = next((rb['barangay'] for rb in report_barangays if rb['barangay'].lower() == 'pinagkawitan'), '')
+                selected_barangay = default_brgy or (report_barangays[0]['barangay'] if report_barangays else 'all')
+            else:
+                selected_barangay = raw_brgy_arg.strip() or 'all'
+        else:
+            selected_barangay = ''
+
+        selected_barangay_label = 'All Barangays'
+        if tab == 'reports' and selected_barangay and selected_barangay.lower() != 'all':
+            matched_lbl = next((rb['label'] for rb in report_barangays if rb['barangay'].lower() == selected_barangay.lower()), None)
+            selected_barangay_label = matched_lbl or f"Barangay {selected_barangay}"
+            residents_list = [r for r in residents_list if resident_matches_barangays(r.get('barangay'), [selected_barangay])]
+            all_txs = [t for t in all_txs if resident_matches_barangays(t.get('resident_barangay'), [selected_barangay])]
+            all_redemptions = [r for r in all_redemptions if resident_matches_barangays(r.get('resident_barangay'), [selected_barangay])]
 
         today_str = datetime.now().strftime('%Y-%m-%d')
         today_items = sum(int(t.get('quantity', 0)) for t in all_txs if str(t.get('created_at', '')).startswith(today_str))
@@ -2114,6 +2313,32 @@ def register_routes(app):
 
         top_recyclers = sorted(res_activity.values(), key=lambda x: x['points'], reverse=True)[:5]
 
+        stream_palette = ['#198754', '#0d6efd', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1']
+        material_stream_performance = []
+        for idx, mat in enumerate(all_materials):
+            m_id = mat.get('id')
+            m_name = (mat.get('name') or '').strip()
+            m_cat = (mat.get('category') or 'General').strip()
+            m_qty = 0
+            m_pts = 0
+            for t in all_txs:
+                t_mid = t.get('material_id')
+                t_name = (t.get('material_name') or '').strip().lower()
+                if (m_id is not None and t_mid == m_id) or (m_name and t_name == m_name.lower()):
+                    m_qty += int(t.get('quantity') or 0)
+                    m_pts += int(t.get('points_earned') or 0)
+            material_stream_performance.append({
+                'name': m_name,
+                'category': m_cat,
+                'qty': m_qty,
+                'points': m_pts,
+                'color': stream_palette[idx % len(stream_palette)]
+            })
+        stream_total_qty = sum(x['qty'] for x in material_stream_performance)
+        for x in material_stream_performance:
+            x['share'] = round((x['qty'] / stream_total_qty) * 100, 1) if stream_total_qty > 0 else 0.0
+        material_stream_performance.sort(key=lambda x: (-x['qty'], -x['points'], x['name']))
+
         stats = {
             'today_items': today_items,
             'total_points_issued': total_points,
@@ -2125,6 +2350,8 @@ def register_routes(app):
             'participation_rate': part_rate,
             'diverted_kg': diverted_kg,
             'cat_breakdown': cat_breakdown,
+            'material_stream_performance': material_stream_performance,
+            'dynamic_materials': build_dynamic_material_chart(all_txs),
             'timeline_labels': timeline_labels,
             'timeline_items': timeline_items,
             'timeline_points': timeline_points,
@@ -2146,6 +2373,9 @@ def register_routes(app):
             all_rewards=all_rewards,
             all_redemptions=all_redemptions,
             all_stations=all_stations,
+            report_barangays=report_barangays,
+            selected_barangay=selected_barangay,
+            selected_barangay_label=selected_barangay_label,
             stats=stats
         )
 
@@ -2233,11 +2463,13 @@ def register_routes(app):
         user = get_current_user()
         if not user or user['role'] != 'admin':
             return redirect(url_for('login'))
-        pdf_data = generate_participation_report_pdf()
+        brgy = request.args.get('barangay', '').strip()
+        pdf_data = generate_participation_report_pdf(barangay=brgy)
         response = make_response(pdf_data)
         response.headers['Content-Type'] = 'application/pdf'
         disposition = 'attachment' if request.args.get('download') else 'inline'
-        response.headers['Content-Disposition'] = f'{disposition}; filename=Community_Participation_Report.pdf'
+        suffix = f"_{brgy.replace(' ', '_')}" if (brgy and brgy.lower() != 'all') else ''
+        response.headers['Content-Disposition'] = f'{disposition}; filename=Community_Participation_Report{suffix}.pdf'
         return response
 
     @app.route('/admin/report/materials.pdf')
@@ -2245,11 +2477,13 @@ def register_routes(app):
         user = get_current_user()
         if not user or user['role'] != 'admin':
             return redirect(url_for('login'))
-        pdf_data = generate_materials_report_pdf()
+        brgy = request.args.get('barangay', '').strip()
+        pdf_data = generate_materials_report_pdf(barangay=brgy)
         response = make_response(pdf_data)
         response.headers['Content-Type'] = 'application/pdf'
         disposition = 'attachment' if request.args.get('download') else 'inline'
-        response.headers['Content-Disposition'] = f'{disposition}; filename=Collected_Materials_Summary.pdf'
+        suffix = f"_{brgy.replace(' ', '_')}" if (brgy and brgy.lower() != 'all') else ''
+        response.headers['Content-Disposition'] = f'{disposition}; filename=Collected_Materials_Summary{suffix}.pdf'
         return response
 
     @app.route('/staff/receipt/<receipt_no>.pdf')
@@ -2296,6 +2530,376 @@ def register_routes(app):
         disposition = 'attachment' if request.args.get('download') else 'inline'
         response.headers['Content-Disposition'] = f'{disposition}; filename={receipt_no}.pdf'
         return response
+
+    @app.route('/api/contact-us', methods=['POST'])
+    def api_contact_us():
+        user = get_current_user()
+        if not user:
+            return jsonify({'status': 'error', 'message': 'Please log in to send a message.'}), 401
+
+        data = request.get_json(silent=True) or {}
+        subject = str(data.get('subject') or '').strip()
+        body_text = str(data.get('message') or '').strip()
+
+        if not subject:
+            return jsonify({'status': 'error', 'message': 'Please enter a subject for your inquiry.'}), 400
+        if not body_text or len(body_text) < 5:
+            return jsonify({'status': 'error', 'message': 'Please enter a message (at least 5 characters).'}), 400
+
+        subject = subject[:120]
+        body_text = body_text[:2000]
+        now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        def read_env(env_key, default_val=''):
+            val = os.environ.get(env_key, '').strip()
+            if val:
+                return val
+            env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+            if os.path.isfile(env_path):
+                try:
+                    with open(env_path, 'r', encoding='utf-8') as f:
+                        for line in f:
+                            line = line.strip()
+                            if not line or '=' not in line:
+                                continue
+                            k, v = line.split('=', 1)
+                            if k.strip() == env_key:
+                                return v.strip().strip('"').strip("'")
+                except Exception:
+                    pass
+            return default_val
+
+        smtp_host = read_env('SMTP_HOST', 'smtp.gmail.com')
+        smtp_port = int(read_env('SMTP_PORT', '587') or '587')
+        smtp_user = read_env('SMTP_USER')
+        smtp_pass = read_env('SMTP_PASS').replace(' ', '')
+        receiver_email = read_env('CONTACT_RECEIVER_EMAIL') or smtp_user
+
+        email_sent = 0
+        smtp_error = None
+        if smtp_user and smtp_pass and receiver_email:
+            try:
+                msg = EmailMessage()
+                msg['Subject'] = f"[EcoCoins Contact Us] {subject}"
+                msg['From'] = smtp_user
+                msg['To'] = receiver_email
+                if user.get('email'):
+                    msg['Reply-To'] = user['email']
+                msg.set_content(
+                    f"Resident Name: {user.get('full_name') or 'Resident'}\n"
+                    f"Resident Email: {user.get('email') or 'N/A'}\n"
+                    f"Barangay: {user.get('barangay') or 'Pinagkawitan'}\n"
+                    f"QR Code: {user.get('qr_code') or 'N/A'}\n"
+                    f"Sent At: {now_str}\n\n"
+                    f"Subject: {subject}\n\n"
+                    f"Message:\n{body_text}\n"
+                )
+                with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
+                    server.ehlo()
+                    server.starttls()
+                    server.ehlo()
+                    server.login(smtp_user, smtp_pass)
+                    server.send_message(msg)
+                email_sent = 1
+            except Exception as ex:
+                smtp_error = str(ex)
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            """CREATE TABLE IF NOT EXISTS contact_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                resident_name TEXT,
+                resident_email TEXT,
+                barangay TEXT,
+                subject TEXT NOT NULL,
+                message TEXT NOT NULL,
+                email_sent INTEGER DEFAULT 0,
+                created_at TEXT
+            )"""
+        )
+        cur.execute(
+            """INSERT INTO contact_messages (user_id, resident_name, resident_email, barangay, subject, message, email_sent, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                user['id'],
+                user.get('full_name') or '',
+                user.get('email') or '',
+                user.get('barangay') or 'Pinagkawitan',
+                subject,
+                body_text,
+                email_sent,
+                now_str
+            )
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        if email_sent:
+            return jsonify({'status': 'success', 'email_sent': True, 'message': 'Your message has been sent! Our barangay EcoCoins team will get back to you soon.'})
+        if smtp_error:
+            return jsonify({'status': 'success', 'email_sent': False, 'message': 'Your message was saved in our system, though email delivery is currently unavailable.'})
+        return jsonify({'status': 'success', 'email_sent': False, 'message': 'Your message has been submitted to the EcoCoins team!'})
+
+    @app.route('/api/google-login', methods=['POST'])
+    def api_google_login():
+        data = request.get_json(silent=True) or {}
+        credential = str(data.get('credential') or '').strip()
+        if not credential:
+            return jsonify({'status': 'error', 'message': 'Missing Google credential.'}), 400
+
+        google_client_id = os.environ.get('GOOGLE_CLIENT_ID', '').strip()
+        if not google_client_id:
+            env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+            if os.path.isfile(env_path):
+                try:
+                    with open(env_path, 'r', encoding='utf-8') as f:
+                        for line in f:
+                            line = line.strip()
+                            if not line or '=' not in line:
+                                continue
+                            k, v = line.split('=', 1)
+                            if k.strip() == 'GOOGLE_CLIENT_ID':
+                                google_client_id = v.strip().strip('"').strip("'")
+                                break
+                except Exception:
+                    pass
+
+        if not google_client_id:
+            return jsonify({'status': 'error', 'message': 'Google Sign-In is not configured on this server.'}), 500
+
+        verify_url = 'https://oauth2.googleapis.com/tokeninfo?id_token=' + urllib.parse.quote(credential, safe='')
+        try:
+            with urllib.request.urlopen(verify_url, timeout=10) as resp:
+                token_info = json.loads(resp.read().decode('utf-8'))
+        except Exception:
+            return jsonify({'status': 'error', 'message': 'Could not verify Google sign-in token. Please try again.'}), 401
+
+        aud = str(token_info.get('aud') or '').strip()
+        iss = str(token_info.get('iss') or '').strip()
+        email_verified = str(token_info.get('email_verified') or '').lower() == 'true'
+        email = str(token_info.get('email') or '').strip().lower()
+
+        if aud != google_client_id or iss not in ('accounts.google.com', 'https://accounts.google.com') or not email_verified or not email:
+            return jsonify({'status': 'error', 'message': 'Invalid or unverified Google account token.'}), 401
+
+        client_ip = (request.headers.get('X-Forwarded-For') or request.remote_addr or '127.0.0.1').split(',')[0].strip()
+        now_dt = datetime.now()
+        now_str = now_dt.strftime('%Y-%m-%d %H:%M:%S')
+
+        conn = get_db()
+        cur = conn.cursor()
+        matched = cur.execute("SELECT * FROM users WHERE LOWER(email) = LOWER(?)", (email,)).fetchone()
+
+        if matched:
+            matched = dict(matched)
+            raw_lockout = (matched.get('lockout_until') or '').strip()
+            if raw_lockout:
+                try:
+                    lock_dt = datetime.strptime(raw_lockout, '%Y-%m-%d %H:%M:%S')
+                    if lock_dt > now_dt:
+                        conn.close()
+                        return jsonify({'status': 'error', 'message': 'This account is temporarily locked. Please wait before trying again.'}), 429
+                except Exception:
+                    pass
+
+            if (matched.get('status') or 'active').lower() != 'active':
+                conn.close()
+                return jsonify({'status': 'error', 'message': 'This account is currently inactive. Please contact your barangay administrator.'}), 403
+
+            cur.execute(
+                "UPDATE users SET failed_login_attempts = 0, lockout_until = NULL, last_login_at = ? WHERE id = ?",
+                (now_str, matched['id'])
+            )
+            cur.execute(
+                "INSERT INTO login_attempts (email, ip_address, success, reason, created_at) VALUES (?, ?, 1, 'google_login', ?)",
+                (email, client_ip, now_str)
+            )
+            conn.commit()
+            conn.close()
+            sync_to_json()
+
+            session.clear()
+            session.permanent = True
+            session['user_id'] = matched['id']
+            session['user_role'] = matched['role']
+            session['last_activity'] = time.time()
+
+            if matched['role'] == 'admin':
+                target_url = url_for('admin')
+            elif matched['role'] == 'staff':
+                target_url = url_for('staff')
+            else:
+                target_url = url_for('dashboard')
+
+            return jsonify({'status': 'success', 'redirect': target_url, 'full_name': matched['full_name']})
+
+        given_name = str(token_info.get('given_name') or '').strip()
+        family_name = str(token_info.get('family_name') or '').strip()
+        full_name = str(token_info.get('name') or '').strip() or f"{given_name} {family_name}".strip() or email.split('@')[0]
+        if not given_name:
+            parts = full_name.split()
+            given_name = parts[0] if parts else email.split('@')[0]
+            family_name = ' '.join(parts[1:]) if len(parts) > 1 else ''
+
+        qr_code = f'ECO-RES-{random.randint(10000, 99999)}'
+        while cur.execute("SELECT 1 FROM users WHERE qr_code = ?", (qr_code,)).fetchone():
+            qr_code = f'ECO-RES-{random.randint(10000, 99999)}'
+
+        random_pw = generate_password_hash(secrets.token_urlsafe(32))
+        cur.execute(
+            "INSERT INTO users (full_name, first_name, last_name, email, password, role, qr_code, points, status, created_at, last_login_at) VALUES (?, ?, ?, ?, ?, 'resident', ?, 0, 'active', ?, ?)",
+            (full_name, given_name, family_name, email, random_pw, qr_code, now_str, now_str)
+        )
+        new_id = cur.lastrowid
+        cur.execute(
+            "INSERT INTO login_attempts (email, ip_address, success, reason, created_at) VALUES (?, ?, 1, 'google_signup', ?)",
+            (email, client_ip, now_str)
+        )
+        conn.commit()
+        conn.close()
+        sync_to_json()
+
+        session.clear()
+        session.permanent = True
+        session['user_id'] = new_id
+        session['user_role'] = 'resident'
+        session['last_activity'] = time.time()
+
+        return jsonify({'status': 'success', 'redirect': url_for('dashboard'), 'full_name': full_name})
+
+    @app.route('/api/faq-chat', methods=['POST'])
+    def api_faq_chat():
+        data = request.get_json(silent=True) or {}
+        question = str(data.get('message') or '').strip()
+        if not question:
+            return jsonify({'status': 'error', 'reply': 'Please type a question about EcoCoins.'}), 400
+        if len(question) > 500:
+            question = question[:500]
+
+        raw_history = data.get('history') if isinstance(data.get('history'), list) else []
+
+        conn = get_db()
+        cur = conn.cursor()
+        materials = [dict(r) for r in cur.execute("SELECT name, category, points_per_unit, unit FROM materials WHERE status = 'active' ORDER BY name ASC").fetchall()]
+        rewards = [dict(r) for r in cur.execute("SELECT title, category, points_required, stock, partner_name FROM rewards WHERE status = 'active' ORDER BY points_required ASC").fetchall()]
+        staff_rows = cur.execute("SELECT DISTINCT barangay FROM users WHERE role = 'staff' AND barangay IS NOT NULL AND barangay != ''").fetchall()
+        cur.close()
+        conn.close()
+
+        hubs = []
+        for r in staff_rows:
+            for b in str(r['barangay']).split(','):
+                b_clean = b.strip()
+                if b_clean and b_clean not in hubs:
+                    hubs.append(b_clean)
+        if not hubs:
+            hubs = ['Pinagkawitan']
+
+        def get_env_val(env_key, default_val=''):
+            val = os.environ.get(env_key, '').strip()
+            if val:
+                return val
+            env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+            if os.path.isfile(env_path):
+                try:
+                    with open(env_path, 'r', encoding='utf-8') as f:
+                        for line in f:
+                            line = line.strip()
+                            if not line or '=' not in line:
+                                continue
+                            k, v = line.split('=', 1)
+                            if k.strip() == env_key:
+                                return v.strip().strip('"').strip("'")
+                except Exception:
+                    pass
+            return default_val
+
+        def build_fallback(q_text):
+            ql = q_text.lower()
+            if any(k in ql for k in ['material', 'plastic', 'bottle', 'can', 'paper', 'cardboard', 'metal', 'glass', 'tin', 'recycl', 'bote', 'lata', 'papel', 'tinatanggap', 'rate', 'points per']):
+                if materials:
+                    lines = [f"- {m['name']}: {m['points_per_unit']} pts per {m['unit']}" for m in materials[:8]]
+                    return "Here are the currently accepted recyclables and their EcoPoints:\n" + "\n".join(lines)
+                return "Bring clean recyclables like plastic bottles, cans, paper, and cardboard to your Barangay Collection Hub to earn EcoPoints."
+            if any(k in ql for k in ['reward', 'redeem', 'claim', 'prize', 'rice', 'grocery', 'gift', 'palit', 'premyo']):
+                if rewards:
+                    lines = [f"- {r['title']}: {r['points_required']} pts ({r['stock']} left)" for r in rewards[:6]]
+                    return "You can redeem your EcoPoints on the Rewards page, then claim them at the barangay station:\n" + "\n".join(lines)
+                return "Go to the Rewards page to redeem EcoPoints for available items, then claim your approved reward at the barangay station."
+            if any(k in ql for k in ['verify', 'verification', 'valid id', 'id ', 'beripika', 'pending', 'rejected', 'cooldown']):
+                return "To verify your resident account, go to Verify Account and complete 3 steps: (1) live face scan (Left, Right, Blink, Hold still 3s) + Front & Back Valid ID upload, (2) review your personal info & address, and (3) submit for Barangay Staff confirmation."
+            if any(k in ql for k in ['face', 'mukha', 'biometric', 'camera', 'liveness', 'face login']):
+                return "Verified residents can use Face Login on the Login page. Follow the liveness check (turn Left, turn Right, Blink, then Hold still for 3 seconds) in good lighting. For security, only a strict match to your verified face can sign in."
+            if any(k in ql for k in ['qr', 'code', 'scan', 'hub', 'barangay', 'where', 'saan', 'station', 'drop']):
+                hub_list = ", ".join(hubs)
+                return f"Once verified, open your Resident QR Code from the Dashboard or the top-right user dropdown (My QR Code). Show it to staff at your Barangay Collection Hub ({hub_list}, Lipa City) when dropping off recyclables."
+            if any(k in ql for k in ['logout', 'log out', 'inactive', 'timeout', 'session', 'security']):
+                return "For your account security, resident accounts automatically log out after 10 minutes of inactivity. Simply sign back in with your email/password or Face Login."
+            if any(k in ql for k in ['earn', 'point', 'how', 'paano', 'start', 'simula', 'register', 'sign up']):
+                return "To earn EcoPoints: (1) Register and verify your resident account, (2) bring accepted recyclables to your Barangay Collection Hub, (3) show your Resident QR Code to staff to record your drop-off and receive EcoPoints, then (4) redeem rewards on the Rewards page."
+            return "I am EcoBot, your EcoCoins assistant! I can only answer questions about the EcoCoins website—such as earning EcoPoints, accepted recyclables, account verification, QR codes, Face Login, and claiming rewards. What would you like to know?"
+
+        mat_summary = "; ".join([f"{m['name']} ({m['category']}): {m['points_per_unit']} pts/{m['unit']}" for m in materials]) or "Standard recyclables"
+        rew_summary = "; ".join([f"{r['title']}: {r['points_required']} pts (stock: {r['stock']})" for r in rewards]) or "Barangay rewards"
+        hub_summary = ", ".join(hubs)
+
+        system_prompt = (
+            "You are EcoBot, the official helpful FAQ assistant for the EcoCoins Barangay Recycling Reward Points System website. "
+            "You MUST ONLY answer questions related to the EcoCoins website, its features, barangay recycling process, points, rewards, account verification, QR code, Face Login, and security. "
+            "If the user asks anything unrelated to EcoCoins (such as general trivia, math homework, coding, weather, politics, or entertainment), politely decline in 1 sentence and invite them to ask about EcoCoins instead. "
+            "Reply in the same language the user uses (English, Tagalog, or Taglish). Keep answers clear, friendly, accurate, and concise (2 to 4 short sentences or short bullet points). Do not use markdown tables. "
+            "Live EcoCoins system facts: "
+            f"Active Barangay Collection Hubs: {hub_summary} (Lipa City). "
+            f"Accepted Recyclable Materials & Rates: {mat_summary}. "
+            f"Available Rewards: {rew_summary}. "
+            "Account Verification: 3 steps (Step 1: Live Face Scan with Left, Right, Blink, Hold still 3s + Front & Back Valid ID upload; Step 2: Info & Address; Step 3: Confirm & Submit for Barangay Staff approval). Rejected verifications have a 24-hour cooldown before reapplying. "
+            "Resident QR Code: Unlocks after verification; accessible on the Dashboard or from the user dropdown menu (My QR Code) in the top navbar. Show it to Barangay Staff when dropping off recyclables. "
+            "Face Login: Available on the Login page for verified residents using live Left-Right-Blink-Hold-3s verification. "
+            "Security: Resident accounts automatically log out after 10 minutes of inactivity. Password login locks temporarily for 5 minutes after 5 failed attempts."
+        )
+
+        api_key = get_env_val('GEMINI_API_KEY')
+        model_name = get_env_val('GEMINI_MODEL', 'gemini-flash-lite-latest')
+
+        if not api_key:
+            return jsonify({'status': 'ok', 'reply': build_fallback(question), 'source': 'fallback'})
+
+        contents = []
+        for item in raw_history[-6:]:
+            if not isinstance(item, dict):
+                continue
+            role = 'model' if item.get('role') == 'bot' else 'user'
+            txt = str(item.get('text') or '').strip()[:400]
+            if txt:
+                contents.append({'role': role, 'parts': [{'text': txt}]})
+        contents.append({'role': 'user', 'parts': [{'text': question}]})
+
+        payload = json.dumps({
+            'systemInstruction': {'parts': [{'text': system_prompt}]},
+            'contents': contents,
+            'generationConfig': {
+                'temperature': 0.3,
+                'maxOutputTokens': 280
+            }
+        }).encode('utf-8')
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+        req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'}, method='POST')
+
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                resp_data = json.loads(resp.read().decode('utf-8'))
+                parts = resp_data.get('candidates', [{}])[0].get('content', {}).get('parts', [])
+                reply_text = ''.join(p.get('text', '') for p in parts if isinstance(p, dict)).strip()
+                if reply_text:
+                    return jsonify({'status': 'ok', 'reply': reply_text, 'source': 'ai'})
+        except Exception:
+            pass
+
+        return jsonify({'status': 'ok', 'reply': build_fallback(question), 'source': 'fallback'})
 
     @app.route('/402')
     def trigger_402():

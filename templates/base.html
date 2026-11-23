@@ -3,13 +3,56 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
   <title>{{ page_title|default('EcoCoins - Recycling Reward Points System') }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.min.css') }}?v=20261123">
+  <script>
+    (function() {
+      const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+      const csrfToken = tokenMeta ? tokenMeta.getAttribute('content') : '';
+      if (!csrfToken) return;
+      function attachCsrf(form) {
+        if (!form || !form.method || form.method.toUpperCase() !== 'POST') return;
+        let inp = form.querySelector('input[name="csrf_token"]');
+        if (!inp) {
+          inp = document.createElement('input');
+          inp.type = 'hidden';
+          inp.name = 'csrf_token';
+          form.appendChild(inp);
+        }
+        inp.value = csrfToken;
+      }
+      document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('form').forEach(attachCsrf);
+      });
+      document.addEventListener('submit', function(e) { attachCsrf(e.target); }, true);
+      const origSubmit = HTMLFormElement.prototype.submit;
+      HTMLFormElement.prototype.submit = function() {
+        attachCsrf(this);
+        return origSubmit.apply(this, arguments);
+      };
+      const origFetch = window.fetch;
+      window.fetch = function(input, init) {
+        const opts = init ? Object.assign({}, init) : {};
+        const method = (opts.method || 'GET').toUpperCase();
+        const urlStr = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+        const isSameOrigin = !urlStr || urlStr.startsWith('/') || urlStr.startsWith(window.location.origin);
+        if (isSameOrigin && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+          const headers = new Headers(opts.headers || {});
+          if (!headers.has('X-CSRF-Token')) {
+            headers.set('X-CSRF-Token', csrfToken);
+          }
+          opts.headers = headers;
+        }
+        return origFetch.call(this, input, opts);
+      };
+    })();
+  </script>
 </head>
 <body class="d-flex flex-column min-vh-100">
 
@@ -67,10 +110,6 @@
       </ul>
 
       <div class="d-flex align-items-center gap-2">
-        <span class="rating-star-badge d-none d-lg-inline-flex" title="Barangay Eco Satisfaction Rating">
-          <i class="bi bi-star-fill"></i> 4.9
-        </span>
-
         {% if current_user %}
           {% if current_user.role == 'resident' %}
             <span class="badge bg-white text-dark border px-3 py-2 rounded-pill fw-bold shadow-sm d-none d-sm-inline-flex align-items-center gap-1">
@@ -103,6 +142,9 @@
                 <li><a class="dropdown-item rounded-3 d-flex align-items-center justify-content-between" href="{{ url_for('reward_history') }}"><span><i class="bi bi-receipt me-2"></i>Reward Claims</span>{% if released_claims_count and released_claims_count > 0 %}<span class="badge bg-info text-dark rounded-pill">{{ released_claims_count }}</span>{% endif %}</a></li>
                 <li><a class="dropdown-item rounded-3" href="{{ url_for('rewards') }}"><i class="bi bi-gift me-2"></i>Redeem Rewards</a></li>
                 <li><hr class="dropdown-divider my-1"></li>
+              {% endif %}
+              {% if current_user.role == 'resident' %}
+                <li><button type="button" class="dropdown-item rounded-3" data-bs-toggle="modal" data-bs-target="#residentQrModal"><i class="bi bi-qr-code me-2"></i>QR Code</button></li>
               {% endif %}
               <li><a class="dropdown-item rounded-3" href="{{ url_for('account') }}"><i class="bi bi-person-gear me-2"></i>Account Settings</a></li>
               <li><a class="dropdown-item text-danger rounded-3" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
@@ -158,7 +200,489 @@
   </div>
 </div>
 
+{% if current_user and current_user.role == 'resident' %}
+<div class="modal fade" id="residentQrModal" tabindex="-1" aria-labelledby="residentQrModalLabel" aria-hidden="true" style="backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background-color: rgba(15, 23, 42, 0.35);">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 390px;">
+    <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+      <div class="modal-header border-0 pb-0 px-4 pt-4">
+        <div class="d-flex align-items-center gap-2">
+          <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 36px; height: 36px; background: rgba(25, 135, 84, 0.12); color: var(--eco-forest);">
+            <i class="bi bi-qr-code-scan fs-5"></i>
+          </span>
+          <div>
+            <h5 class="modal-title fw-bold mb-0" id="residentQrModalLabel" style="color: var(--eco-forest);">My Resident QR</h5>
+            <div class="small text-muted">{{ current_user.full_name }}</div>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center px-4 py-4">
+        {% if current_user.is_verified %}
+          <div class="mb-3">
+            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 fw-semibold">
+              <i class="bi bi-shield-check me-1"></i>Verified Resident ID
+            </span>
+          </div>
+          <div class="p-3 bg-white rounded-4 d-inline-block mx-auto mb-3 border shadow-sm">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={{ current_user.qr_code }}" alt="Resident QR Code" class="img-fluid rounded-2" style="width: 210px; height: 210px;">
+          </div>
+          <div class="fw-bold text-success font-monospace fs-5 mb-2">{{ current_user.qr_code }}</div>
+          <p class="text-muted small mb-0">Present this QR code to collection staff at the barangay station to record recyclables and earn EcoPoints.</p>
+          <div class="pt-3 mt-3 border-top small text-muted">
+            <i class="bi bi-geo-alt me-1 text-success"></i>Barangay {{ current_user.barangay or 'Pinagkawitan' }} Collection Hub
+          </div>
+        {% else %}
+          <div class="py-2">
+            <div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 64px; height: 64px; background: rgba(245, 158, 11, 0.12); color: #d97706;">
+              <i class="bi {% if current_user.verification_status == 'pending' %}bi-hourglass-split{% else %}bi-lock-fill{% endif %} fs-2"></i>
+            </div>
+            {% if current_user.verification_status == 'pending' %}
+              <h6 class="fw-bold mb-2">Verification Pending</h6>
+              <p class="text-muted small mb-0">Your resident QR code will unlock automatically once your account verification is approved.</p>
+            {% else %}
+              <h6 class="fw-bold mb-2">QR Code Locked</h6>
+              <p class="text-muted small mb-3">Verify your resident account to unlock your personal QR code for recycling drop-offs.</p>
+              <a href="{{ url_for('verify_account') }}" class="btn btn-forest btn-pill px-4">Verify Account</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="contactUsModal" tabindex="-1" aria-labelledby="contactUsModalLabel" aria-hidden="true" style="backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background-color: rgba(15, 23, 42, 0.35);">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+    <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+      <div class="modal-header border-0 pb-2 px-4 pt-4">
+        <div class="d-flex align-items-center gap-2">
+          <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 38px; height: 38px; background: rgba(25, 135, 84, 0.12); color: var(--eco-forest);">
+            <i class="bi bi-envelope-paper-fill fs-5"></i>
+          </span>
+          <div>
+            <h5 class="modal-title fw-bold mb-0" id="contactUsModalLabel" style="color: var(--eco-forest);">Contact Us</h5>
+            <div class="small text-muted">Send a message to the Barangay EcoCoins team</div>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="contactUsForm" novalidate>
+        <div class="modal-body px-4 pt-2 pb-3">
+          <div class="p-2 px-3 rounded-3 bg-light border small text-muted mb-3 d-flex align-items-center justify-content-between flex-wrap gap-1">
+            <span><i class="bi bi-person-circle me-1 text-success"></i><strong class="text-dark">{{ current_user.full_name }}</strong></span>
+            <span>{{ current_user.email }}</span>
+          </div>
+
+          <div id="contactUsAlert" class="alert rounded-3 small py-2 px-3 mb-3 d-none" role="alert"></div>
+
+          <div class="mb-3">
+            <label for="contactSubject" class="form-label small fw-semibold mb-1">Subject <span class="text-danger">*</span></label>
+            <input type="text" class="form-control rounded-3" id="contactSubject" maxlength="120" placeholder="e.g., Question about EcoPoints or Verification" required>
+          </div>
+
+          <div class="mb-1">
+            <label for="contactMessage" class="form-label small fw-semibold mb-1">Message <span class="text-danger">*</span></label>
+            <textarea class="form-control rounded-3" id="contactMessage" rows="4" maxlength="2000" placeholder="Write your message or concern here..." style="resize: vertical;" required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-0 px-4 pb-4 pt-1 d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-forest rounded-pill px-4 fw-semibold" id="contactUsSubmitBtn">
+            <i class="bi bi-send-fill me-1"></i><span>Send Message</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const form = document.getElementById('contactUsForm');
+    if (!form) return;
+    const subjectEl = document.getElementById('contactSubject');
+    const messageEl = document.getElementById('contactMessage');
+    const alertEl = document.getElementById('contactUsAlert');
+    const submitBtn = document.getElementById('contactUsSubmitBtn');
+    const modalEl = document.getElementById('contactUsModal');
+
+    function showContactAlert(type, text) {
+      alertEl.className = 'alert alert-' + type + ' rounded-3 small py-2 px-3 mb-3';
+      alertEl.textContent = text;
+      alertEl.classList.remove('d-none');
+    }
+
+    if (modalEl) {
+      modalEl.addEventListener('show.bs.modal', function() {
+        alertEl.classList.add('d-none');
+      });
+    }
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      alertEl.classList.add('d-none');
+      const subject = (subjectEl.value || '').trim();
+      const message = (messageEl.value || '').trim();
+      if (!subject) {
+        showContactAlert('danger', 'Please enter a subject.');
+        subjectEl.focus();
+        return;
+      }
+      if (message.length < 5) {
+        showContactAlert('danger', 'Please enter a message (at least 5 characters).');
+        messageEl.focus();
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Sending...';
+
+      try {
+        const res = await fetch('/api/contact-us', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subject: subject, message: message })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          showContactAlert('success', data.message || 'Your message has been sent!');
+          subjectEl.value = '';
+          messageEl.value = '';
+        } else {
+          showContactAlert('danger', (data && data.message) ? data.message : 'Unable to send message right now.');
+        }
+      } catch (err) {
+        showContactAlert('danger', 'Connection error. Please try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-send-fill me-1"></i><span>Send Message</span>';
+      }
+    });
+  })();
+</script>
+{% endif %}
+
+{% if not current_user or current_user.role == 'resident' %}
+<style>
+  #ecoFaqToggleBtn {
+    position: fixed;
+    bottom: 22px;
+    right: 22px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(234, 88, 12, 0.38);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.45rem;
+    z-index: 1055;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  #ecoFaqToggleBtn:hover {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 12px 28px rgba(234, 88, 12, 0.48);
+  }
+  #ecoFaqWindow {
+    position: fixed;
+    bottom: 88px;
+    right: 22px;
+    width: 360px;
+    max-width: calc(100vw - 24px);
+    height: 480px;
+    max-height: 74vh;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22);
+    border: 1px solid rgba(25, 135, 84, 0.16);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1055;
+  }
+  #ecoFaqWindow.open {
+    display: flex;
+  }
+  .eco-faq-header {
+    background: linear-gradient(135deg, #1b5e20, #2e7d32);
+    color: #fff;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .eco-faq-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    background: #f6faf7;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .eco-faq-bubble {
+    max-width: 85%;
+    padding: 10px 13px;
+    border-radius: 14px;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .eco-faq-bubble.bot {
+    align-self: flex-start;
+    background: #ffffff;
+    color: #1e293b;
+    border: 1px solid rgba(25, 135, 84, 0.14);
+    border-bottom-left-radius: 4px;
+  }
+  .eco-faq-bubble.user {
+    align-self: flex-end;
+    background: #1b5e20;
+    color: #ffffff;
+    border-bottom-right-radius: 4px;
+  }
+  .eco-faq-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+  }
+  .eco-faq-chip {
+    background: #fff3e0;
+    color: #c2410c;
+    border: 1px solid rgba(249, 115, 22, 0.35);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .eco-faq-chip:hover {
+    background: #f97316;
+    color: #ffffff;
+  }
+  .eco-faq-input-bar {
+    padding: 10px 12px;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  #ecoFaqInput {
+    resize: none;
+    overflow-y: auto;
+    min-height: 36px;
+    max-height: 110px;
+    line-height: 1.4;
+    border-radius: 16px;
+    padding: 7px 12px;
+  }
+</style>
+
+<button type="button" id="ecoFaqToggleBtn" aria-label="Open EcoCoins FAQ Assistant" title="EcoCoins FAQ Assistant">
+  <i class="bi bi-chat-dots-fill" id="ecoFaqToggleIcon"></i>
+</button>
+
+<div id="ecoFaqWindow" role="dialog" aria-label="EcoCoins FAQ Assistant">
+  <div class="eco-faq-header">
+    <div class="d-flex align-items-center gap-2">
+      <span class="d-inline-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 34px; height: 34px; background: linear-gradient(135deg, #fb923c, #ea580c); color: #ffffff;">
+        <i class="bi bi-robot fs-5"></i>
+      </span>
+      <div>
+        <div class="fw-bold" style="font-size: 0.92rem; line-height: 1.2;">EcoCoins Assistant</div>
+        <div style="font-size: 0.72rem; opacity: 0.85;">Ask anything about EcoCoins</div>
+      </div>
+    </div>
+    <button type="button" id="ecoFaqCloseBtn" class="btn btn-sm text-white border-0 p-1" aria-label="Close">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <div class="eco-faq-messages" id="ecoFaqMessages">
+    <div class="eco-faq-bubble bot">Hi! I'm EcoBot. Ask me anything about EcoCoins — earning points, accepted recyclables, account verification, QR code, Face Login, or claiming rewards.</div>
+    <div class="eco-faq-chips" id="ecoFaqChips">
+      <button type="button" class="eco-faq-chip" data-q="How do I earn EcoPoints?">How to earn EcoPoints?</button>
+      <button type="button" class="eco-faq-chip" data-q="What recyclable materials are accepted and how many points?">Accepted recyclables</button>
+      <button type="button" class="eco-faq-chip" data-q="How do I verify my resident account?">Verify account</button>
+      <button type="button" class="eco-faq-chip" data-q="How do I claim my rewards?">Claim rewards</button>
+      <button type="button" class="eco-faq-chip" data-q="How does Face Login work?">Face Login</button>
+    </div>
+  </div>
+
+  <form class="eco-faq-input-bar" id="ecoFaqForm" autocomplete="off">
+    <textarea id="ecoFaqInput" rows="1" class="form-control form-control-sm" placeholder="Ask about EcoCoins..." maxlength="500"></textarea>
+    <button type="submit" id="ecoFaqSendBtn" class="btn btn-success btn-sm rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px; flex-shrink: 0;">
+      <i class="bi bi-send-fill" style="font-size: 0.82rem;"></i>
+    </button>
+  </form>
+</div>
+
+<script>
+  (function() {
+    const toggleBtn = document.getElementById('ecoFaqToggleBtn');
+    const toggleIcon = document.getElementById('ecoFaqToggleIcon');
+    const closeBtn = document.getElementById('ecoFaqCloseBtn');
+    const win = document.getElementById('ecoFaqWindow');
+    const messagesEl = document.getElementById('ecoFaqMessages');
+    const form = document.getElementById('ecoFaqForm');
+    const input = document.getElementById('ecoFaqInput');
+    const sendBtn = document.getElementById('ecoFaqSendBtn');
+    const chips = document.querySelectorAll('.eco-faq-chip');
+    const history = [];
+    let isSending = false;
+
+    function autoResizeInput() {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 110) + 'px';
+    }
+
+    function toggleWindow(forceOpen) {
+      const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !win.classList.contains('open');
+      win.classList.toggle('open', shouldOpen);
+      toggleIcon.className = shouldOpen ? 'bi bi-x-lg' : 'bi bi-chat-dots-fill';
+      if (shouldOpen) {
+        setTimeout(function() {
+          autoResizeInput();
+          input.focus();
+        }, 100);
+      }
+    }
+
+    function appendBubble(role, text) {
+      const div = document.createElement('div');
+      div.className = 'eco-faq-bubble ' + role;
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return div;
+    }
+
+    async function sendQuestion(text) {
+      const trimmed = (text || '').trim();
+      if (!trimmed || isSending) return;
+      isSending = true;
+      sendBtn.disabled = true;
+      input.value = '';
+      autoResizeInput();
+
+      appendBubble('user', trimmed);
+      const typingEl = appendBubble('bot', 'EcoBot is thinking...');
+
+      try {
+        const res = await fetch('/api/faq-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: trimmed, history: history.slice(-6) })
+        });
+        const data = await res.json();
+        const reply = (data && data.reply) ? data.reply : 'Sorry, I could not process that right now. Please try again.';
+        typingEl.textContent = reply;
+        history.push({ role: 'user', text: trimmed });
+        history.push({ role: 'bot', text: reply });
+      } catch (err) {
+        typingEl.textContent = 'Connection error. Please try again in a moment.';
+      } finally {
+        isSending = false;
+        sendBtn.disabled = false;
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        input.focus();
+      }
+    }
+
+    toggleBtn.addEventListener('click', function() { toggleWindow(); });
+    closeBtn.addEventListener('click', function() { toggleWindow(false); });
+
+    input.addEventListener('input', autoResizeInput);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendQuestion(input.value);
+      }
+    });
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      sendQuestion(input.value);
+    });
+
+    chips.forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        sendQuestion(chip.getAttribute('data-q'));
+      });
+    });
+  })();
+</script>
+{% endif %}
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/app.min.js') }}?v=20261123"></script>
+{% if current_user and current_user.role == 'resident' %}
+<script>
+  (function() {
+    const TIMEOUT_MS = 10 * 60 * 1000;
+    const STORAGE_KEY = 'ecocoins_resident_last_activity';
+    const logoutUrl = "{{ url_for('logout', reason='timeout') }}";
+    let lastActivity = Date.now();
+    let isLoggingOut = false;
+
+    function recordActivity() {
+      const now = Date.now();
+      lastActivity = now;
+      try {
+        localStorage.setItem(STORAGE_KEY, String(now));
+      } catch (e) {}
+    }
+
+    function getLastActivity() {
+      try {
+        const stored = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
+        if (stored > lastActivity) {
+          lastActivity = stored;
+        }
+      } catch (e) {}
+      return lastActivity;
+    }
+
+    function checkInactivity() {
+      if (isLoggingOut) return;
+      if ((Date.now() - getLastActivity()) >= TIMEOUT_MS) {
+        isLoggingOut = true;
+        window.location.href = logoutUrl;
+      }
+    }
+
+    recordActivity();
+
+    ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach(function(evt) {
+      document.addEventListener(evt, recordActivity, { passive: true });
+    });
+
+    window.addEventListener('storage', function(e) {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        const val = parseInt(e.newValue, 10);
+        if (val > lastActivity) {
+          lastActivity = val;
+        }
+      }
+    });
+
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) {
+        checkInactivity();
+      }
+    });
+
+    setInterval(checkInactivity, 15000);
+  })();
+</script>
+{% endif %}
 </body>
 </html>

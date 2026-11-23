@@ -5,7 +5,7 @@
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-md-7 col-lg-5 col-xl-4">
-        <div class="card border-0 shadow-sm p-4 p-md-5 bg-white">
+        <div class="card border-0 shadow-sm p-4 p-md-5 bg-white rounded-1 gap-2 mb-3">
           <div class="text-center mb-4">
             <span class="eco-brand-badge mb-3" style="width: 48px; height: 48px;">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -18,6 +18,10 @@
           </div>
 
           <form action="{{ url_for('register') }}" method="POST" id="registerForm" novalidate>
+            <div style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
+              <label for="regWebsite">Website</label>
+              <input type="text" name="website" id="regWebsite" tabindex="-1" autocomplete="off">
+            </div>
             <div class="row g-2 mb-3">
               <div class="col-12 col-sm-6">
                 <div class="messenger-field-group {% if error and error_field == 'first_name' %}has-error{% endif %}" id="firstNameGroup">
@@ -58,9 +62,25 @@
                   <i class="bi bi-eye"></i>
                 </button>
               </div>
+              <div class="mt-2 d-none" id="pwStrengthBox">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="small text-muted" style="font-size: 0.74rem;">Password strength</span>
+                  <span class="small fw-semibold" id="pwStrengthLabel" style="font-size: 0.74rem;">Weak</span>
+                </div>
+                <div class="progress rounded-pill mb-2" style="height: 5px; background: #e2e8f0;">
+                  <div class="progress-bar bg-danger" id="pwStrengthBar" role="progressbar" style="width: 0%; transition: width 0.2s ease;"></div>
+                </div>
+                <div class="d-flex flex-column gap-1" style="font-size: 0.75rem;">
+                  <span class="text-muted" id="pwReqLen"><i class="bi bi-circle me-1"></i>At least 8 characters</span>
+                  <span class="text-muted" id="pwReqUpper"><i class="bi bi-circle me-1"></i>One uppercase letter (A–Z)</span>
+                  <span class="text-muted" id="pwReqLower"><i class="bi bi-circle me-1"></i>One lowercase letter (a–z)</span>
+                  <span class="text-muted" id="pwReqNum"><i class="bi bi-circle me-1"></i>One number (0–9)</span>
+                  <span class="text-muted" id="pwReqSym"><i class="bi bi-circle me-1"></i>One special character (!@#$...)</span>
+                </div>
+              </div>
               <div class="messenger-error-msg" id="regPassError" {% if not (error and error_field == 'password') %}style="display: none;"{% endif %}>
                 <i class="bi bi-exclamation-circle"></i>
-                <span class="msg-text">{{ error if (error and error_field == 'password') else 'Password must be at least 6 characters.' }}</span>
+                <span class="msg-text">{{ error if (error and error_field == 'password') else 'Password must be at least 8 characters with uppercase, lowercase, number, and symbol.' }}</span>
               </div>
             </div>
 
@@ -159,6 +179,66 @@
         termsCheck.checked = true;
         termsCheck.classList.remove('is-invalid');
         if (termsError) termsError.style.display = 'none';
+      });
+    }
+
+    const regPass = document.getElementById('regPass');
+    const pwBox = document.getElementById('pwStrengthBox');
+    const pwBar = document.getElementById('pwStrengthBar');
+    const pwLabel = document.getElementById('pwStrengthLabel');
+    const reqs = {
+      len: document.getElementById('pwReqLen'),
+      upper: document.getElementById('pwReqUpper'),
+      lower: document.getElementById('pwReqLower'),
+      num: document.getElementById('pwReqNum'),
+      sym: document.getElementById('pwReqSym')
+    };
+
+    function markReq(el, ok) {
+      if (!el) return;
+      el.className = ok ? 'text-success fw-semibold' : 'text-muted';
+      const icon = el.querySelector('i');
+      if (icon) {
+        icon.className = ok ? 'bi bi-check-circle-fill me-1' : 'bi bi-circle me-1';
+      }
+    }
+
+    if (regPass && pwBox) {
+      regPass.addEventListener('input', function() {
+        const val = this.value || '';
+        if (!val) {
+          pwBox.classList.add('d-none');
+          return;
+        }
+        pwBox.classList.remove('d-none');
+        const cLen = val.length >= 8;
+        const cUpper = /[A-Z]/.test(val);
+        const cLower = /[a-z]/.test(val);
+        const cNum = /\d/.test(val);
+        const cSym = /[^A-Za-z0-9]/.test(val);
+
+        markReq(reqs.len, cLen);
+        markReq(reqs.upper, cUpper);
+        markReq(reqs.lower, cLower);
+        markReq(reqs.num, cNum);
+        markReq(reqs.sym, cSym);
+
+        const score = [cLen, cUpper, cLower, cNum, cSym].filter(Boolean).length;
+        const pct = score * 20;
+        pwBar.style.width = pct + '%';
+        if (score <= 2) {
+          pwBar.className = 'progress-bar bg-danger';
+          pwLabel.className = 'small fw-semibold text-danger';
+          pwLabel.textContent = 'Weak';
+        } else if (score <= 4) {
+          pwBar.className = 'progress-bar bg-warning';
+          pwLabel.className = 'small fw-semibold text-warning-emphasis';
+          pwLabel.textContent = 'Fair';
+        } else {
+          pwBar.className = 'progress-bar bg-success';
+          pwLabel.className = 'small fw-semibold text-success';
+          pwLabel.textContent = 'Strong';
+        }
       });
     }
   });

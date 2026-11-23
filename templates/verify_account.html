@@ -5,7 +5,7 @@
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-12 col-md-10 col-lg-7">
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+        <div class="card border-0 shadow-sm rounded-1 overflow-hidden bg-white gap-2 mb-3">
           <div class="p-4 p-md-5">
             <div class="text-center mb-4">
               <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 56px; height: 56px; background-color: rgba(25, 135, 84, 0.1); color: var(--eco-forest);">
@@ -360,7 +360,7 @@
                   </div>
                 </div>
 
-                <div class="card border rounded-4 bg-light bg-opacity-50 p-3 p-md-4 mb-4">
+                <div class="card border rounded-1 bg-light bg-opacity-50 p-3 p-md-4 mb-3 gap-2">
                   <div class="row g-3 small">
                     <div class="col-12 col-sm-6">
                       <div class="text-muted">Full Name</div>
@@ -1023,6 +1023,22 @@
     let passedBlink = false;
     let maxEar = 0.28;
     let isCapturing = false;
+    let holdStartTime = null;
+    let holdDescriptors = [];
+
+    function averageDescriptors(list) {
+      const len = list[0].length;
+      const avg = new Array(len).fill(0);
+      for (const d of list) {
+        for (let i = 0; i < len; i++) {
+          avg[i] += d[i];
+        }
+      }
+      for (let i = 0; i < len; i++) {
+        avg[i] /= list.length;
+      }
+      return avg;
+    }
 
     function setBadge(type, html) {
       statusBadge.className = 'badge rounded-pill px-3 py-2 fw-semibold shadow border ';
@@ -1036,16 +1052,18 @@
       statusBadge.innerHTML = html;
     }
 
-    function showVerifyLoading(show) {
+    function showVerifyLoading(show, title, subtitle) {
       if (show) {
+        video.style.filter = 'blur(14px)';
         verifyLoadingOverlay.classList.remove('d-none');
         verifyLoadingOverlay.classList.add('d-flex');
         verifySpinner.classList.remove('d-none');
         verifyIcon.classList.add('d-none');
         verifyIcon.classList.remove('d-inline-flex');
-        verifyLoadingTitle.textContent = 'Capturing Biometrics...';
-        verifyLoadingSubtitle.textContent = 'Encoding facial recognition data';
+        verifyLoadingTitle.textContent = title || 'Capturing Biometrics...';
+        verifyLoadingSubtitle.textContent = subtitle || 'Encoding facial recognition data';
       } else {
+        video.style.filter = 'none';
         verifyLoadingOverlay.classList.add('d-none');
         verifyLoadingOverlay.classList.remove('d-flex');
       }
@@ -1074,6 +1092,8 @@
       passedBlink = false;
       maxEar = 0.28;
       isCapturing = false;
+      holdStartTime = null;
+      holdDescriptors = [];
       showVerifyLoading(false);
     }
 
@@ -1114,21 +1134,25 @@
         return;
       }
       resetVerifyLiveness();
+      showVerifyLoading(true, 'Initializing AI Scanner...', 'Preparing camera and facial recognition models');
       try {
-        setBadge('warning', '<i class="bi bi-hourglass-split me-1 text-warning"></i><span>Loading Camera...</span>');
+        setBadge('warning', '<i class="bi bi-hourglass-split me-1 text-warning"></i><span>Loading AI Scanner...</span>');
         mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
         video.srcObject = mediaStream;
         await video.play();
 
         try {
           await loadFaceModels();
+          showVerifyLoading(false);
           startDetectionLoop();
         } catch (modelErr) {
+          showVerifyLoading(false);
           setBadge('warning', '<i class="bi bi-camera me-1 text-warning"></i><span>Center your face and click Capture.</span>');
           btnCapture.classList.remove('d-none');
           btnCapture.disabled = false;
         }
       } catch (camErr) {
+        showVerifyLoading(false);
         setBadge('danger', '<i class="bi bi-camera-video-off me-1"></i><span>Camera access denied or unavailable.</span>');
       }
     }
@@ -1145,7 +1169,7 @@
 
         faceapi.matchDimensions(overlay, displaySize);
         const detection = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.45 }))
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.50 }))
           .withFaceLandmarks()
           .withFaceDescriptor();
 
@@ -1154,6 +1178,8 @@
 
         if (!detection) {
           latestDescriptor = null;
+          holdStartTime = null;
+          holdDescriptors = [];
           setBadge('warning', '<i class="bi bi-person-bounding-box me-1 text-warning"></i><span>Position your face inside the frame</span>');
           return;
         }
@@ -1195,12 +1221,32 @@
             passedBlink = true;
           }
         } else {
-          setBadge('success', '<i class="bi bi-shield-check me-1"></i><span>Liveness verified! Look straight...</span>');
-          if (yawRatio >= 0.42 && yawRatio <= 0.58) {
-            isCapturing = true;
-            latestDescriptor = Array.from(detection.descriptor);
-            performFaceCapture();
+          const isCentered = yawRatio >= 0.42 && yawRatio <= 0.58 && detection.detection.score >= 0.62;
+          if (!isCentered) {
+            holdStartTime = null;
+            holdDescriptors = [];
+            setBadge('success', '<i class="bi bi-shield-check me-1"></i><span>Liveness verified! Look straight and hold still...</span>');
+            return;
           }
+          if (!holdStartTime) {
+            holdStartTime = Date.now();
+          }
+          if (holdDescriptors.length < 6) {
+            holdDescriptors.push(Array.from(detection.descriptor));
+          }
+          const elapsed = Date.now() - holdStartTime;
+          const remaining = Math.max(1, Math.ceil((3000 - elapsed) / 1000));
+          if (elapsed < 3000 || holdDescriptors.length < 3) {
+            setBadge('success', '<i class="bi bi-camera me-1"></i><span>Hold still... ' + remaining + 's</span>');
+            return;
+          }
+          isCapturing = true;
+          if (detectionTimer) {
+            clearInterval(detectionTimer);
+            detectionTimer = null;
+          }
+          latestDescriptor = averageDescriptors(holdDescriptors);
+          performFaceCapture();
         }
       }, 220);
     }

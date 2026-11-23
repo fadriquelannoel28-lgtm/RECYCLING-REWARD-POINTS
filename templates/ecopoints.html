@@ -20,12 +20,12 @@
           </a>
         </div>
 
-        <div class="row g-3 mb-4">
+        <div class="row g-2 mb-3">
           <div class="col-md-5">
-            <div class="card text-white border-0 shadow-sm p-4 h-100 d-flex flex-column justify-content-between" style="background-color: var(--eco-forest);">
+            <div class="card rounded-1 shadow-sm p-4 h-100 d-flex flex-column justify-content-between gap-2 mb-3" style="background-color: var(--eco-forest);">
               <div>
                 <span class="text-white-50 small text-uppercase fw-semibold">Current Balance</span>
-                <div class="display-5 fw-bold my-2">{{ "{:,}".format(current_user.points) }}</div>
+                <div class="display-5 fw-bold my-2 text-white">{{ "{:,}".format(current_user.points) }}</div>
                 <div class="small text-white-50">Total EcoPoints Available</div>
               </div>
               <div class="mt-3">
@@ -35,58 +35,24 @@
           </div>
 
           <div class="col-md-7">
-            <div class="card border-0 shadow-sm p-4 h-100">
-              <h5 class="fw-bold mb-3" style="color: var(--eco-forest);">Points Breakdown</h5>
-
-              <div class="mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="eco-icon-tile tile-blue" style="width: 28px; height: 28px;">
-                      <i class="bi bi-cup-straw"></i>
-                    </span>
-                    <span class="small fw-semibold">Plastic Bottles</span>
-                  </div>
-                  <span class="small fw-bold">{{ bottle_points }} pts ({{ bottle_pct }}%)</span>
+            <div class="card border-0 shadow-sm p-4 h-100 rounded-1 gap-2 mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                  <h5 class="fw-bold mb-1" style="color: var(--eco-forest);">Points Breakdown</h5>
+                  <p class="text-muted small mb-0">EcoPoints percentage share by material.</p>
                 </div>
-                <div class="progress" style="height: 10px;">
-                  <div class="progress-bar bg-primary" style="width: {{ bottle_pct }}%;"></div>
-                </div>
+                <span class="badge text-success rounded-pill px-2 py-1 small">
+                  {{ "{:,}".format(total_earned_points) }} Total pts
+                </span>
               </div>
-
-              <div class="mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="eco-icon-tile tile-orange" style="width: 28px; height: 28px;">
-                      <i class="bi bi-box2"></i>
-                    </span>
-                    <span class="small fw-semibold">Cans</span>
-                  </div>
-                  <span class="small fw-bold">{{ can_points }} pts ({{ can_pct }}%)</span>
-                </div>
-                <div class="progress" style="height: 10px;">
-                  <div class="progress-bar bg-warning" style="width: {{ can_pct }}%;"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="eco-icon-tile tile-purple" style="width: 28px; height: 28px;">
-                      <i class="bi bi-file-earmark-text"></i>
-                    </span>
-                    <span class="small fw-semibold">Other Materials</span>
-                  </div>
-                  <span class="small fw-bold">{{ other_points }} pts ({{ other_pct }}%)</span>
-                </div>
-                <div class="progress" style="height: 10px;">
-                  <div class="progress-bar bg-secondary" style="width: {{ other_pct }}%;"></div>
-                </div>
+              <div style="height: 175px; position: relative;">
+                <canvas id="ecopointsBarRaceChart"></canvas>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="card border-0 shadow-sm p-4">
+        <div class="card rounded-1 shadow-sm p-4 gap-2 mb-3">
           <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <div>
               <h5 class="fw-bold mb-0" style="color: var(--eco-forest);">Points Earned History</h5>
@@ -156,4 +122,81 @@
     </div>
   </div>
 </main>
+
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script id="ecopointsRaceData" type="application/json">
+{{ dynamic_materials|tojson }}
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const dataEl = document.getElementById('ecopointsRaceData');
+  let mats = [];
+  if (dataEl) {
+    try {
+      mats = JSON.parse(dataEl.textContent) || [];
+    } catch (e) {}
+  }
+
+  mats.sort((a, b) => (b.pts_pct || 0) - (a.pts_pct || 0));
+  const racePalette = ['#3b82f6', '#38bdf8', '#a855f7', '#ec4899', '#14b8a6', '#10b981', '#f59e0b', '#f97316'];
+  const labels = mats.length ? mats.map(m => m.name) : ['No Data'];
+  const pcts = mats.length ? mats.map(m => m.pts_pct) : [0];
+  const pts = mats.length ? mats.map(m => m.points) : [0];
+  const colors = labels.map((_, idx) => racePalette[idx % racePalette.length]);
+
+  const barEl = document.getElementById('ecopointsBarRaceChart');
+  if (barEl && typeof Chart !== 'undefined') {
+    if (barEl.parentElement) {
+      barEl.parentElement.style.height = Math.max(100, labels.length * 26) + 'px';
+    }
+    new Chart(barEl, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: pcts,
+          backgroundColor: colors,
+          borderRadius: 6,
+          borderSkipped: false,
+          barThickness: 12
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const idx = context.dataIndex;
+                const val = context.parsed.x || 0;
+                const p = pts[idx] || 0;
+                return ' ' + val + '% (' + p.toLocaleString() + ' pts)';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            display: false,
+            beginAtZero: true,
+            max: 100
+          },
+          y: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: {
+              color: '#475569',
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: '600' }
+            }
+          }
+        }
+      }
+    });
+  }
+});
+</script>
 {% endblock %}

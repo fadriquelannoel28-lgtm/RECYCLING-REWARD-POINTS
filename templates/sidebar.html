@@ -1,4 +1,4 @@
-<div class="card border-0 shadow-sm mb-4">
+<div class="card border-0 shadow-sm mb-3 rounded-1 gap-2">
   <div class="card-body p-2">
     <div class="nav flex-column nav-pills">
       <a href="{{ url_for('dashboard') }}" class="nav-link py-2 px-3 {% if active_page == 'dashboard' %}active bg-success text-white{% else %}text-dark{% endif %}">
@@ -23,6 +23,9 @@
         <i class="bi bi-person-gear me-2"></i> Account Settings
       </a>
       <hr class="my-2">
+      <button type="button" class="nav-link py-2 px-3 text-dark text-start w-100 border-0 bg-transparent" data-bs-toggle="modal" data-bs-target="#contactUsModal">
+        <i class="bi bi-envelope-paper me-2 text-success"></i> Contact Us
+      </button>
       <a href="{{ url_for('logout') }}" class="nav-link py-2 px-3 text-danger">
         <i class="bi bi-box-arrow-right me-2"></i> Log out
       </a>

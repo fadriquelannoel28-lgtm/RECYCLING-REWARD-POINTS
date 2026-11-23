@@ -440,16 +440,14 @@ document.addEventListener('DOMContentLoaded', function () {
       const cp = cpInput ? cpInput.value : '';
       const tm = tmCheck ? tmCheck.checked : false;
 
+      const nameRegex = /^[A-Za-zÀ-ÿ\s.\-']{2,50}$/;
+
       if (!fn) {
         showRegError(fnGroup, fnInput, fnError, 'Please enter your first name.');
         if (!hasErr && fnInput) fnInput.focus();
         hasErr = true;
-      } else if (fn.length < 2) {
-        showRegError(fnGroup, fnInput, fnError, 'First name must be at least 2 characters.');
-        if (!hasErr && fnInput) fnInput.focus();
-        hasErr = true;
-      } else if (/\d/.test(fn)) {
-        showRegError(fnGroup, fnInput, fnError, 'First name cannot contain numbers.');
+      } else if (!nameRegex.test(fn)) {
+        showRegError(fnGroup, fnInput, fnError, 'First name must be 2–50 letters only (no numbers or symbols).');
         if (!hasErr && fnInput) fnInput.focus();
         hasErr = true;
       }
@@ -458,12 +456,8 @@ document.addEventListener('DOMContentLoaded', function () {
         showRegError(lnGroup, lnInput, lnError, 'Please enter your last name.');
         if (!hasErr && lnInput) lnInput.focus();
         hasErr = true;
-      } else if (ln.length < 2) {
-        showRegError(lnGroup, lnInput, lnError, 'Last name must be at least 2 characters.');
-        if (!hasErr && lnInput) lnInput.focus();
-        hasErr = true;
-      } else if (/\d/.test(ln)) {
-        showRegError(lnGroup, lnInput, lnError, 'Last name cannot contain numbers.');
+      } else if (!nameRegex.test(ln)) {
+        showRegError(lnGroup, lnInput, lnError, 'Last name must be 2–50 letters only (no numbers or symbols).');
         if (!hasErr && lnInput) lnInput.focus();
         hasErr = true;
       }
@@ -472,7 +466,7 @@ document.addEventListener('DOMContentLoaded', function () {
         showRegError(emGroup, emInput, emError, 'Please enter your email address.');
         if (!hasErr && emInput) emInput.focus();
         hasErr = true;
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+      } else if (!/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(em)) {
         showRegError(emGroup, emInput, emError, 'Please enter a valid email address.');
         if (!hasErr && emInput) emInput.focus();
         hasErr = true;
@@ -482,8 +476,12 @@ document.addEventListener('DOMContentLoaded', function () {
         showRegError(pwGroup, pwInput, pwError, 'Please enter a password.');
         if (!hasErr && pwInput) pwInput.focus();
         hasErr = true;
-      } else if (pw.length < 6) {
-        showRegError(pwGroup, pwInput, pwError, 'Password must be at least 6 characters.');
+      } else if (pw.length < 8 || pw.length > 64) {
+        showRegError(pwGroup, pwInput, pwError, 'Password must be 8 to 64 characters long.');
+        if (!hasErr && pwInput) pwInput.focus();
+        hasErr = true;
+      } else if (!/[A-Z]/.test(pw) || !/[a-z]/.test(pw) || !/\d/.test(pw) || !/[^A-Za-z0-9]/.test(pw)) {
+        showRegError(pwGroup, pwInput, pwError, 'Include uppercase, lowercase, a number, and a special character.');
         if (!hasErr && pwInput) pwInput.focus();
         hasErr = true;
       }
@@ -643,8 +641,8 @@ document.addEventListener('DOMContentLoaded', function () {
         showPwError(newGroup, newInput, newError, 'Please enter a new password.');
         if (!hasErr && newInput) newInput.focus();
         hasErr = true;
-      } else if (nw.length < 6) {
-        showPwError(newGroup, newInput, newError, 'New password must be at least 6 characters long.');
+      } else if (nw.length < 8) {
+        showPwError(newGroup, newInput, newError, 'New password must be at least 8 characters long.');
         if (!hasErr && newInput) newInput.focus();
         hasErr = true;
       }

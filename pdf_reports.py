@@ -7,16 +7,40 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_RIGHT, TA_CENTER
 from db import get_db
 
+def _make_footer(location_label='Barangay Pinagkawitan, Lipa City'):
+    def _footer(canvas, doc):
+        canvas.saveState()
+        canvas.setStrokeColor(colors.HexColor('#cbd5e1'))
+        canvas.setLineWidth(0.5)
+        canvas.line(40, 42, 555.27, 42)
+        canvas.setFont('Helvetica', 8)
+        canvas.setFillColor(colors.HexColor('#64748b'))
+        canvas.drawString(40, 28, f'EcoCoins • {location_label}')
+        canvas.drawRightString(555.27, 28, f'Page {doc.page}')
+        canvas.restoreState()
+    return _footer
+
 def _draw_footer(canvas, doc):
-    canvas.saveState()
-    canvas.setStrokeColor(colors.HexColor('#cbd5e1'))
-    canvas.setLineWidth(0.5)
-    canvas.line(40, 42, 555.27, 42)
-    canvas.setFont('Helvetica', 8)
-    canvas.setFillColor(colors.HexColor('#64748b'))
-    canvas.drawString(40, 28, 'EcoCoins • Barangay Pinagkawitan, Lipa City')
-    canvas.drawRightString(555.27, 28, 'Page 1')
-    canvas.restoreState()
+    _make_footer('Barangay Pinagkawitan, Lipa City')(canvas, doc)
+
+def _resolve_barangay_label(cur, barangay):
+    b = (barangay or '').strip()
+    if not b or b.lower() == 'all':
+        return '', 'All Barangays', 'All Barangays'
+    try:
+        row = cur.execute(
+            "SELECT barangay, city FROM stations WHERE LOWER(barangay) = LOWER(?) LIMIT 1",
+            (b,)
+        ).fetchone()
+        if row:
+            b_name = (row['barangay'] or b).strip()
+            c_name = (row['city'] or '').strip()
+            meta_lbl = f"{b_name}, {c_name}" if c_name else b_name
+            footer_lbl = f"Barangay {meta_lbl}"
+            return b_name, meta_lbl, footer_lbl
+    except Exception:
+        pass
+    return b, b, f"Barangay {b}"
 
 def _get_styles():
     base = getSampleStyleSheet()['Normal']
@@ -36,13 +60,34 @@ def _get_styles():
         'sig_text': ParagraphStyle('SText', parent=base, fontName='Helvetica', fontSize=9, leading=13, textColor=colors.HexColor('#334155')),
     }
 
-def generate_participation_report_pdf():
+def generate_participation_report_pdf(barangay=None):
     conn = get_db()
     cur = conn.cursor()
-    all_txs = [dict(r) for r in cur.execute("SELECT * FROM transactions").fetchall()]
-    residents_list = [dict(r) for r in cur.execute("SELECT * FROM users WHERE role = 'resident'").fetchall()]
-    staff_list = [dict(r) for r in cur.execute("SELECT * FROM users WHERE role = 'staff'").fetchall()]
-    all_redemptions = [dict(r) for r in cur.execute("SELECT * FROM redemptions").fetchall()]
+    brgy_filter, meta_lbl, footer_lbl = _resolve_barangay_label(cur, barangay)
+    if brgy_filter:
+        all_txs = [dict(r) for r in cur.execute("""
+            SELECT t.* FROM transactions t
+            LEFT JOIN users u ON t.user_id = u.id
+            WHERE LOWER(COALESCE(u.barangay, '')) = LOWER(?)
+        """, (brgy_filter,)).fetchall()]
+        residents_list = [dict(r) for r in cur.execute(
+            "SELECT * FROM users WHERE role = 'resident' AND LOWER(COALESCE(barangay, '')) = LOWER(?)",
+            (brgy_filter,)
+        ).fetchall()]
+        staff_list = [dict(r) for r in cur.execute(
+            "SELECT * FROM users WHERE role = 'staff' AND LOWER(COALESCE(station_name, '')) LIKE LOWER(?)",
+            (f"%{brgy_filter}%",)
+        ).fetchall()]
+        all_redemptions = [dict(r) for r in cur.execute("""
+            SELECT r.* FROM redemptions r
+            LEFT JOIN users u ON r.user_id = u.id
+            WHERE LOWER(COALESCE(u.barangay, '')) = LOWER(?)
+        """, (brgy_filter,)).fetchall()]
+    else:
+        all_txs = [dict(r) for r in cur.execute("SELECT * FROM transactions").fetchall()]
+        residents_list = [dict(r) for r in cur.execute("SELECT * FROM users WHERE role = 'resident'").fetchall()]
+        staff_list = [dict(r) for r in cur.execute("SELECT * FROM users WHERE role = 'staff'").fetchall()]
+        all_redemptions = [dict(r) for r in cur.execute("SELECT * FROM redemptions").fetchall()]
     conn.close()
 
     total_points = sum(int(t.get('points_earned', 0)) for t in all_txs)
@@ -74,7 +119,7 @@ def generate_participation_report_pdf():
 
     meta_cells = [
         [
-            [Paragraph('Barangay', st['meta_label']), Paragraph('Pinagkawitan, Lipa City', st['meta_val'])],
+            [Paragraph('Barangay', st['meta_label']), Paragraph(meta_lbl, st['meta_val'])],
             [Paragraph('Report generated', st['meta_label']), Paragraph(now_date, st['meta_val'])],
             [Paragraph('Report type', st['meta_label']), Paragraph('Summary', st['meta_val'])],
         ],
@@ -140,13 +185,21 @@ def generate_participation_report_pdf():
     ]))
     story.append(t_sig)
 
-    doc.build(story, onFirstPage=_draw_footer)
+    doc.build(story, onFirstPage=_make_footer(footer_lbl), onLaterPages=_make_footer(footer_lbl))
     return buf.getvalue()
 
-def generate_materials_report_pdf():
+def generate_materials_report_pdf(barangay=None):
     conn = get_db()
     cur = conn.cursor()
-    all_txs = [dict(r) for r in cur.execute("SELECT * FROM transactions").fetchall()]
+    brgy_filter, meta_lbl, footer_lbl = _resolve_barangay_label(cur, barangay)
+    if brgy_filter:
+        all_txs = [dict(r) for r in cur.execute("""
+            SELECT t.* FROM transactions t
+            LEFT JOIN users u ON t.user_id = u.id
+            WHERE LOWER(COALESCE(u.barangay, '')) = LOWER(?)
+        """, (brgy_filter,)).fetchall()]
+    else:
+        all_txs = [dict(r) for r in cur.execute("SELECT * FROM transactions").fetchall()]
     conn.close()
 
     mat_counts = {'Plastic Bottles': 0, 'Aluminum Cans': 0, 'Other Recyclables': 0}
@@ -187,7 +240,7 @@ def generate_materials_report_pdf():
 
     meta_cells = [
         [
-            [Paragraph('Barangay', st['meta_label']), Paragraph('Pinagkawitan, Lipa City', st['meta_val'])],
+            [Paragraph('Barangay', st['meta_label']), Paragraph(meta_lbl, st['meta_val'])],
             [Paragraph('Report generated', st['meta_label']), Paragraph(now_date, st['meta_val'])],
             [Paragraph('Report type', st['meta_label']), Paragraph('Summary', st['meta_val'])],
         ],
@@ -251,7 +304,7 @@ def generate_materials_report_pdf():
     ]))
     story.append(t_sig)
 
-    doc.build(story, onFirstPage=_draw_footer)
+    doc.build(story, onFirstPage=_make_footer(footer_lbl), onLaterPages=_make_footer(footer_lbl))
     return buf.getvalue()
 
 def generate_deposit_receipt_pdf(receipt_data):

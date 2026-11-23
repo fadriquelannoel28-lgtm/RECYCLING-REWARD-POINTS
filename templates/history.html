@@ -20,7 +20,7 @@
           </a>
         </div>
 
-        <div class="card border-0 shadow-sm p-4 bg-white">
+        <div class="card rounded-1 shadow-sm p-4 bg-white gap-2 mb-3">
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
             <div class="d-flex flex-wrap gap-2 filter-container" data-target="#historyTable">
               <button type="button" class="btn btn-sm btn-success filter-btn active" data-filter="all">All</button>
@@ -63,7 +63,11 @@
                       {% set cat = 'others' %}
                     {% endif %}
                     <tr class="table-row-item filter-item" data-category="{{ cat }}" data-search="{{ t.receipt_no }} {{ t.created_at }} {{ t.material_name }} {{ cat }}">
-                      <td class="font-monospace text-muted small">{{ t.receipt_no }}</td>
+                      <td>
+                        <a href="{{ url_for('receipt_pdf', receipt_no=t.receipt_no) }}" target="_blank" class="text-decoration-none font-monospace small text-success fw-semibold" title="View official PDF receipt">
+                          <i class="bi bi-file-earmark-pdf me-1"></i>{{ t.receipt_no }}
+                        </a>
+                      </td>
                       <td class="text-muted small">{{ t.created_at }}</td>
                       <td>
                         <div class="d-flex align-items-center gap-2">

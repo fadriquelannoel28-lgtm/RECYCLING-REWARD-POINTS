@@ -5,7 +5,7 @@
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-md-7 col-lg-5 col-xl-4">
-        <div class="card border-0 shadow-sm p-4 p-md-5 bg-white">
+        <div class="card border-0 shadow-sm p-4 p-md-5 bg-white rounded-1 gap-2 mb-3">
           <div class="text-center mb-4">
             <span class="eco-brand-badge mb-3" style="width: 48px; height: 48px;">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -92,6 +92,11 @@
             <span class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">Other ways to login</span>
             <hr class="flex-grow-1 m-0">
           </div>
+
+          {% if google_client_id %}
+          <div id="googleLoginError" class="alert alert-danger rounded-3 small py-2 px-3 mb-2 d-none" role="alert"></div>
+          <div id="googleSignInContainer" class="d-flex justify-content-center mb-3"></div>
+          {% endif %}
 
           <button type="button" class="btn btn-outline-success w-100 py-2 fw-semibold btn-pill d-flex align-items-center justify-content-center gap-2 mb-3" data-bs-toggle="modal" data-bs-target="#faceLoginModal">
             <i class="bi bi-person-bounding-box fs-5"></i>
@@ -189,6 +194,8 @@
     let passedRight = false;
     let passedBlink = false;
     let maxEar = 0.30;
+    let holdStartTime = null;
+    let holdDescriptors = [];
     let isSubmitting = false;
 
     function setStatus(type, html) {
@@ -216,16 +223,34 @@
       return horiz > 0 ? (vert1 + vert2) / (2.0 * horiz) : 0.3;
     }
 
-    function showLoadingScreen(show) {
+    function averageDescriptors(list) {
+      if (!list || !list.length) return [];
+      const dim = list[0].length;
+      const out = new Array(dim).fill(0);
+      for (let i = 0; i < list.length; i++) {
+        for (let j = 0; j < dim; j++) {
+          out[j] += list[i][j];
+        }
+      }
+      for (let j = 0; j < dim; j++) {
+        out[j] /= list.length;
+      }
+      return out;
+    }
+
+    function showLoadingScreen(show, title, subtitle) {
       if (show) {
+        video.style.filter = 'blur(14px)';
+        video.style.transition = 'filter 0.3s ease';
         loadingOverlay.classList.remove('d-none');
         loadingOverlay.classList.add('d-flex');
         loadingSpinner.classList.remove('d-none');
         loadingIcon.classList.add('d-none');
         loadingIcon.classList.remove('d-inline-flex');
-        loadingTitle.textContent = 'Verifying Identity...';
-        loadingSubtitle.textContent = 'Analyzing facial biometrics';
+        loadingTitle.textContent = title || 'Verifying Identity...';
+        loadingSubtitle.textContent = subtitle || 'Analyzing facial biometrics';
       } else {
+        video.style.filter = 'none';
         loadingOverlay.classList.add('d-none');
         loadingOverlay.classList.remove('d-flex');
       }
@@ -236,6 +261,8 @@
       passedRight = false;
       passedBlink = false;
       maxEar = 0.28;
+      holdStartTime = null;
+      holdDescriptors = [];
       isSubmitting = false;
       resultEl.classList.add('d-none');
       showLoadingScreen(false);
@@ -253,14 +280,17 @@
     }
 
     async function startFaceLogin() {
+      stopCamera();
       resetLiveness();
+      showLoadingScreen(true, 'Initializing AI Scanner...', 'Starting camera and loading facial recognition');
+      setStatus('warning', '<i class="bi bi-hourglass-split me-1 text-warning"></i>Loading Camera...');
       try {
-        setStatus('warning', '<i class="bi bi-hourglass-split me-1 text-warning"></i>Loading Camera...');
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
         video.srcObject = stream;
         await video.play();
 
         if (!modelsReady && typeof faceapi !== 'undefined') {
+          loadingSubtitle.textContent = 'Preparing AI face detection models...';
           const modelUrl = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
           await Promise.all([
             faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl),
@@ -271,12 +301,16 @@
         }
 
         if (!modelsReady) {
+          showLoadingScreen(false);
           setStatus('danger', '<i class="bi bi-wifi-off me-1"></i>AI liveness models failed to load.');
           return;
         }
 
+        await new Promise(r => setTimeout(r, 350));
+        showLoadingScreen(false);
         timer = setInterval(detectFrame, 220);
       } catch (err) {
+        showLoadingScreen(false);
         setStatus('danger', '<i class="bi bi-camera-video-off me-1"></i>Camera access denied or unavailable.');
       }
     }
@@ -288,7 +322,7 @@
 
       faceapi.matchDimensions(overlay, displaySize);
       const detection = await faceapi
-        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.45 }))
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.50 }))
         .withFaceLandmarks()
         .withFaceDescriptor();
 
@@ -335,21 +369,40 @@
         setStatus('warning', '<i class="bi bi-eye me-1 text-warning"></i>Look straight and BLINK');
         if (yawRatio >= 0.40 && yawRatio <= 0.60 && (avgEar < 0.22 || avgEar < maxEar * 0.78)) {
           passedBlink = true;
+          holdStartTime = Date.now();
+          holdDescriptors = [];
         }
       } else {
-        setStatus('success', '<i class="bi bi-shield-check me-1"></i>Liveness verified! Look straight...');
-        if (yawRatio >= 0.42 && yawRatio <= 0.58) {
-          isSubmitting = true;
-          submitFaceLogin(Array.from(detection.descriptor));
+        const isCentered = yawRatio >= 0.42 && yawRatio <= 0.58 && detection.detection.score >= 0.62;
+        if (!isCentered) {
+          setStatus('warning', '<i class="bi bi-person-bounding-box me-1 text-warning"></i>Look straight and hold still...');
+          return;
         }
+
+        if (!holdStartTime) holdStartTime = Date.now();
+        holdDescriptors.push(Array.from(detection.descriptor));
+        if (holdDescriptors.length > 6) holdDescriptors.shift();
+
+        const elapsed = Date.now() - holdStartTime;
+        const remainingSec = Math.ceil(Math.max(0, 3000 - elapsed) / 1000);
+
+        if (elapsed < 3000 || holdDescriptors.length < 3) {
+          setStatus('success', `<i class="bi bi-shield-check me-1"></i>Hold still... ${Math.max(1, remainingSec)}s`);
+          return;
+        }
+
+        isSubmitting = true;
+        const avgDesc = averageDescriptors(holdDescriptors);
+        stopCamera();
+        submitFaceLogin(avgDesc);
       }
     }
 
     async function submitFaceLogin(descriptor) {
-      showLoadingScreen(true);
+      showLoadingScreen(true, 'Verifying Identity...', 'Analyzing facial biometrics');
       try {
-        await new Promise(r => setTimeout(r, 650));
-        loadingSubtitle.textContent = 'Getting resident information...';
+        await new Promise(r => setTimeout(r, 550));
+        loadingSubtitle.textContent = 'Checking verified resident records...';
 
         const res = await fetch('/api/face-login', {
           method: 'POST',
@@ -358,7 +411,7 @@
         });
         const data = await res.json();
 
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise(r => setTimeout(r, 450));
 
         if (res.ok && data.status === 'success') {
           loadingSpinner.classList.add('d-none');
@@ -366,21 +419,20 @@
           loadingIcon.classList.add('d-inline-flex');
           loadingTitle.textContent = 'Identified!';
           loadingSubtitle.textContent = `Welcome back, ${data.full_name} (${data.confidence}% match)`;
-          stopCamera();
           setTimeout(() => { window.location.href = data.redirect; }, 900);
         } else {
           showLoadingScreen(false);
+          setStatus('danger', '<i class="bi bi-x-circle me-1"></i>Face not recognized. Click Retry to scan again.');
           resultEl.className = 'alert alert-danger mt-3 mb-0 rounded-3 small fw-semibold';
           resultEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i>${data.message || 'Face not recognized.'}`;
           resultEl.classList.remove('d-none');
-          isSubmitting = false;
         }
       } catch (err) {
         showLoadingScreen(false);
+        setStatus('danger', '<i class="bi bi-wifi-off me-1"></i>Connection error. Click Retry to scan again.');
         resultEl.className = 'alert alert-danger mt-3 mb-0 rounded-3 small fw-semibold';
         resultEl.textContent = 'Connection error while verifying face.';
         resultEl.classList.remove('d-none');
-        isSubmitting = false;
       }
     }
 
@@ -420,4 +472,74 @@
     }
   });
 </script>
+{% if google_client_id %}
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+  (function() {
+    const clientId = {{ google_client_id|tojson }};
+    const container = document.getElementById('googleSignInContainer');
+    const errorBox = document.getElementById('googleLoginError');
+
+    function showGoogleError(msg) {
+      if (!errorBox) return;
+      errorBox.textContent = msg;
+      errorBox.classList.remove('d-none');
+    }
+
+    async function handleGoogleCredentialResponse(response) {
+      if (errorBox) errorBox.classList.add('d-none');
+      if (!response || !response.credential) {
+        showGoogleError('Google sign-in was cancelled or returned no credential.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/google-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credential: response.credential })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success' && data.redirect) {
+          window.location.href = data.redirect;
+        } else {
+          showGoogleError((data && data.message) ? data.message : 'Unable to sign in with Google.');
+        }
+      } catch (err) {
+        showGoogleError('Network error while verifying Google sign-in. Please try again.');
+      }
+    }
+
+    function initGoogleButton() {
+      if (!container || typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
+        return false;
+      }
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleCredentialResponse
+      });
+      const btnWidth = Math.min(340, Math.max(240, container.parentElement ? container.parentElement.clientWidth : 300));
+      google.accounts.id.renderButton(container, {
+        theme: 'outline',
+        size: 'large',
+        shape: 'pill',
+        text: 'continue_with',
+        width: btnWidth
+      });
+      return true;
+    }
+
+    window.addEventListener('load', function() {
+      if (!initGoogleButton()) {
+        let tries = 0;
+        const t = setInterval(function() {
+          tries++;
+          if (initGoogleButton() || tries > 25) {
+            clearInterval(t);
+          }
+        }, 200);
+      }
+    });
+  })();
+</script>
+{% endif %}
 {% endblock %}
