@@ -440,14 +440,14 @@ document.addEventListener('DOMContentLoaded', function () {
       const cp = cpInput ? cpInput.value : '';
       const tm = tmCheck ? tmCheck.checked : false;
 
-      const nameRegex = /^[A-Za-zÀ-ÿ\s.\-']{2,50}$/;
+      const nameRegex = /^[A-Za-zÀ-ÿ\s.\-']{2,30}$/;
 
       if (!fn) {
         showRegError(fnGroup, fnInput, fnError, 'Please enter your first name.');
         if (!hasErr && fnInput) fnInput.focus();
         hasErr = true;
       } else if (!nameRegex.test(fn)) {
-        showRegError(fnGroup, fnInput, fnError, 'First name must be 2–50 letters only (no numbers or symbols).');
+        showRegError(fnGroup, fnInput, fnError, 'First name must be 2–30 letters only (no numbers or symbols).');
         if (!hasErr && fnInput) fnInput.focus();
         hasErr = true;
       }
@@ -457,7 +457,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!hasErr && lnInput) lnInput.focus();
         hasErr = true;
       } else if (!nameRegex.test(ln)) {
-        showRegError(lnGroup, lnInput, lnError, 'Last name must be 2–50 letters only (no numbers or symbols).');
+        showRegError(lnGroup, lnInput, lnError, 'Last name must be 2–30 letters only (no numbers or symbols).');
         if (!hasErr && lnInput) lnInput.focus();
         hasErr = true;
       }

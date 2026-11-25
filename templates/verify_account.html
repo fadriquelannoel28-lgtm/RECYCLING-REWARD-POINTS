@@ -192,7 +192,7 @@
                   <div class="col-12 col-sm-6">
                     <div class="messenger-field-group" id="vFirstNameGroup">
                       <label class="form-label small fw-semibold" for="vFirstName">First Name <span class="text-danger">*</span></label>
-                      <input type="text" class="form-control form-control-lg fs-6" id="vFirstName" name="first_name" placeholder="e.g. Juan" value="{{ user.first_name or (user.full_name.split(' ', 1)[0] if user.full_name else '') }}" required>
+                      <input type="text" class="form-control form-control-lg fs-6" id="vFirstName" name="first_name" maxlength="30" placeholder="e.g. Juan" value="{{ user.first_name or (user.full_name.split(' ', 1)[0] if user.full_name else '') }}" required>
                       <div class="messenger-error-msg" style="display: none;">
                         <i class="bi bi-exclamation-circle"></i>
                         <span class="msg-text">What's your first name?</span>
@@ -202,7 +202,7 @@
                   <div class="col-12 col-sm-6">
                     <div class="messenger-field-group" id="vMiddleNameGroup">
                       <label class="form-label small fw-semibold" for="vMiddleName">Middle Name <span class="text-muted fw-normal">(Optional)</span></label>
-                      <input type="text" class="form-control form-control-lg fs-6" id="vMiddleName" name="middle_name" placeholder="e.g. Reyes" value="{{ user.middle_name or '' }}">
+                      <input type="text" class="form-control form-control-lg fs-6" id="vMiddleName" name="middle_name" maxlength="30" placeholder="e.g. Reyes" value="{{ user.middle_name or '' }}">
                       <div class="messenger-error-msg" style="display: none;">
                         <i class="bi bi-exclamation-circle"></i>
                         <span class="msg-text">Middle name must contain letters only.</span>
@@ -213,7 +213,7 @@
 
                 <div class="messenger-field-group mb-3" id="vLastNameGroup">
                   <label class="form-label small fw-semibold" for="vLastName">Last Name <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control form-control-lg fs-6" id="vLastName" name="last_name" placeholder="e.g. Dela Cruz" value="{{ user.last_name or (user.full_name.split(' ', 1)[1] if user.full_name and ' ' in user.full_name else '') }}" required>
+                  <input type="text" class="form-control form-control-lg fs-6" id="vLastName" name="last_name" maxlength="30" placeholder="e.g. Dela Cruz" value="{{ user.last_name or (user.full_name.split(' ', 1)[1] if user.full_name and ' ' in user.full_name else '') }}" required>
                   <div class="messenger-error-msg" style="display: none;">
                     <i class="bi bi-exclamation-circle"></i>
                     <span class="msg-text">What's your last name?</span>
@@ -252,7 +252,7 @@
                   <div class="col-12 col-sm-6">
                     <div class="messenger-field-group" id="vContactGroup">
                       <label class="form-label small fw-semibold" for="vContact">Mobile / Contact Number <span class="text-danger">*</span></label>
-                      <input type="tel" class="form-control form-control-lg fs-6" id="vContact" name="contact_number" placeholder="e.g. 0917 123 4567" value="{{ user.contact_number or '' }}" required>
+                      <input type="tel" class="form-control form-control-lg fs-6" id="vContact" name="contact_number" maxlength="15" placeholder="e.g. 0917 123 4567" value="{{ user.contact_number or '' }}" required>
                       <div class="messenger-error-msg" style="display: none;">
                         <i class="bi bi-exclamation-circle"></i>
                         <span class="msg-text">Please enter a valid Philippine mobile number.</span>
@@ -304,7 +304,7 @@
                   <div class="col-12 col-sm-8">
                     <div class="messenger-field-group" id="vAddressGroup">
                       <label class="form-label small fw-semibold" for="vAddress">House No., Street / Purok <span class="text-danger">*</span></label>
-                      <input type="text" class="form-control form-control-lg fs-6" id="vAddress" name="address" placeholder="e.g. Purok 2, Blk 4 Lot 9" value="{{ user.address or '' }}" required>
+                      <input type="text" class="form-control form-control-lg fs-6" id="vAddress" name="address" maxlength="120" placeholder="e.g. Purok 2, Blk 4 Lot 9" value="{{ user.address or '' }}" required>
                       <div class="messenger-error-msg" style="display: none;">
                         <i class="bi bi-exclamation-circle"></i>
                         <span class="msg-text">Please enter your house number, street, or purok.</span>
@@ -738,20 +738,94 @@
       activeOcrPromises.push(p);
     }
 
+    let frontIdValid = Boolean(latestIdPreviewUrl);
+    let backIdValid = Boolean(latestIdBackPreviewUrl);
+    let activeIdValidationPromises = [];
+
+    function updatePreviewBoxVisibility() {
+      const hasAnyThumb = !idFrontThumbWrap.classList.contains('d-none') || !idBackThumbWrap.classList.contains('d-none');
+      if (!hasAnyThumb) {
+        idPreviewBox.classList.add('d-none');
+      }
+    }
+
+    async function validateUploadedIdFile(file, side, inputEl, groupId, previewImgEl, thumbWrapEl) {
+      const inputId = inputEl.id;
+      clearFieldError(inputId, groupId);
+      idPreviewBox.classList.remove('d-none');
+      ocrStatusLine.className = 'fw-semibold text-primary d-flex align-items-center gap-2';
+      ocrStatusLine.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span><span>Checking if photo is a real Valid ID...</span>';
+      ocrSubText.textContent = 'Verifying document authenticity with AI...';
+
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('side', side);
+      formData.append('id_type', (document.getElementById('vIdType').value || '').trim());
+
+      try {
+        const res = await fetch('/api/validate-id-image', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok || !data || data.valid === false) {
+          const errMsg = (data && data.message) ? data.message : 'This image does not appear to be a real Valid ID. Please upload a clear photo of your ID.';
+          inputEl.value = '';
+          if (side === 'front') {
+            latestIdPreviewUrl = '';
+            frontIdValid = false;
+          } else {
+            latestIdBackPreviewUrl = '';
+            backIdValid = false;
+          }
+          previewImgEl.src = '';
+          thumbWrapEl.classList.add('d-none');
+          setFieldError(inputId, groupId, errMsg);
+          ocrStatusLine.className = 'fw-semibold text-danger d-flex align-items-center gap-2';
+          ocrStatusLine.innerHTML = '<i class="bi bi-x-circle-fill"></i><span>Invalid ID Photo Rejected</span>';
+          ocrSubText.textContent = errMsg;
+          updatePreviewBoxVisibility();
+          return false;
+        }
+      } catch (err) {
+      }
+
+      if (side === 'front') {
+        frontIdValid = true;
+      } else {
+        backIdValid = true;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        if (side === 'front') {
+          latestIdPreviewUrl = e.target.result;
+        } else {
+          latestIdBackPreviewUrl = e.target.result;
+        }
+        previewImgEl.src = e.target.result;
+        thumbWrapEl.classList.remove('d-none');
+        idPreviewBox.classList.remove('d-none');
+      };
+      reader.readAsDataURL(file);
+      queueOcr(file);
+      return true;
+    }
+
+    function queueIdValidation(file, side, inputEl, groupId, previewImgEl, thumbWrapEl) {
+      if (side === 'front') frontIdValid = false;
+      else backIdValid = false;
+      const p = validateUploadedIdFile(file, side, inputEl, groupId, previewImgEl, thumbWrapEl).finally(() => {
+        activeIdValidationPromises = activeIdValidationPromises.filter(item => item !== p);
+      });
+      activeIdValidationPromises.push(p);
+    }
+
     if (idPictureInput) {
       idPictureInput.addEventListener('change', function() {
         const file = this.files && this.files[0];
         if (file) {
-          clearFieldError('vIdPicture', 'vIdPictureGroup');
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            latestIdPreviewUrl = e.target.result;
-            idPreviewImg.src = latestIdPreviewUrl;
-            idFrontThumbWrap.classList.remove('d-none');
-            idPreviewBox.classList.remove('d-none');
-          };
-          reader.readAsDataURL(file);
-          queueOcr(file);
+          queueIdValidation(file, 'front', idPictureInput, 'vIdPictureGroup', idPreviewImg, idFrontThumbWrap);
         }
       });
     }
@@ -760,29 +834,31 @@
       idBackPictureInput.addEventListener('change', function() {
         const file = this.files && this.files[0];
         if (file) {
-          clearFieldError('vIdBackPicture', 'vIdBackPictureGroup');
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            latestIdBackPreviewUrl = e.target.result;
-            idBackPreviewImg.src = latestIdBackPreviewUrl;
-            idBackThumbWrap.classList.remove('d-none');
-            idPreviewBox.classList.remove('d-none');
-          };
-          reader.readAsDataURL(file);
-          queueOcr(file);
+          queueIdValidation(file, 'back', idBackPictureInput, 'vIdBackPictureGroup', idBackPreviewImg, idBackThumbWrap);
         }
       });
     }
 
     const btnNext1 = document.getElementById('btnNext1');
     btnNext1.addEventListener('click', async function() {
+      if (activeIdValidationPromises.length > 0) {
+        const origHtml = btnNext1.innerHTML;
+        btnNext1.disabled = true;
+        btnNext1.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span><span>Verifying ID...</span>';
+        try {
+          await Promise.all(activeIdValidationPromises);
+        } catch (e) {}
+        btnNext1.innerHTML = origHtml;
+        btnNext1.disabled = false;
+      }
+
       let valid = true;
       let firstInvalid = null;
 
       const faceImgVal = document.getElementById('faceImageInput').value.trim();
       const idType = document.getElementById('vIdType').value.trim();
-      const hasFront = (idPictureInput.files && idPictureInput.files.length > 0) || Boolean(latestIdPreviewUrl);
-      const hasBack = (idBackPictureInput.files && idBackPictureInput.files.length > 0) || Boolean(latestIdBackPreviewUrl);
+      const hasFront = frontIdValid && ((idPictureInput.files && idPictureInput.files.length > 0) || Boolean(latestIdPreviewUrl));
+      const hasBack = backIdValid && ((idBackPictureInput.files && idBackPictureInput.files.length > 0) || Boolean(latestIdBackPreviewUrl));
 
       if (!faceImgVal) {
         setFieldError(null, 'vFaceGroup', 'Please complete your facial recognition scan first.');
@@ -800,7 +876,7 @@
       }
 
       if (!hasFront) {
-        setFieldError('vIdPicture', 'vIdPictureGroup', 'Please upload the FRONT photo of your valid ID.');
+        setFieldError('vIdPicture', 'vIdPictureGroup', 'Please upload a valid FRONT photo of your government ID.');
         valid = false;
         firstInvalid = firstInvalid || 'vIdPicture';
       } else {
@@ -808,7 +884,7 @@
       }
 
       if (!hasBack) {
-        setFieldError('vIdBackPicture', 'vIdBackPictureGroup', 'Please upload the BACK photo of your valid ID.');
+        setFieldError('vIdBackPicture', 'vIdBackPictureGroup', 'Please upload a valid BACK photo of your government ID.');
         valid = false;
         firstInvalid = firstInvalid || 'vIdBackPicture';
       } else {
@@ -871,18 +947,18 @@
       const address = document.getElementById('vAddress').value.trim();
       const zipCode = document.getElementById('vZipCode').value.trim();
 
-      const nameRegex = /^[A-Za-zÀ-ÿ\s.\-']{2,}$/;
+      const nameRegex = /^[A-Za-zÀ-ÿ\s.\-']{2,30}$/;
 
       if (!firstName || !nameRegex.test(firstName)) {
-        setFieldError('vFirstName', 'vFirstNameGroup', firstName ? 'First name must contain letters only.' : "What's your first name?");
+        setFieldError('vFirstName', 'vFirstNameGroup', firstName ? 'First name must be 2–30 letters only.' : "What's your first name?");
         valid = false;
         firstInvalid = firstInvalid || 'vFirstName';
       } else {
         clearFieldError('vFirstName', 'vFirstNameGroup');
       }
 
-      if (middleName && !/^[A-Za-zÀ-ÿ\s.\-']+$/.test(middleName)) {
-        setFieldError('vMiddleName', 'vMiddleNameGroup', 'Middle name must contain letters only.');
+      if (middleName && !/^[A-Za-zÀ-ÿ\s.\-']{1,30}$/.test(middleName)) {
+        setFieldError('vMiddleName', 'vMiddleNameGroup', 'Middle name must be 1–30 letters only.');
         valid = false;
         firstInvalid = firstInvalid || 'vMiddleName';
       } else {
@@ -890,7 +966,7 @@
       }
 
       if (!lastName || !nameRegex.test(lastName)) {
-        setFieldError('vLastName', 'vLastNameGroup', lastName ? 'Last name must contain letters only.' : "What's your last name?");
+        setFieldError('vLastName', 'vLastNameGroup', lastName ? 'Last name must be 2–30 letters only.' : "What's your last name?");
         valid = false;
         firstInvalid = firstInvalid || 'vLastName';
       } else {

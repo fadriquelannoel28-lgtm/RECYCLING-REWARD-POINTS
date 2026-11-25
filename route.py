@@ -1,4 +1,5 @@
 import os
+import io
 import json
 import base64
 import math
@@ -11,6 +12,7 @@ import urllib.parse
 import urllib.request
 import urllib.error
 from email.message import EmailMessage
+from PIL import Image
 import numpy as np
 from datetime import datetime, timedelta
 from flask import render_template, request, redirect, url_for, session, jsonify, make_response
@@ -84,6 +86,97 @@ def resident_matches_barangays(resident_barangay, staff_barangays):
     if not r_brgy:
         return False
     return r_brgy in [b.strip().lower() for b in staff_barangays]
+
+def _load_env_key(env_key, default_val=''):
+    val = os.environ.get(env_key, '').strip()
+    if val:
+        return val
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+    if os.path.isfile(env_path):
+        try:
+            with open(env_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or '=' not in line:
+                        continue
+                    k, v = line.split('=', 1)
+                    if k.strip() == env_key:
+                        return v.strip().strip('"').strip("'")
+        except Exception:
+            pass
+    return default_val
+
+def validate_id_image_with_ai(raw_bytes, side='front', id_type=''):
+    if not raw_bytes:
+        return False, 'Uploaded file is empty. Please upload a clear photo of your valid ID.'
+    try:
+        img = Image.open(io.BytesIO(raw_bytes))
+        img = img.convert('RGB')
+        w, h = img.size
+        if w < 120 or h < 80:
+            return False, 'Image resolution is too small. Please upload a clearer photo of your valid ID.'
+        img.thumbnail((960, 960))
+        buf = io.BytesIO()
+        img.save(buf, format='JPEG', quality=82)
+        jpg_b64 = base64.b64encode(buf.getvalue()).decode('ascii')
+    except Exception:
+        return False, 'Could not read image file. Please upload a valid JPG or PNG photo of your ID.'
+
+    api_key = _load_env_key('GEMINI_API_KEY')
+    model_name = _load_env_key('GEMINI_MODEL', 'gemini-flash-lite-latest')
+    if not api_key:
+        return True, 'ID image attached.'
+
+    side_label = 'BACK' if str(side).lower() == 'back' else 'FRONT'
+    id_hint = f" (selected type: {id_type})" if id_type else ""
+    prompt = (
+        f"You are a strict ID document verifier for a Philippine barangay resident portal. "
+        f"Inspect this uploaded {side_label} ID photo{id_hint}. "
+        f"Determine if this image actually shows a real physical or printed official/government identification card or official PhilSys document "
+        f"(such as Philippine National ID / PhilSys card, ePhilID, PhilSys Transaction Slip, Postal ID, Voter's ID or COMELEC Voter's Certificate, Driver's License, UMID, SSS, Passport, PRC, Senior/PWD ID, School/Student ID, or Barangay ID — either its front or back side). "
+        f"You MUST REJECT (is_valid_id: false) any non-ID image such as bottles, plastic items, household objects, food, animals, landscapes, memes, cartoons, screenshots of chats/apps, blank paper, or a plain selfie with no ID card. "
+        f"Respond with ONLY valid JSON and no markdown fences: "
+        f"{{\"is_valid_id\": true or false, \"detected\": \"short 2-5 word description of what is in the image\", \"reason\": \"concise 1-sentence reason for the user\"}}"
+    )
+
+    payload = json.dumps({
+        'contents': [{
+            'parts': [
+                {'text': prompt},
+                {'inlineData': {'mimeType': 'image/jpeg', 'data': jpg_b64}}
+            ]
+        }],
+        'generationConfig': {
+            'temperature': 0.0,
+            'maxOutputTokens': 1024,
+            'responseMimeType': 'application/json'
+        }
+    }).encode('utf-8')
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+    req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'}, method='POST')
+
+    try:
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            resp_data = json.loads(resp.read().decode('utf-8'))
+            parts = resp_data.get('candidates', [{}])[0].get('content', {}).get('parts', [])
+            raw_text = ''.join(p.get('text', '') for p in parts if isinstance(p, dict)).strip()
+            raw_text = re.sub(r'^```(?:json)?\s*|\s*```$', '', raw_text, flags=re.I | re.S).strip()
+            m = re.search(r'\{.*\}', raw_text, flags=re.S)
+            if m:
+                parsed = json.loads(m.group(0))
+                is_valid = bool(parsed.get('is_valid_id'))
+                detected = str(parsed.get('detected') or '').strip()
+                reason = str(parsed.get('reason') or '').strip()
+                if is_valid:
+                    return True, reason or 'Valid ID card detected.'
+                if detected:
+                    return False, f"Invalid ID photo (detected: {detected}). Please upload a real {side_label.lower()} photo of your Valid ID."
+                return False, reason or f"This image does not appear to be a real Valid ID. Please upload a clear {side_label.lower()} photo of your ID."
+    except Exception:
+        return True, 'ID image attached.'
+
+    return True, 'ID image attached.'
 
 def find_duplicate_verified_face(cur, descriptor_raw, exclude_user_id, threshold=0.42):
     if not descriptor_raw:
@@ -379,23 +472,20 @@ def register_routes(app):
             terms = request.form.get('terms')
 
             full_name = f"{first_name} {last_name}".strip() if first_name else request.form.get('full_name', '').strip()
-            name_pattern = re.compile(r"^[A-Za-zÀ-ÿ\s.\-']{2,50}$")
+            name_pattern = re.compile(r"^[A-Za-zÀ-ÿ\s.\-']{2,30}$")
             email_pattern = re.compile(r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$")
-            weak_passwords = {'password', 'password1', 'password123', '12345678', '123456789', 'qwerty123', 'admin123', 'ecocoins123', 'welcome123'}
-            email_prefix = email.split('@')[0] if '@' in email else ''
-            pw_lower = password.lower()
 
             if not first_name:
                 error = 'Please enter your first name.'
                 error_field = 'first_name'
             elif not name_pattern.match(first_name):
-                error = 'First name must be 2–50 letters only (no numbers or symbols).'
+                error = 'First name must be 2–30 letters only (no numbers or symbols).'
                 error_field = 'first_name'
             elif not last_name:
                 error = 'Please enter your last name.'
                 error_field = 'last_name'
             elif not name_pattern.match(last_name):
-                error = 'Last name must be 2–50 letters only (no numbers or symbols).'
+                error = 'Last name must be 2–30 letters only (no numbers or symbols).'
                 error_field = 'last_name'
             elif not email or not email_pattern.match(email):
                 error = 'Please enter a valid email address.'
@@ -408,9 +498,6 @@ def register_routes(app):
                 error_field = 'password'
             elif not re.search(r"[A-Z]", password) or not re.search(r"[a-z]", password) or not re.search(r"\d", password) or not re.search(r"[^A-Za-z0-9]", password):
                 error = 'Password must include uppercase, lowercase, a number, and a special character.'
-                error_field = 'password'
-            elif pw_lower in weak_passwords or (len(email_prefix) >= 3 and email_prefix in pw_lower) or (len(first_name) >= 3 and first_name.lower() in pw_lower) or (len(last_name) >= 3 and last_name.lower() in pw_lower):
-                error = 'Password is too weak or contains your name/email. Please choose a stronger password.'
                 error_field = 'password'
             elif password != confirm_password:
                 error = 'The passwords you entered do not match.'
@@ -491,10 +578,10 @@ def register_routes(app):
                     feedback = 'Please enter your email address.'
                     feedback_type = 'danger'
                     feedback_field = 'email'
-                elif len(first_name) < 2 or len(last_name) < 2:
-                    feedback = 'Names must be at least 2 characters.'
+                elif len(first_name) < 2 or len(first_name) > 30 or len(last_name) < 2 or len(last_name) > 30:
+                    feedback = 'Names must be between 2 and 30 characters.'
                     feedback_type = 'danger'
-                    feedback_field = 'first_name' if len(first_name) < 2 else 'last_name'
+                    feedback_field = 'first_name' if (len(first_name) < 2 or len(first_name) > 30) else 'last_name'
                 elif any(char.isdigit() for char in full_name):
                     feedback = 'Names cannot contain numbers.'
                     feedback_type = 'danger'
@@ -680,24 +767,33 @@ def register_routes(app):
                 except ValueError:
                     birthday_error = 'Please enter a valid birthday (YYYY-MM-DD).'
 
+            verify_name_pattern = re.compile(r"^[A-Za-zÀ-ÿ\s.\-']{2,30}$")
+            verify_mid_pattern = re.compile(r"^[A-Za-zÀ-ÿ\s.\-']{1,30}$")
+
             if not first_name or not last_name:
                 error = 'Please enter your first and last name.'
+            elif not verify_name_pattern.match(first_name):
+                error = 'First name must be 2–30 letters only.'
+            elif not verify_name_pattern.match(last_name):
+                error = 'Last name must be 2–30 letters only.'
+            elif middle_name and not verify_mid_pattern.match(middle_name):
+                error = 'Middle name must be 1–30 letters only.'
             elif not birthday:
                 error = 'Please enter your birthday.'
             elif birthday_error:
                 error = birthday_error
-            elif not contact_number:
-                error = 'Please enter your contact number.'
+            elif not contact_number or len(contact_number) > 15:
+                error = 'Please enter a valid contact number (max 15 characters).'
             elif not province:
                 error = 'Please select your Province.'
             elif not city:
                 error = 'Please select your City / Municipality.'
             elif not barangay:
                 error = 'Please select your Barangay.'
-            elif not address:
-                error = 'Please enter your residential address.'
-            elif not zip_code:
-                error = 'Please enter your ZIP code.'
+            elif not address or len(address) > 120:
+                error = 'Please enter your residential address (max 120 characters).'
+            elif not zip_code or not re.match(r"^\d{4}$", zip_code):
+                error = 'Please enter a valid 4-digit ZIP code.'
             elif not id_type:
                 error = 'Please select your valid ID type.'
             elif not has_id_front:
@@ -707,55 +803,72 @@ def register_routes(app):
             elif not has_face:
                 error = 'Please capture your face photo to complete verification.'
             else:
-                name_parts = [p for p in [first_name, middle_name, last_name] if p]
-                full_name = ' '.join(name_parts)
-
-                if face_image_data.startswith('data:'):
-                    saved_face_path = save_image_asset(face_image_data, 'faces', f"resident_{user['id']}.jpg")
-                else:
-                    saved_face_path = existing_face or face_image_data
-
-                saved_descriptor = face_descriptor_raw or existing_descriptor
-
+                id_validation_err = None
                 if id_file and id_file.filename:
-                    ext = os.path.splitext(id_file.filename)[1].lower() or '.jpg'
-                    saved_id_path = save_image_asset(id_file, 'ids', f"id_front_{user['id']}_{int(datetime.now().timestamp())}{ext}")
-                elif id_image_data:
-                    saved_id_path = save_image_asset(id_image_data, 'ids', f"id_front_{user['id']}.jpg")
-                else:
-                    saved_id_path = existing_id_front
+                    front_bytes = id_file.read()
+                    id_file.seek(0)
+                    ok_front, msg_front = validate_id_image_with_ai(front_bytes, 'front', id_type)
+                    if not ok_front:
+                        id_validation_err = msg_front
+                if not id_validation_err and id_back_file and id_back_file.filename:
+                    back_bytes = id_back_file.read()
+                    id_back_file.seek(0)
+                    ok_back, msg_back = validate_id_image_with_ai(back_bytes, 'back', id_type)
+                    if not ok_back:
+                        id_validation_err = msg_back
 
-                if id_back_file and id_back_file.filename:
-                    ext_b = os.path.splitext(id_back_file.filename)[1].lower() or '.jpg'
-                    saved_id_back_path = save_image_asset(id_back_file, 'ids', f"id_back_{user['id']}_{int(datetime.now().timestamp())}{ext_b}")
+                if id_validation_err:
+                    error = id_validation_err
                 else:
-                    saved_id_back_path = existing_id_back
+                    name_parts = [p for p in [first_name, middle_name, last_name] if p]
+                    full_name = ' '.join(name_parts)
 
-                conn = get_db()
-                cur = conn.cursor()
-                cur.execute(
-                    """UPDATE users
-                       SET full_name = ?, first_name = ?, middle_name = ?, last_name = ?,
-                           birthday = ?, gender = ?, contact_number = ?, province = ?, city = ?, barangay = ?,
-                           address = ?, zip_code = ?, id_type = ?, id_image = ?, id_back_image = ?,
-                           face_image = ?, face_descriptor = ?,
-                           is_verified = 0, verification_status = 'pending',
-                           verified_at = NULL, verification_notes = ''
-                       WHERE id = ?""",
-                    (
-                        full_name, first_name, middle_name, last_name,
-                        birthday, gender, contact_number, province, city, barangay,
-                        address, zip_code, id_type, saved_id_path, saved_id_back_path,
-                        saved_face_path, saved_descriptor, user['id']
+                    if face_image_data.startswith('data:'):
+                        saved_face_path = save_image_asset(face_image_data, 'faces', f"resident_{user['id']}.jpg")
+                    else:
+                        saved_face_path = existing_face or face_image_data
+
+                    saved_descriptor = face_descriptor_raw or existing_descriptor
+
+                    if id_file and id_file.filename:
+                        ext = os.path.splitext(id_file.filename)[1].lower() or '.jpg'
+                        saved_id_path = save_image_asset(id_file, 'ids', f"id_front_{user['id']}_{int(datetime.now().timestamp())}{ext}")
+                    elif id_image_data:
+                        saved_id_path = save_image_asset(id_image_data, 'ids', f"id_front_{user['id']}.jpg")
+                    else:
+                        saved_id_path = existing_id_front
+
+                    if id_back_file and id_back_file.filename:
+                        ext_b = os.path.splitext(id_back_file.filename)[1].lower() or '.jpg'
+                        saved_id_back_path = save_image_asset(id_back_file, 'ids', f"id_back_{user['id']}_{int(datetime.now().timestamp())}{ext_b}")
+                    else:
+                        saved_id_back_path = existing_id_back
+
+                    conn = get_db()
+                    cur = conn.cursor()
+                    cur.execute(
+                        """UPDATE users
+                           SET full_name = ?, first_name = ?, middle_name = ?, last_name = ?,
+                               birthday = ?, gender = ?, contact_number = ?, province = ?, city = ?, barangay = ?,
+                               address = ?, zip_code = ?, id_type = ?, id_image = ?, id_back_image = ?,
+                               face_image = ?, face_descriptor = ?,
+                               is_verified = 0, verification_status = 'pending',
+                               verified_at = NULL, verification_notes = ''
+                           WHERE id = ?""",
+                        (
+                            full_name, first_name, middle_name, last_name,
+                            birthday, gender, contact_number, province, city, barangay,
+                            address, zip_code, id_type, saved_id_path, saved_id_back_path,
+                            saved_face_path, saved_descriptor, user['id']
+                        )
                     )
-                )
-                conn.commit()
-                conn.close()
-                sync_to_json()
+                    conn.commit()
+                    conn.close()
+                    sync_to_json()
 
-                session['feedback'] = f'Verification submitted for Barangay {barangay}! Your status is now Pending Staff Confirmation.'
-                session['feedback_type'] = 'success'
-                return redirect(url_for('dashboard'))
+                    session['feedback'] = f'Verification submitted for Barangay {barangay}! Your status is now Pending Staff Confirmation.'
+                    session['feedback_type'] = 'success'
+                    return redirect(url_for('dashboard'))
 
         feedback = session.pop('feedback', None)
         feedback_type = session.pop('feedback_type', 'info')
@@ -2530,6 +2643,20 @@ def register_routes(app):
         disposition = 'attachment' if request.args.get('download') else 'inline'
         response.headers['Content-Disposition'] = f'{disposition}; filename={receipt_no}.pdf'
         return response
+
+    @app.route('/api/validate-id-image', methods=['POST'])
+    def api_validate_id_image():
+        user = get_current_user()
+        if not user:
+            return jsonify({'status': 'error', 'valid': False, 'message': 'Please log in first.'}), 401
+        id_file = request.files.get('image')
+        side = request.form.get('side', 'front')
+        id_type = request.form.get('id_type', '')
+        if not id_file or not id_file.filename:
+            return jsonify({'status': 'error', 'valid': False, 'message': 'No image uploaded.'}), 400
+        raw_bytes = id_file.read()
+        is_valid, msg = validate_id_image_with_ai(raw_bytes, side, id_type)
+        return jsonify({'status': 'ok', 'valid': is_valid, 'message': msg})
 
     @app.route('/api/contact-us', methods=['POST'])
     def api_contact_us():

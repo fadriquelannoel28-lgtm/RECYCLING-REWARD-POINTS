@@ -245,7 +245,7 @@
                   <div class="col-12 col-sm-6">
                     <div class="messenger-field-group {% if feedback and feedback_type == 'danger' and feedback_field == 'first_name' %}has-error{% endif %}" id="profileFnGroup">
                       <label class="form-label" for="profileFnInput">First Name</label>
-                      <input type="text" name="first_name" id="profileFnInput" class="form-control {% if feedback and feedback_type == 'danger' and feedback_field == 'first_name' %}is-invalid{% endif %}" value="{{ current_user.full_name.split(' ', 1)[0] if current_user.full_name else '' }}" autocomplete="given-name">
+                      <input type="text" name="first_name" id="profileFnInput" maxlength="30" class="form-control {% if feedback and feedback_type == 'danger' and feedback_field == 'first_name' %}is-invalid{% endif %}" value="{{ current_user.full_name.split(' ', 1)[0] if current_user.full_name else '' }}" autocomplete="given-name">
                       <div class="messenger-error-msg" id="profileFnError" {% if not (feedback and feedback_type == 'danger' and feedback_field == 'first_name') %}style="display: none;"{% endif %}>
                         <i class="bi bi-exclamation-circle"></i>
                         <span class="msg-text">{{ feedback if (feedback and feedback_type == 'danger' and feedback_field == 'first_name') else 'Please enter your first name.' }}</span>
@@ -255,7 +255,7 @@
                   <div class="col-12 col-sm-6">
                     <div class="messenger-field-group {% if feedback and feedback_type == 'danger' and feedback_field == 'last_name' %}has-error{% endif %}" id="profileLnGroup">
                       <label class="form-label" for="profileLnInput">Last Name</label>
-                      <input type="text" name="last_name" id="profileLnInput" class="form-control {% if feedback and feedback_type == 'danger' and feedback_field == 'last_name' %}is-invalid{% endif %}" value="{{ current_user.full_name.split(' ', 1)[1] if current_user.full_name and ' ' in current_user.full_name else '' }}" autocomplete="family-name">
+                      <input type="text" name="last_name" id="profileLnInput" maxlength="30" class="form-control {% if feedback and feedback_type == 'danger' and feedback_field == 'last_name' %}is-invalid{% endif %}" value="{{ current_user.full_name.split(' ', 1)[1] if current_user.full_name and ' ' in current_user.full_name else '' }}" autocomplete="family-name">
                       <div class="messenger-error-msg" id="profileLnError" {% if not (feedback and feedback_type == 'danger' and feedback_field == 'last_name') %}style="display: none;"{% endif %}>
                         <i class="bi bi-exclamation-circle"></i>
                         <span class="msg-text">{{ feedback if (feedback and feedback_type == 'danger' and feedback_field == 'last_name') else 'Please enter your last name.' }}</span>

@@ -26,7 +26,7 @@
               <div class="col-12 col-sm-6">
                 <div class="messenger-field-group {% if error and error_field == 'first_name' %}has-error{% endif %}" id="firstNameGroup">
                   <label class="form-label" for="regFirstName">First Name</label>
-                  <input type="text" name="first_name" id="regFirstName" class="form-control {% if error and error_field == 'first_name' %}is-invalid{% endif %}" placeholder="Juan" value="{{ first_name|default('') }}" autocomplete="given-name">
+                  <input type="text" name="first_name" id="regFirstName" maxlength="30" class="form-control {% if error and error_field == 'first_name' %}is-invalid{% endif %}" placeholder="Juan" value="{{ first_name|default('') }}" autocomplete="given-name">
                   <div class="messenger-error-msg" id="firstNameError" {% if not (error and error_field == 'first_name') %}style="display: none;"{% endif %}>
                     <i class="bi bi-exclamation-circle"></i>
                     <span class="msg-text">{{ error if (error and error_field == 'first_name') else 'Please enter your first name.' }}</span>
@@ -36,7 +36,7 @@
               <div class="col-12 col-sm-6">
                 <div class="messenger-field-group {% if error and error_field == 'last_name' %}has-error{% endif %}" id="lastNameGroup">
                   <label class="form-label" for="regLastName">Last Name</label>
-                  <input type="text" name="last_name" id="regLastName" class="form-control {% if error and error_field == 'last_name' %}is-invalid{% endif %}" placeholder="Dela Cruz" value="{{ last_name|default('') }}" autocomplete="family-name">
+                  <input type="text" name="last_name" id="regLastName" maxlength="30" class="form-control {% if error and error_field == 'last_name' %}is-invalid{% endif %}" placeholder="Dela Cruz" value="{{ last_name|default('') }}" autocomplete="family-name">
                   <div class="messenger-error-msg" id="lastNameError" {% if not (error and error_field == 'last_name') %}style="display: none;"{% endif %}>
                     <i class="bi bi-exclamation-circle"></i>
                     <span class="msg-text">{{ error if (error and error_field == 'last_name') else 'Please enter your last name.' }}</span>
@@ -47,7 +47,7 @@
 
             <div class="messenger-field-group mb-3 {% if error and error_field == 'email' %}has-error{% endif %}" id="regEmailGroup">
               <label class="form-label" for="regEmail">Email Address</label>
-              <input type="email" name="email" id="regEmail" class="form-control {% if error and error_field == 'email' %}is-invalid{% endif %}" placeholder="name@example.com" value="{{ email|default('') }}" autocomplete="email">
+              <input type="email" name="email" id="regEmail" maxlength="100" class="form-control {% if error and error_field == 'email' %}is-invalid{% endif %}" placeholder="name@example.com" value="{{ email|default('') }}" autocomplete="email">
               <div class="messenger-error-msg" id="regEmailError" {% if not (error and error_field == 'email') %}style="display: none;"{% endif %}>
                 <i class="bi bi-exclamation-circle"></i>
                 <span class="msg-text">{{ error if (error and error_field == 'email') else 'Please enter a valid email address.' }}</span>
@@ -57,7 +57,7 @@
             <div class="messenger-field-group mb-3 {% if error and error_field == 'password' %}has-error{% endif %}" id="regPassGroup">
               <label class="form-label" for="regPass">Password</label>
               <div class="input-group">
-                <input type="password" name="password" id="regPass" class="form-control {% if error and error_field == 'password' %}is-invalid{% endif %}" placeholder="Create password" autocomplete="new-password">
+                <input type="password" name="password" id="regPass" maxlength="64" class="form-control {% if error and error_field == 'password' %}is-invalid{% endif %}" placeholder="Create password" autocomplete="new-password">
                 <button type="button" class="btn btn-outline-secondary toggle-password" data-target="regPass" aria-label="Toggle password visibility">
                   <i class="bi bi-eye"></i>
                 </button>
@@ -87,7 +87,7 @@
             <div class="messenger-field-group mb-3 {% if error and error_field == 'confirm_password' %}has-error{% endif %}" id="regConfirmGroup">
               <label class="form-label" for="regConfirmPass">Confirm Password</label>
               <div class="input-group">
-                <input type="password" name="confirm_password" id="regConfirmPass" class="form-control {% if error and error_field == 'confirm_password' %}is-invalid{% endif %}" placeholder="Repeat password" autocomplete="new-password">
+                <input type="password" name="confirm_password" id="regConfirmPass" maxlength="64" class="form-control {% if error and error_field == 'confirm_password' %}is-invalid{% endif %}" placeholder="Repeat password" autocomplete="new-password">
                 <button type="button" class="btn btn-outline-secondary toggle-password" data-target="regConfirmPass" aria-label="Toggle password visibility">
                   <i class="bi bi-eye"></i>
                 </button>
