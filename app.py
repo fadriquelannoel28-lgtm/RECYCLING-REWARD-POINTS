@@ -68,6 +68,7 @@ def apply_security_caching_and_compression(response):
     response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
     response.headers.setdefault('X-XSS-Protection', '1; mode=block')
     response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+    response.headers.setdefault('Cross-Origin-Opener-Policy', 'same-origin-allow-popups')
     response.headers.setdefault('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()')
     response.headers.setdefault(
         'Content-Security-Policy',
