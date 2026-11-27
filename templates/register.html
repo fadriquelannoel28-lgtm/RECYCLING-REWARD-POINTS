@@ -17,7 +17,20 @@
             <p class="text-muted small">Join EcoCoins and earn rewards for recycling</p>
           </div>
 
+          {% if google_linked_email %}
+            <div class="alert alert-success rounded-3 small py-2 px-3 mb-3" role="alert">
+              <div class="d-flex align-items-center justify-content-between gap-2">
+                <span class="fw-semibold"><i class="bi bi-google text-success me-1"></i>Google email Linked:</span>
+                <a href="{{ url_for('register', clear_google=1) }}" class="text-success fw-semibold text-nowrap text-decoration-none" style="font-size: 0.78rem;">Change</a>
+              </div>
+              <div class="text-dark mt-1" style="word-break: break-all;">{{ google_linked_email }}</div>
+            </div>
+          {% endif %}
+
           <form action="{{ url_for('register') }}" method="POST" id="registerForm" novalidate>
+            {% if google_linked_email %}
+              <input type="hidden" name="use_google_email" value="1">
+            {% endif %}
             <div style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
               <label for="regWebsite">Website</label>
               <input type="text" name="website" id="regWebsite" tabindex="-1" autocomplete="off">
@@ -47,7 +60,7 @@
 
             <div class="messenger-field-group mb-3 {% if error and error_field == 'email' %}has-error{% endif %}" id="regEmailGroup">
               <label class="form-label" for="regEmail">Email Address</label>
-              <input type="email" name="email" id="regEmail" maxlength="100" class="form-control {% if error and error_field == 'email' %}is-invalid{% endif %}" placeholder="name@example.com" value="{{ email|default('') }}" autocomplete="email">
+              <input type="email" name="email" id="regEmail" maxlength="100" class="form-control {% if google_linked_email %}bg-light{% endif %} {% if error and error_field == 'email' %}is-invalid{% endif %}" placeholder="name@example.com" value="{{ email|default('') }}" autocomplete="email" {% if google_linked_email %}readonly{% endif %}>
               <div class="messenger-error-msg" id="regEmailError" {% if not (error and error_field == 'email') %}style="display: none;"{% endif %}>
                 <i class="bi bi-exclamation-circle"></i>
                 <span class="msg-text">{{ error if (error and error_field == 'email') else 'Please enter a valid email address.' }}</span>
@@ -120,6 +133,16 @@
               Already have an account? <a href="{{ url_for('login') }}" class="fw-bold text-decoration-none" style="color: var(--eco-forest);">Login</a>
             </div>
           </form>
+
+          {% if google_client_id %}
+          <div class="my-4 d-flex align-items-center gap-2">
+            <hr class="flex-grow-1 m-0">
+            <span class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">Or sign up with</span>
+            <hr class="flex-grow-1 m-0">
+          </div>
+          <div id="googleRegisterError" class="alert alert-danger rounded-3 small py-2 px-3 mb-2 d-none" role="alert"></div>
+          <div id="googleRegisterContainer" class="d-flex justify-content-center"></div>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -243,4 +266,74 @@
     }
   });
 </script>
+{% if google_client_id %}
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+  (function() {
+    const clientId = {{ google_client_id|tojson }};
+    const container = document.getElementById('googleRegisterContainer');
+    const errorBox = document.getElementById('googleRegisterError');
+
+    function showGoogleRegError(msg) {
+      if (!errorBox) return;
+      errorBox.textContent = msg;
+      errorBox.classList.remove('d-none');
+    }
+
+    async function handleGoogleRegisterResponse(response) {
+      if (errorBox) errorBox.classList.add('d-none');
+      if (!response || !response.credential) {
+        showGoogleRegError('Google sign-in was cancelled or returned no credential.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/google-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credential: response.credential })
+        });
+        const data = await res.json();
+        if (res.ok && (data.status === 'success' || data.status === 'needs_register') && data.redirect) {
+          window.location.href = data.redirect;
+        } else {
+          showGoogleRegError((data && data.message) ? data.message : 'Unable to continue with Google.');
+        }
+      } catch (err) {
+        showGoogleRegError('Network error while verifying Google account. Please try again.');
+      }
+    }
+
+    function initGoogleRegButton() {
+      if (!container || typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
+        return false;
+      }
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleRegisterResponse
+      });
+      const btnWidth = Math.min(340, Math.max(240, container.parentElement ? container.parentElement.clientWidth : 300));
+      google.accounts.id.renderButton(container, {
+        theme: 'outline',
+        size: 'large',
+        shape: 'pill',
+        text: 'continue_with',
+        width: btnWidth
+      });
+      return true;
+    }
+
+    window.addEventListener('load', function() {
+      if (!initGoogleRegButton()) {
+        let tries = 0;
+        const t = setInterval(function() {
+          tries++;
+          if (initGoogleRegButton() || tries > 25) {
+            clearInterval(t);
+          }
+        }, 200);
+      }
+    });
+  })();
+</script>
+{% endif %}
 {% endblock %}

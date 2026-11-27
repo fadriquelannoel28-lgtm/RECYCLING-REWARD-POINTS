@@ -452,21 +452,34 @@ def register_routes(app):
                 return redirect(url_for('staff'))
             return redirect(url_for('index'))
 
+        if request.args.get('clear_google') == '1':
+            session.pop('google_prefill', None)
+            return redirect(url_for('register'))
+
+        google_prefill = session.get('google_prefill') or {}
+        google_linked_email = str(google_prefill.get('email') or '').strip().lower()
+
         error = None
         error_field = None
-        first_name = ''
-        last_name = ''
-        email = ''
+        first_name = str(google_prefill.get('first_name') or '').strip()[:30]
+        last_name = str(google_prefill.get('last_name') or '').strip()[:30]
+        email = google_linked_email
         if request.method == 'POST':
             honeypot = request.form.get('website', '').strip()
             if honeypot:
                 error = 'Registration request could not be processed.'
                 error_field = 'email'
-                return render_template('register.html', error=error, error_field=error_field, first_name='', last_name='', email='', active_page='register')
+                return render_template('register.html', error=error, error_field=error_field, first_name='', last_name='', email='', google_linked_email=google_linked_email, active_page='register')
 
             first_name = request.form.get('first_name', '').strip()
             last_name = request.form.get('last_name', '').strip()
-            email = request.form.get('email', '').strip().lower()
+            if google_linked_email and request.form.get('use_google_email') == '1':
+                email = google_linked_email
+            else:
+                email = request.form.get('email', '').strip().lower()
+                if google_linked_email and email != google_linked_email:
+                    session.pop('google_prefill', None)
+                    google_linked_email = ''
             password = request.form.get('password', '')
             confirm_password = request.form.get('confirm_password', '')
             terms = request.form.get('terms')
@@ -532,9 +545,10 @@ def register_routes(app):
                     session.permanent = True
                     session['user_id'] = new_id
                     session['user_role'] = 'resident'
+                    session['last_activity'] = time.time()
                     return redirect(url_for('dashboard'))
 
-        return render_template('register.html', error=error, error_field=error_field, first_name=first_name, last_name=last_name, email=email, active_page='register')
+        return render_template('register.html', error=error, error_field=error_field, first_name=first_name, last_name=last_name, email=email, google_linked_email=google_linked_email, active_page='register')
 
     @app.route('/logout')
     def logout():
@@ -2770,6 +2784,188 @@ def register_routes(app):
             return jsonify({'status': 'success', 'email_sent': False, 'message': 'Your message was saved in our system, though email delivery is currently unavailable.'})
         return jsonify({'status': 'success', 'email_sent': False, 'message': 'Your message has been submitted to the EcoCoins team!'})
 
+    @app.route('/api/forgot-password/send-code', methods=['POST'])
+    def api_forgot_password_send_code():
+        data = request.get_json(silent=True) or {}
+        email = str(data.get('email') or '').strip().lower()
+        if not email or not re.match(r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$", email):
+            return jsonify({'status': 'error', 'message': 'Please enter a valid email address.'}), 400
+
+        conn = get_db()
+        cur = conn.cursor()
+        user_row = cur.execute("SELECT id, full_name, email, status FROM users WHERE LOWER(email) = LOWER(?)", (email,)).fetchone()
+        if not user_row:
+            conn.close()
+            return jsonify({'status': 'error', 'message': 'No account found with that email address.'}), 404
+
+        user_row = dict(user_row)
+        if (user_row.get('status') or 'active').lower() != 'active':
+            conn.close()
+            return jsonify({'status': 'error', 'message': 'This account is currently inactive. Please contact your barangay administrator.'}), 403
+
+        cur.execute(
+            """CREATE TABLE IF NOT EXISTS password_reset_codes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                email TEXT NOT NULL,
+                code_hash TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                attempts INTEGER DEFAULT 0,
+                used INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL
+            )"""
+        )
+
+        code = f"{secrets.randbelow(900000) + 100000}"
+        now_dt = datetime.now()
+        now_str = now_dt.strftime('%Y-%m-%d %H:%M:%S')
+        expires_str = (now_dt + timedelta(minutes=15)).strftime('%Y-%m-%d %H:%M:%S')
+
+        smtp_host = _load_env_key('SMTP_HOST', 'smtp.gmail.com')
+        smtp_port = int(_load_env_key('SMTP_PORT', '587') or '587')
+        smtp_user = _load_env_key('SMTP_USER')
+        smtp_pass = _load_env_key('SMTP_PASS').replace(' ', '')
+
+        if not smtp_user or not smtp_pass:
+            conn.close()
+            return jsonify({'status': 'error', 'message': 'Email service is not configured on this server.'}), 500
+
+        try:
+            msg = EmailMessage()
+            msg['Subject'] = 'EcoCoins Password Reset Verification Code'
+            msg['From'] = smtp_user
+            msg['To'] = user_row['email']
+            msg.set_content(
+                f"Hello {user_row.get('full_name') or 'Resident'},\n\n"
+                f"Your EcoCoins password reset verification code is:\n\n"
+                f"    {code}\n\n"
+                f"This code will expire in 15 minutes. If you did not request a password reset, you can safely ignore this email.\n\n"
+                f"- EcoCoins Barangay Recycling System\n"
+            )
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+        except Exception:
+            conn.close()
+            return jsonify({'status': 'error', 'message': 'Failed to send verification code email. Please try again in a moment.'}), 500
+
+        cur.execute("UPDATE password_reset_codes SET used = 1 WHERE LOWER(email) = LOWER(?) AND used = 0", (email,))
+        cur.execute(
+            """INSERT INTO password_reset_codes (user_id, email, code_hash, expires_at, attempts, used, created_at)
+               VALUES (?, ?, ?, ?, 0, 0, ?)""",
+            (user_row['id'], user_row['email'].lower(), generate_password_hash(code), expires_str, now_str)
+        )
+        conn.commit()
+        conn.close()
+        session.pop('pw_reset_verified', None)
+
+        return jsonify({'status': 'success', 'message': f"A 6-digit verification code has been sent to {user_row['email']}."})
+
+    @app.route('/api/forgot-password/verify-code', methods=['POST'])
+    def api_forgot_password_verify_code():
+        data = request.get_json(silent=True) or {}
+        email = str(data.get('email') or '').strip().lower()
+        code = str(data.get('code') or '').strip()
+
+        if not email or not re.match(r"^\d{6}$", code):
+            return jsonify({'status': 'error', 'message': 'Please enter the 6-digit code sent to your email.'}), 400
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            """CREATE TABLE IF NOT EXISTS password_reset_codes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                email TEXT NOT NULL,
+                code_hash TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                attempts INTEGER DEFAULT 0,
+                used INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL
+            )"""
+        )
+        row = cur.execute(
+            "SELECT * FROM password_reset_codes WHERE LOWER(email) = LOWER(?) AND used = 0 ORDER BY id DESC LIMIT 1",
+            (email,)
+        ).fetchone()
+
+        if not row:
+            conn.close()
+            return jsonify({'status': 'error', 'message': 'No active reset code found. Please request a new code.'}), 400
+
+        row = dict(row)
+        try:
+            exp_dt = datetime.strptime(row['expires_at'], '%Y-%m-%d %H:%M:%S')
+        except Exception:
+            exp_dt = datetime.min
+
+        if datetime.now() > exp_dt:
+            cur.execute("UPDATE password_reset_codes SET used = 1 WHERE id = ?", (row['id'],))
+            conn.commit()
+            conn.close()
+            return jsonify({'status': 'error', 'message': 'This verification code has expired. Please request a new one.'}), 400
+
+        if int(row.get('attempts') or 0) >= 5:
+            cur.execute("UPDATE password_reset_codes SET used = 1 WHERE id = ?", (row['id'],))
+            conn.commit()
+            conn.close()
+            return jsonify({'status': 'error', 'message': 'Too many incorrect attempts. Please request a new code.'}), 400
+
+        if not check_password_hash(row['code_hash'], code):
+            cur.execute("UPDATE password_reset_codes SET attempts = attempts + 1 WHERE id = ?", (row['id'],))
+            conn.commit()
+            conn.close()
+            return jsonify({'status': 'error', 'message': 'Incorrect verification code. Please check your email and try again.'}), 400
+
+        conn.close()
+        session['pw_reset_verified'] = {'email': row['email'], 'user_id': row['user_id'], 'code_id': row['id']}
+        return jsonify({'status': 'success', 'message': 'Code verified! Enter your new password below.'})
+
+    @app.route('/api/forgot-password/reset', methods=['POST'])
+    def api_forgot_password_reset():
+        verified = session.get('pw_reset_verified')
+        if not verified or not verified.get('user_id') or not verified.get('code_id'):
+            return jsonify({'status': 'error', 'message': 'Reset session expired. Please request a new verification code.'}), 400
+
+        data = request.get_json(silent=True) or {}
+        password = str(data.get('password') or '')
+        confirm_password = str(data.get('confirm_password') or '')
+
+        if len(password) < 8 or len(password) > 64:
+            return jsonify({'status': 'error', 'message': 'Password must be 8 to 64 characters long.'}), 400
+        if not re.search(r"[A-Z]", password) or not re.search(r"[a-z]", password) or not re.search(r"\d", password) or not re.search(r"[^A-Za-z0-9]", password):
+            return jsonify({'status': 'error', 'message': 'Password must include uppercase, lowercase, a number, and a special character.'}), 400
+        if password != confirm_password:
+            return jsonify({'status': 'error', 'message': 'The passwords you entered do not match.'}), 400
+
+        conn = get_db()
+        cur = conn.cursor()
+        code_row = cur.execute(
+            "SELECT * FROM password_reset_codes WHERE id = ? AND used = 0",
+            (verified['code_id'],)
+        ).fetchone()
+        if not code_row:
+            conn.close()
+            session.pop('pw_reset_verified', None)
+            return jsonify({'status': 'error', 'message': 'Reset code already used or expired. Please request a new one.'}), 400
+
+        hashed_pw = generate_password_hash(password)
+        cur.execute(
+            "UPDATE users SET password = ?, failed_login_attempts = 0, lockout_until = NULL WHERE id = ?",
+            (hashed_pw, verified['user_id'])
+        )
+        cur.execute("UPDATE password_reset_codes SET used = 1 WHERE id = ?", (verified['code_id'],))
+        conn.commit()
+        conn.close()
+        sync_to_json()
+
+        reset_email = verified.get('email', '')
+        session.pop('pw_reset_verified', None)
+        return jsonify({'status': 'success', 'email': reset_email, 'message': 'Password updated successfully! You can now log in with your new password.'})
+
     @app.route('/api/google-login', methods=['POST'])
     def api_google_login():
         data = request.get_json(silent=True) or {}
@@ -2863,39 +3059,32 @@ def register_routes(app):
 
             return jsonify({'status': 'success', 'redirect': target_url, 'full_name': matched['full_name']})
 
+        conn.close()
+
         given_name = str(token_info.get('given_name') or '').strip()
         family_name = str(token_info.get('family_name') or '').strip()
-        full_name = str(token_info.get('name') or '').strip() or f"{given_name} {family_name}".strip() or email.split('@')[0]
-        if not given_name:
+        full_name = str(token_info.get('name') or '').strip()
+        if not given_name and full_name:
             parts = full_name.split()
-            given_name = parts[0] if parts else email.split('@')[0]
+            given_name = parts[0] if parts else ''
             family_name = ' '.join(parts[1:]) if len(parts) > 1 else ''
 
-        qr_code = f'ECO-RES-{random.randint(10000, 99999)}'
-        while cur.execute("SELECT 1 FROM users WHERE qr_code = ?", (qr_code,)).fetchone():
-            qr_code = f'ECO-RES-{random.randint(10000, 99999)}'
+        given_name = re.sub(r"[^A-Za-zÀ-ÿ\s.\-']", '', given_name).strip()[:30]
+        family_name = re.sub(r"[^A-Za-zÀ-ÿ\s.\-']", '', family_name).strip()[:30]
 
-        random_pw = generate_password_hash(secrets.token_urlsafe(32))
-        cur.execute(
-            "INSERT INTO users (full_name, first_name, last_name, email, password, role, qr_code, points, status, created_at, last_login_at) VALUES (?, ?, ?, ?, ?, 'resident', ?, 0, 'active', ?, ?)",
-            (full_name, given_name, family_name, email, random_pw, qr_code, now_str, now_str)
-        )
-        new_id = cur.lastrowid
-        cur.execute(
-            "INSERT INTO login_attempts (email, ip_address, success, reason, created_at) VALUES (?, ?, 1, 'google_signup', ?)",
-            (email, client_ip, now_str)
-        )
-        conn.commit()
-        conn.close()
-        sync_to_json()
+        session['google_prefill'] = {
+            'email': email,
+            'first_name': given_name,
+            'last_name': family_name
+        }
 
-        session.clear()
-        session.permanent = True
-        session['user_id'] = new_id
-        session['user_role'] = 'resident'
-        session['last_activity'] = time.time()
-
-        return jsonify({'status': 'success', 'redirect': url_for('dashboard'), 'full_name': full_name})
+        return jsonify({
+            'status': 'needs_register',
+            'redirect': url_for('register'),
+            'email': email,
+            'first_name': given_name,
+            'last_name': family_name
+        })
 
     @app.route('/api/faq-chat', methods=['POST'])
     def api_faq_chat():

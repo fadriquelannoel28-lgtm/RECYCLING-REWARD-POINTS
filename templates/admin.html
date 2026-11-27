@@ -412,10 +412,6 @@
               <i class="bi bi-file-earmark-bar-graph"></i>
               <span>View Reports</span>
             </a>
-            <button class="btn btn-accent btn-pill d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addResidentModal">
-              <i class="bi bi-person-plus"></i>
-              <span>Add Resident</span>
-            </button>
           </div>
         </div>
 
@@ -555,14 +551,7 @@
       {% elif tab == 'residents' %}
         <div class="mb-3">
           <h3 class="fw-bold mb-1">Registered Residents Management</h3>
-          <p class="text-muted mb-0">Add new residents, edit details or points, and manage resident accounts.</p>
-        </div>
-
-        <div id="adminResToolbarBtns" class="d-inline-flex align-items-center gap-2">
-          <button class="btn btn-forest btn-sm d-flex align-items-center gap-2 rounded-2 px-3 py-2" data-bs-toggle="modal" data-bs-target="#addResidentModal">
-            <i class="bi bi-person-plus"></i>
-            <span>Add Resident</span>
-          </button>
+          <p class="text-muted mb-0">Edit details or points, and manage registered resident accounts.</p>
         </div>
 
         <div class="card border-0 shadow-sm p-4 rounded-1 gap-2 mb-3">
@@ -2692,7 +2681,6 @@ document.addEventListener('DOMContentLoaded', function() {
         emptyTable: 'No registered residents yet.'
       }
     });
-    mountToolbarBtns(adminResidentsEl, 'adminResToolbarBtns');
   }
 
   const adminStaffEl = document.getElementById('adminStaffTable');

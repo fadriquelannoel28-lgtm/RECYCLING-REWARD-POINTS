@@ -64,7 +64,10 @@
             </div>
 
             <div class="messenger-field-group mb-3 {% if error and (error_field == 'password' or not error_field) %}has-error{% endif %}" id="passwordGroup">
-              <label class="form-label" for="passwordInput">Password</label>
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="form-label mb-0" for="passwordInput">Password</label>
+                <a href="#" class="small fw-semibold text-decoration-none" style="color: var(--eco-forest);" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">Forgot password?</a>
+              </div>
               <div class="input-group">
                 <input type="password" name="password" id="passwordInput" class="form-control {% if error and (error_field == 'password' or not error_field) %}is-invalid{% endif %}" placeholder="Enter password" autocomplete="current-password">
                 <button type="button" class="btn btn-outline-secondary toggle-password" data-target="passwordInput" aria-label="Toggle password visibility">
@@ -95,13 +98,15 @@
 
           {% if google_client_id %}
           <div id="googleLoginError" class="alert alert-danger rounded-3 small py-2 px-3 mb-2 d-none" role="alert"></div>
-          <div id="googleSignInContainer" class="d-flex justify-content-center mb-3"></div>
+          <div id="googleSignInContainer" class="d-flex justify-content-center mb-2"></div>
           {% endif %}
 
-          <button type="button" class="btn btn-outline-success w-100 py-2 fw-semibold btn-pill d-flex align-items-center justify-content-center gap-2 mb-3" data-bs-toggle="modal" data-bs-target="#faceLoginModal">
-            <i class="bi bi-person-bounding-box fs-5"></i>
-            <span>Login with Face Recognition</span>
-          </button>
+          <div class="d-flex justify-content-center mb-3">
+            <button type="button" id="faceLoginTriggerBtn" class="btn rounded-pill d-inline-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#faceLoginModal" style="width: 100%; max-width: 340px; height: 40px; border: 1px solid #dadce0; background-color: #ffffff; color: #3c4043; font-size: 14px; font-weight: 500; letter-spacing: 0.25px; transition: background-color 0.15s ease, border-color 0.15s ease;" onmouseover="this.style.backgroundColor='#f4faf6'; this.style.borderColor='#198754';" onmouseout="this.style.backgroundColor='#ffffff'; this.style.borderColor='#dadce0';">
+              <i class="bi bi-person-bounding-box text-success" style="font-size: 1.05rem;"></i>
+              <span>Continue with Face Recognition</span>
+            </button>
+          </div>
 
           <hr class="my-3">
 
@@ -124,6 +129,80 @@
     </div>
   </div>
 </main>
+
+<div id="resetSuccessBanner" class="d-none"></div>
+
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true" style="backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background-color: rgba(15, 23, 42, 0.35);">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 430px;">
+    <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+      <div class="modal-header border-0 pb-1 px-4 pt-4">
+        <div class="d-flex align-items-center gap-2">
+          <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 38px; height: 38px; background: rgba(25, 135, 84, 0.12); color: var(--eco-forest);">
+            <i class="bi bi-key-fill fs-5"></i>
+          </span>
+          <div>
+            <h5 class="modal-title fw-bold mb-0" id="forgotPasswordModalLabel" style="color: var(--eco-forest);">Forgot Password</h5>
+            <div class="small text-muted" id="fpSubtitle">Enter your email to receive a 6-digit code</div>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body px-4 pt-3 pb-4">
+        <div id="fpAlert" class="alert rounded-3 small py-2 px-3 mb-3 d-none" role="alert"></div>
+
+        <form id="fpStep1Form" novalidate>
+          <div class="mb-3">
+            <label for="fpEmailInput" class="form-label small fw-semibold">Registered Email Address</label>
+            <input type="email" id="fpEmailInput" class="form-control rounded-3" placeholder="name@example.com" maxlength="100" required>
+          </div>
+          <button type="submit" id="fpSendBtn" class="btn btn-forest w-100 rounded-pill py-2 fw-semibold">
+            <i class="bi bi-envelope-arrow-up me-1"></i><span>Send Verification Code</span>
+          </button>
+        </form>
+
+        <form id="fpStep2Form" class="d-none" novalidate>
+          <div class="small text-muted mb-3">Enter the 6-digit code sent to <strong id="fpEmailDisplay" class="text-dark"></strong>:</div>
+          <div class="mb-3">
+            <input type="text" id="fpCodeInput" class="form-control form-control-lg text-center fw-bold font-monospace rounded-3" maxlength="6" inputmode="numeric" placeholder="000000" style="letter-spacing: 0.45rem; font-size: 1.4rem;" required>
+          </div>
+          <button type="submit" id="fpVerifyBtn" class="btn btn-forest w-100 rounded-pill py-2 fw-semibold mb-2">
+            <i class="bi bi-shield-check me-1"></i><span>Verify Code</span>
+          </button>
+          <div class="d-flex justify-content-between align-items-center small pt-1">
+            <button type="button" id="fpBackToEmailBtn" class="btn btn-link btn-sm p-0 text-muted text-decoration-none">Change email</button>
+            <button type="button" id="fpResendBtn" class="btn btn-link btn-sm p-0 fw-semibold text-decoration-none" style="color: var(--eco-forest);">Resend code</button>
+          </div>
+        </form>
+
+        <form id="fpStep3Form" class="d-none" novalidate>
+          <div class="mb-3">
+            <label for="fpNewPass" class="form-label small fw-semibold">New Password</label>
+            <div class="input-group">
+              <input type="password" id="fpNewPass" class="form-control" maxlength="64" placeholder="Create new password" required>
+              <button type="button" class="btn btn-outline-secondary toggle-password" data-target="fpNewPass" aria-label="Toggle password visibility">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+            <div class="text-muted mt-1" style="font-size: 0.74rem;">8+ chars with uppercase, lowercase, number, and symbol.</div>
+          </div>
+          <div class="mb-3">
+            <label for="fpConfirmPass" class="form-label small fw-semibold">Confirm New Password</label>
+            <div class="input-group">
+              <input type="password" id="fpConfirmPass" class="form-control" maxlength="64" placeholder="Repeat new password" required>
+              <button type="button" class="btn btn-outline-secondary toggle-password" data-target="fpConfirmPass" aria-label="Toggle password visibility">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+          <button type="submit" id="fpResetBtn" class="btn btn-accent w-100 rounded-pill py-2 fw-bold">
+            <i class="bi bi-check2-circle me-1"></i><span>Save Password &amp; Return to Login</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="modal fade" id="faceLoginModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -470,6 +549,206 @@
         }
       }, 1000);
     }
+
+    const fpModalEl = document.getElementById('forgotPasswordModal');
+    const fpAlert = document.getElementById('fpAlert');
+    const fpSubtitle = document.getElementById('fpSubtitle');
+    const fpStep1Form = document.getElementById('fpStep1Form');
+    const fpStep2Form = document.getElementById('fpStep2Form');
+    const fpStep3Form = document.getElementById('fpStep3Form');
+    const fpEmailInput = document.getElementById('fpEmailInput');
+    const fpEmailDisplay = document.getElementById('fpEmailDisplay');
+    const fpCodeInput = document.getElementById('fpCodeInput');
+    const fpNewPass = document.getElementById('fpNewPass');
+    const fpConfirmPass = document.getElementById('fpConfirmPass');
+    const fpSendBtn = document.getElementById('fpSendBtn');
+    const fpVerifyBtn = document.getElementById('fpVerifyBtn');
+    const fpResetBtn = document.getElementById('fpResetBtn');
+    const fpBackToEmailBtn = document.getElementById('fpBackToEmailBtn');
+    const fpResendBtn = document.getElementById('fpResendBtn');
+    let fpCurrentEmail = '';
+
+    function showFpAlert(type, msg) {
+      if (!fpAlert) return;
+      fpAlert.className = 'alert alert-' + type + ' rounded-3 small py-2 px-3 mb-3';
+      fpAlert.textContent = msg;
+      fpAlert.classList.remove('d-none');
+    }
+
+    function hideFpAlert() {
+      if (fpAlert) fpAlert.classList.add('d-none');
+    }
+
+    function showFpStep(step) {
+      fpStep1Form.classList.toggle('d-none', step !== 1);
+      fpStep2Form.classList.toggle('d-none', step !== 2);
+      fpStep3Form.classList.toggle('d-none', step !== 3);
+      if (step === 1) fpSubtitle.textContent = 'Enter your email to receive a 6-digit code';
+      else if (step === 2) fpSubtitle.textContent = 'Check your inbox for the 6-digit code';
+      else fpSubtitle.textContent = 'Create a strong new password';
+    }
+
+    if (fpModalEl) {
+      fpModalEl.addEventListener('show.bs.modal', function() {
+        hideFpAlert();
+        showFpStep(1);
+        const loginEmailEl = document.getElementById('emailInput');
+        if (loginEmailEl && loginEmailEl.value.trim() && !fpEmailInput.value.trim()) {
+          fpEmailInput.value = loginEmailEl.value.trim();
+        }
+        fpCodeInput.value = '';
+        fpNewPass.value = '';
+        fpConfirmPass.value = '';
+      });
+    }
+
+    async function requestResetCode(emailVal) {
+      hideFpAlert();
+      fpSendBtn.disabled = true;
+      fpSendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending Code...';
+      try {
+        const res = await fetch('/api/forgot-password/send-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailVal })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          fpCurrentEmail = emailVal;
+          fpEmailDisplay.textContent = emailVal;
+          showFpStep(2);
+          showFpAlert('success', data.message);
+          setTimeout(function() { fpCodeInput.focus(); }, 100);
+        } else {
+          showFpAlert('danger', (data && data.message) ? data.message : 'Unable to send code.');
+        }
+      } catch (err) {
+        showFpAlert('danger', 'Network error while sending code. Please try again.');
+      } finally {
+        fpSendBtn.disabled = false;
+        fpSendBtn.innerHTML = '<i class="bi bi-envelope-arrow-up me-1"></i><span>Send Verification Code</span>';
+      }
+    }
+
+    if (fpStep1Form) {
+      fpStep1Form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const emailVal = (fpEmailInput.value || '').trim();
+        if (!emailVal) {
+          showFpAlert('danger', 'Please enter your email address.');
+          fpEmailInput.focus();
+          return;
+        }
+        requestResetCode(emailVal);
+      });
+    }
+
+    if (fpBackToEmailBtn) {
+      fpBackToEmailBtn.addEventListener('click', function() {
+        hideFpAlert();
+        showFpStep(1);
+        fpEmailInput.focus();
+      });
+    }
+
+    if (fpResendBtn) {
+      fpResendBtn.addEventListener('click', function() {
+        if (fpCurrentEmail) {
+          requestResetCode(fpCurrentEmail);
+        }
+      });
+    }
+
+    if (fpCodeInput) {
+      fpCodeInput.addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g, '').slice(0, 6);
+      });
+    }
+
+    if (fpStep2Form) {
+      fpStep2Form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        hideFpAlert();
+        const codeVal = (fpCodeInput.value || '').trim();
+        if (!/^\d{6}$/.test(codeVal)) {
+          showFpAlert('danger', 'Please enter the 6-digit code from your email.');
+          fpCodeInput.focus();
+          return;
+        }
+        fpVerifyBtn.disabled = true;
+        fpVerifyBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verifying...';
+        try {
+          const res = await fetch('/api/forgot-password/verify-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: fpCurrentEmail, code: codeVal })
+          });
+          const data = await res.json();
+          if (res.ok && data.status === 'success') {
+            showFpStep(3);
+            showFpAlert('success', data.message);
+            setTimeout(function() { fpNewPass.focus(); }, 100);
+          } else {
+            showFpAlert('danger', (data && data.message) ? data.message : 'Invalid verification code.');
+          }
+        } catch (err) {
+          showFpAlert('danger', 'Network error while verifying code. Please try again.');
+        } finally {
+          fpVerifyBtn.disabled = false;
+          fpVerifyBtn.innerHTML = '<i class="bi bi-shield-check me-1"></i><span>Verify Code</span>';
+        }
+      });
+    }
+
+    if (fpStep3Form) {
+      fpStep3Form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        hideFpAlert();
+        const pw = fpNewPass.value || '';
+        const cp = fpConfirmPass.value || '';
+        if (pw.length < 8 || pw.length > 64 || !/[A-Z]/.test(pw) || !/[a-z]/.test(pw) || !/\d/.test(pw) || !/[^A-Za-z0-9]/.test(pw)) {
+          showFpAlert('danger', 'Password must be 8+ chars with uppercase, lowercase, a number, and a symbol.');
+          fpNewPass.focus();
+          return;
+        }
+        if (pw !== cp) {
+          showFpAlert('danger', 'The passwords you entered do not match.');
+          fpConfirmPass.focus();
+          return;
+        }
+        fpResetBtn.disabled = true;
+        fpResetBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating Password...';
+        try {
+          const res = await fetch('/api/forgot-password/reset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pw, confirm_password: cp })
+          });
+          const data = await res.json();
+          if (res.ok && data.status === 'success') {
+            showFpAlert('success', data.message);
+            const loginEmailEl = document.getElementById('emailInput');
+            const loginPassEl = document.getElementById('passwordInput');
+            if (loginEmailEl && data.email) loginEmailEl.value = data.email;
+            setTimeout(function() {
+              const modalInst = bootstrap.Modal.getInstance(fpModalEl);
+              if (modalInst) modalInst.hide();
+              if (loginPassEl) {
+                loginPassEl.value = '';
+                loginPassEl.focus();
+              }
+            }, 1200);
+          } else {
+            showFpAlert('danger', (data && data.message) ? data.message : 'Unable to reset password.');
+          }
+        } catch (err) {
+          showFpAlert('danger', 'Network error while updating password. Please try again.');
+        } finally {
+          fpResetBtn.disabled = false;
+          fpResetBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i><span>Save Password &amp; Return to Login</span>';
+        }
+      });
+    }
   });
 </script>
 {% if google_client_id %}
@@ -499,7 +778,7 @@
           body: JSON.stringify({ credential: response.credential })
         });
         const data = await res.json();
-        if (res.ok && data.status === 'success' && data.redirect) {
+        if (res.ok && (data.status === 'success' || data.status === 'needs_register') && data.redirect) {
           window.location.href = data.redirect;
         } else {
           showGoogleError((data && data.message) ? data.message : 'Unable to sign in with Google.');
@@ -518,6 +797,10 @@
         callback: handleGoogleCredentialResponse
       });
       const btnWidth = Math.min(340, Math.max(240, container.parentElement ? container.parentElement.clientWidth : 300));
+      const faceBtn = document.getElementById('faceLoginTriggerBtn');
+      if (faceBtn) {
+        faceBtn.style.width = btnWidth + 'px';
+      }
       google.accounts.id.renderButton(container, {
         theme: 'outline',
         size: 'large',
