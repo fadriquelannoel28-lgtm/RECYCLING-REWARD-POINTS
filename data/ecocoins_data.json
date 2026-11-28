@@ -37,7 +37,7 @@
       "verify_cooldown_until": null,
       "failed_login_attempts": 0,
       "lockout_until": null,
-      "last_login_at": "2026-11-28 08:51:16"
+      "last_login_at": "2026-11-28 09:39:24"
     },
     {
       "id": 2,
@@ -1529,16 +1529,6 @@
       "created_at": "2026-10-22 09:52:00"
     },
     {
-      "id": 9,
-      "user_id": 6,
-      "material_id": 2,
-      "material_name": "Can",
-      "quantity": 1,
-      "points_earned": 8,
-      "receipt_no": "REC-20261022-09",
-      "created_at": "2026-10-22 09:30:00"
-    },
-    {
       "id": 10,
       "user_id": 2,
       "material_id": 1,
@@ -1659,16 +1649,6 @@
       "created_at": "2026-11-01 21:21:46"
     },
     {
-      "id": 22,
-      "user_id": 23,
-      "material_id": 1,
-      "material_name": "Plastic Bottle",
-      "quantity": 1,
-      "points_earned": 5,
-      "receipt_no": "REC-20261101-5860",
-      "created_at": "2026-11-01 21:40:13"
-    },
-    {
       "id": 23,
       "user_id": 21,
       "material_id": 1,
@@ -1697,26 +1677,6 @@
       "points_earned": 80,
       "receipt_no": "REC-20261103-2560",
       "created_at": "2026-11-03 14:20:21"
-    },
-    {
-      "id": 26,
-      "user_id": 6,
-      "material_id": 2,
-      "material_name": "Can",
-      "quantity": 16,
-      "points_earned": 128,
-      "receipt_no": "REC-20261119-3766",
-      "created_at": "2026-11-19 07:57:11"
-    },
-    {
-      "id": 27,
-      "user_id": 42,
-      "material_id": 1,
-      "material_name": "Plastic Bottle",
-      "quantity": 1,
-      "points_earned": 5,
-      "receipt_no": "REC-20261128-1598",
-      "created_at": "2026-11-28 08:24:38"
     }
   ],
   "rewards": [
@@ -1822,46 +1782,6 @@
       "redemption_code": "RDM-19541",
       "status": "received",
       "created_at": "2026-11-03 14:20:50"
-    },
-    {
-      "id": 4,
-      "user_id": 6,
-      "reward_id": 19,
-      "reward_title": "1kg Sinandomeng Rice (Bigas)",
-      "points_spent": 300,
-      "redemption_code": "RDM-50786",
-      "status": "received",
-      "created_at": "2026-11-19 08:05:43"
-    },
-    {
-      "id": 9,
-      "user_id": 6,
-      "reward_id": 23,
-      "reward_title": "Eco Tote Bag (Reusable)",
-      "points_spent": 200,
-      "redemption_code": "RDM-94460",
-      "status": "received",
-      "created_at": "2026-11-19 08:34:00"
-    },
-    {
-      "id": 11,
-      "user_id": 6,
-      "reward_id": 23,
-      "reward_title": "Eco Tote Bag (Reusable)",
-      "points_spent": 200,
-      "redemption_code": "RDM-77742",
-      "status": "received",
-      "created_at": "2026-11-19 08:37:11"
-    },
-    {
-      "id": 12,
-      "user_id": 6,
-      "reward_id": 24,
-      "reward_title": "Noodles & Coffee Bundle (3 Noodles + 3 Coffee)",
-      "points_spent": 180,
-      "redemption_code": "RDM-69783",
-      "status": "received",
-      "created_at": "2026-11-28 08:26:58"
     }
   ],
   "stations": [

@@ -2110,9 +2110,11 @@ def register_routes(app):
                         sync_to_json()
             elif action == 'delete_resident':
                 res_id = int(request.form.get('res_id', 0))
+                cur.execute("DELETE FROM transactions WHERE user_id = ?", (res_id,))
+                cur.execute("DELETE FROM redemptions WHERE user_id = ?", (res_id,))
                 cur.execute("DELETE FROM users WHERE id = ? AND role = 'resident'", (res_id,))
                 conn.commit()
-                feedback = 'Resident account deleted successfully.'
+                feedback = 'Resident account and associated history deleted successfully.'
                 feedback_type = 'info'
                 sync_to_json()
             elif action == 'reset_resident_password':
