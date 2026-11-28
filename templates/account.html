@@ -228,7 +228,7 @@
         {% endif %}
 
         <div class="row g-4">
-          <div class="col-md-6">
+          <div class="{% if current_user.role == 'resident' %}col-12{% else %}col-md-6{% endif %}">
             <div class="card border-0 shadow-sm p-4 h-100 bg-white rounded-1 gap-2 mb-3">
               <div class="d-flex align-items-center gap-2 mb-3">
                 <span class="eco-icon-tile tile-blue" style="width: 36px; height: 36px;">
@@ -294,6 +294,7 @@
             </div>
           </div>
 
+          {% if current_user.role != 'resident' %}
           <div class="col-md-6">
             <div class="card border-0 shadow-sm p-4 h-100 bg-white rounded-1 gap-2 mb-3">
               <div class="d-flex align-items-center gap-2 mb-3">
@@ -356,6 +357,7 @@
               </form>
             </div>
           </div>
+          {% endif %}
         </div>
       </div>
     </div>

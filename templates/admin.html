@@ -592,19 +592,6 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end crud-dropdown-menu shadow">
                           <li>
-                            <button type="button" class="crud-menu-item edit-resident-btn" data-id="{{ res.id }}" data-name="{{ res.full_name }}" data-email="{{ res.email }}" data-points="{{ res.points }}" data-bs-toggle="modal" data-bs-target="#editResidentModal">
-                              <span class="crud-icon-box blue"><i class="bi bi-pencil"></i></span>
-                              <span>Edit</span>
-                            </button>
-                          </li>
-                          <li>
-                            <button type="button" class="crud-menu-item reset-res-pw-btn" data-id="{{ res.id }}" data-name="{{ res.full_name }}" data-bs-toggle="modal" data-bs-target="#resetResPasswordModal">
-                              <span class="crud-icon-box orange"><i class="bi bi-key"></i></span>
-                              <span>Set Password</span>
-                            </button>
-                          </li>
-                          <li><hr class="dropdown-divider my-1"></li>
-                          <li>
                             <form action="{{ url_for('admin', tab='residents') }}" method="POST" data-confirm-modal="true" data-confirm-title="Confirm Account Status Change" data-confirm-message="Are you sure you want to {{ 'activate' if res.status == 'inactive' else 'deactivate' }} {{ res.full_name }}?" data-confirm-btn="Confirm" data-confirm-color="{{ 'btn-success' if res.status == 'inactive' else 'btn-warning' }}">
                               <input type="hidden" name="admin_action" value="toggle_resident_status">
                               <input type="hidden" name="res_id" value="{{ res.id }}">

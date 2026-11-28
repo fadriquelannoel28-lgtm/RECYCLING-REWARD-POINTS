@@ -106,6 +106,30 @@ def _load_env_key(env_key, default_val=''):
             pass
     return default_val
 
+def _send_smtp_email(msg):
+    smtp_host = _load_env_key('SMTP_HOST', 'smtp.gmail.com')
+    smtp_port = int(_load_env_key('SMTP_PORT', '587') or '587')
+    smtp_user = _load_env_key('SMTP_USER')
+    smtp_pass = _load_env_key('SMTP_PASS').replace(' ', '')
+    if not smtp_user or not smtp_pass:
+        raise RuntimeError('SMTP credentials not configured')
+    try:
+        if smtp_port == 465:
+            with smtplib.SMTP_SSL(smtp_host, 465, timeout=12) as server:
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+            return
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=12) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+    except Exception:
+        with smtplib.SMTP_SSL(smtp_host, 465, timeout=12) as server:
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+
 def validate_id_image_with_ai(raw_bytes, side='front', id_type=''):
     if not raw_bytes:
         return False, 'Uploaded file is empty. Please upload a clear photo of your valid ID.'
@@ -2821,8 +2845,6 @@ def register_routes(app):
         now_str = now_dt.strftime('%Y-%m-%d %H:%M:%S')
         expires_str = (now_dt + timedelta(minutes=15)).strftime('%Y-%m-%d %H:%M:%S')
 
-        smtp_host = _load_env_key('SMTP_HOST', 'smtp.gmail.com')
-        smtp_port = int(_load_env_key('SMTP_PORT', '587') or '587')
         smtp_user = _load_env_key('SMTP_USER')
         smtp_pass = _load_env_key('SMTP_PASS').replace(' ', '')
 
@@ -2842,15 +2864,11 @@ def register_routes(app):
                 f"This code will expire in 15 minutes. If you did not request a password reset, you can safely ignore this email.\n\n"
                 f"- EcoCoins Barangay Recycling System\n"
             )
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
-                server.ehlo()
-                server.starttls()
-                server.ehlo()
-                server.login(smtp_user, smtp_pass)
-                server.send_message(msg)
-        except Exception:
+            _send_smtp_email(msg)
+        except Exception as ex:
             conn.close()
-            return jsonify({'status': 'error', 'message': 'Failed to send verification code email. Please try again in a moment.'}), 500
+            err_hint = 'Current Wi-Fi network is blocking Gmail SMTP ports (587/465). Try switching to mobile hotspot or using the Vercel live link.' if '10061' in str(ex) or 'refused' in str(ex).lower() else 'Failed to send verification code email. Please try again in a moment.'
+            return jsonify({'status': 'error', 'message': err_hint}), 500
 
         cur.execute("UPDATE password_reset_codes SET used = 1 WHERE LOWER(email) = LOWER(?) AND used = 0", (email,))
         cur.execute(
